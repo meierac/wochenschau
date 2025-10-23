@@ -164,7 +164,7 @@
             </div>
 
             <!-- Week View -->
-            <div class="flex-1 overflow-hidden px-2">
+            <div class="flex-1 overflow-hidden">
                 <WeekView />
             </div>
             <!-- Floating Navigation Bar -->
