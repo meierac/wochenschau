@@ -38,14 +38,17 @@
 
 <svelte:window on:resize={handleResize} />
 
-<!-- Mobile: Simple grid with padding, no height constraints -->
-<!-- Desktop: Maintain height for proper layout -->
-<div class="px-2 pb-24 md:pb-0 md:h-full md:flex md:flex-col">
+<div class="flex flex-col h-full w-full px-2">
+    <!-- Week Days Layout - Responsive -->
+    <!-- Mobile: Stack vertically (1 column) with overflow-y -->
+    <!-- Tablet: 2-3 columns with overflow-y -->
+    <!-- Desktop: 4 columns max (max 4 days per row) with overflow-y -->
     <div
-        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 md:flex-1 md:overflow-y-auto"
+        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 flex-1 overflow-y-auto md:pb-0 pt-6 md:pt-0"
+        style={"padding-bottom: 100px"}
     >
         {#each days as day, dayIndex}
-            <div class="md:h-full md:flex md:flex-col">
+            <div class="h-full flex flex-col">
                 <DayColumn
                     {day}
                     {dayIndex}
@@ -58,7 +61,7 @@
 
         <!-- Bible Verse of the Day as Last Item -->
         {#if $bibleVerse.enabled}
-            <div class="md:h-full md:flex md:flex-col">
+            <div class="h-full flex flex-col">
                 <div
                     class="flex flex-col h-full bg-card rounded-lg border border-border p-2 md:p-3"
                 >
@@ -84,14 +87,14 @@
             </div>
         {/if}
     </div>
-</div>
 
-<!-- Week Picker Modal/Sheet -->
-{#if showWeekPicker}
-    <WeekPicker
-        currentWeek={$currentWeek}
-        currentYear={$currentYear}
-        on:weekSelected={handleWeekSelected}
-        on:close={() => (showWeekPicker = false)}
-    />
-{/if}
+    <!-- Week Picker Modal/Sheet -->
+    {#if showWeekPicker}
+        <WeekPicker
+            currentWeek={$currentWeek}
+            currentYear={$currentYear}
+            on:weekSelected={handleWeekSelected}
+            on:close={() => (showWeekPicker = false)}
+        />
+    {/if}
+</div>

@@ -144,14 +144,18 @@
         </div>
     {:else}
         <!-- Mobile Layout -->
-        <div class="h-screen flex flex-col pb-0 overflow-hidden">
-            <!-- Mobile Header - Sticky -->
+        <div class="h-screen flex flex-col pb-0 relative overflow-hidden">
+            <!-- Mobile Header -->
             <div
-                class="sticky top-0 z-10 bg-gradient-to-b from-background/80 to-transparent px-4 py-3 flex items-center justify-between backdrop-blur-lg shrink-0"
+                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/80 to-transparent px-4 py-3 flex items-center justify-between pointer-events-none backdrop-blur-lg"
                 style="mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
             >
-                <h1 class="text-2xl font-bold">📅 Wochenschau</h1>
-                <div class="hidden sm:block text-sm text-muted-foreground">
+                <h1 class="text-2xl font-bold pointer-events-auto">
+                    📅 Wochenschau
+                </h1>
+                <div
+                    class="hidden sm:block text-sm text-muted-foreground pointer-events-auto"
+                >
                     W{$currentWeek} • {formatDateRange(
                         $currentWeek,
                         $currentYear,
@@ -159,19 +163,16 @@
                 </div>
             </div>
 
-            <!-- Week View - Single Scroll Container -->
-            <div class="flex-1 overflow-y-auto">
+            <!-- Week View -->
+            <div class="flex-1 overflow-hidden">
                 <WeekView />
             </div>
-
-            <!-- Floating Navigation Bar - Sticky -->
-            <div class="sticky bottom-0 z-10 shrink-0">
-                <FloatingNav
-                    on:openAddActivity={handleOpenAddActivity}
-                    on:openSettings={handleOpenSettings}
-                    on:openExport={handleOpenExport}
-                />
-            </div>
+            <!-- Floating Navigation Bar -->
+            <FloatingNav
+                on:openAddActivity={handleOpenAddActivity}
+                on:openSettings={handleOpenSettings}
+                on:openExport={handleOpenExport}
+            />
         </div>
     {/if}
 </main>
