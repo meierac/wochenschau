@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="canvas192" width="192" height="192"></canvas>
+<canvas id="canvas512" width="512" height="512"></canvas>
+<script>
+function drawIcon(canvas, size) {
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, size, size);
+  gradient.addColorStop(0, '#0ea5e9');
+  gradient.addColorStop(1, '#3b82f6');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = 'white';
+  ctx.font = `bold ${size/3}px -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('W', size/2, size/2);
+}
+drawIcon(document.getElementById('canvas192'), 192);
+drawIcon(document.getElementById('canvas512'), 512);
+console.log('Icons generated. Right-click to save as pwa-192x192.png and pwa-512x512.png');
+</script>
+</body>
+</html>
