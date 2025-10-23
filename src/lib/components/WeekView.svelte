@@ -44,7 +44,8 @@
     <!-- Tablet: 2-3 columns with overflow-y -->
     <!-- Desktop: 4 columns max (max 4 days per row) with overflow-y -->
     <div
-        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 flex-1 overflow-y-auto pb-20 md:pb-6"
+        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 flex-1 overflow-y-auto pb-24 md:pb-6"
+        style="padding-bottom: 104px;"
     >
         {#each days as day, dayIndex}
             <div class="h-full flex flex-col">
