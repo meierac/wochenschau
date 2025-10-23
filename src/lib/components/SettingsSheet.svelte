@@ -3,6 +3,7 @@
     import { templates } from "../stores/templates";
     import { subscriptions } from "../stores/ical";
     import { activities } from "../stores/activities";
+    import { bibleVerse } from "../stores/bibleVerse";
     import { exportSettings, FONT_FAMILIES } from "../stores/exportSettings";
     import type {
         ActivityTemplate,
@@ -17,7 +18,7 @@
 
     const dispatch = createEventDispatcher();
 
-    type SettingType = "templates" | "ical" | "export";
+    type SettingType = "templates" | "ical" | "export" | "bibleVerse";
 
     interface SettingItem {
         id: SettingType;
@@ -44,6 +45,12 @@
             label: "Export Settings",
             icon: "🎨",
             description: "Customize export appearance",
+        },
+        {
+            id: "bibleVerse",
+            label: "Bible Verse of the Day",
+            icon: "✝️",
+            description: $bibleVerse.enabled ? "Enabled" : "Disabled",
         },
     ];
 
@@ -804,9 +811,69 @@
                                         : "Refresh All"}
                                 </Button>
                             {/if}
+                        {:else if selectedSetting === "bibleVerse"}
+                            <!-- Bible Verse Settings -->
+                            <div class="space-y-4">
+                                <h3
+                                    class="text-lg font-semibold text-foreground mb-4"
+                                >
+                                    Bible Verse of the Day
+                                </h3>
+
+                                <div
+                                    class="p-4 bg-muted rounded-lg border border-border space-y-3"
+                                >
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="enableBibleVerse"
+                                            checked={$bibleVerse.enabled}
+                                            on:change={(e) =>
+                                                bibleVerse.toggleEnabled(
+                                                    e.currentTarget.checked,
+                                                )}
+                                            class="w-4 h-4 rounded border-input"
+                                        />
+                                        <label
+                                            for="enableBibleVerse"
+                                            class="text-sm font-medium text-foreground cursor-pointer"
+                                        >
+                                            Show Bible Verse on Export
+                                        </label>
+                                    </div>
+
+                                    {#if $bibleVerse.enabled}
+                                        <div
+                                            class="mt-4 p-3 bg-background rounded border border-input space-y-2"
+                                        >
+                                            <p
+                                                class="text-sm italic text-foreground"
+                                            >
+                                                "{$bibleVerse.currentVerse
+                                                    .text}"
+                                            </p>
+                                            <p
+                                                class="text-xs text-muted-foreground text-right"
+                                            >
+                                                – {$bibleVerse.currentVerse
+                                                    .reference}
+                                            </p>
+                                        </div>
+
+                                        <Button
+                                            variant="secondary"
+                                            class="w-full"
+                                            on:click={() =>
+                                                bibleVerse.refreshVerse()}
+                                        >
+                                            🔄 Get New Verse
+                                        </Button>
+                                    {/if}
+                                </div>
+                            </div>
                         {:else if selectedSetting === "export"}
                             <h3
-                                class="text-xl font-semibold text-foreground mb-4"
+                                class="text-lg font-semibold text-foreground mb-4"
                             >
                                 Export Settings
                             </h3>

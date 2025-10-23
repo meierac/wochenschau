@@ -3,6 +3,7 @@
     import { activities } from "../stores/activities";
     import { currentWeek, currentYear } from "../stores/week";
     import { exportSettings } from "../stores/exportSettings";
+    import { bibleVerse } from "../stores/bibleVerse";
     import { getDaysOfWeek } from "../utils/date";
     import { WEEKDAYS_DE } from "../types/index";
     import IconButton from "./IconButton.svelte";
@@ -399,6 +400,27 @@
                                         KW{$currentWeek}
                                     </p>
                                 </div>
+
+                                {#if $bibleVerse.enabled}
+                                    <div
+                                        class="mb-6 p-3 rounded relative z-10"
+                                        style="border: 1px solid {$exportSettings.accentColor}30; border-radius: {$exportSettings.borderRadius}px;"
+                                    >
+                                        <p
+                                            class="text-xs italic text-center mb-1"
+                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                        >
+                                            "{$bibleVerse.currentVerse.text}"
+                                        </p>
+                                        <p
+                                            class="text-[10px] text-center"
+                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                        >
+                                            – {$bibleVerse.currentVerse
+                                                .reference}
+                                        </p>
+                                    </div>
+                                {/if}
 
                                 {#if layoutMode === "grid"}
                                     <div
