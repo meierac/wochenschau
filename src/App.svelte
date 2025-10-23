@@ -160,7 +160,7 @@
             </div>
 
             <!-- Week View - Single Scroll Container -->
-            <div class="flex-1 overflow-hidden">
+            <div class="flex-1 overflow-y-auto">
                 <WeekView />
             </div>
 
