@@ -39,26 +39,6 @@
 <svelte:window on:resize={handleResize} />
 
 <div class="flex flex-col h-full w-full">
-    <!-- Bible Verse of the Day -->
-    {#if $bibleVerse.enabled}
-        <div
-            class="p-3 md:p-4 bg-card rounded-lg border border-border mb-3 md:mb-4 mx-2 md:mx-0"
-        >
-            <p class="text-xs md:text-sm italic text-foreground mb-1">
-                "{$bibleVerse.currentVerse.text}"
-            </p>
-            <p class="text-[10px] md:text-xs text-muted-foreground text-right">
-                – {$bibleVerse.currentVerse.reference}
-            </p>
-            <button
-                on:click={() => bibleVerse.refreshVerse()}
-                class="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-                🔄 Refresh
-            </button>
-        </div>
-    {/if}
-
     <!-- Week Days Layout - Responsive -->
     <!-- Mobile: Stack vertically (1 column) with overflow-y -->
     <!-- Tablet: 2-3 columns with overflow-y -->
@@ -77,6 +57,34 @@
                 />
             </div>
         {/each}
+
+        <!-- Bible Verse of the Day as Last Item -->
+        {#if $bibleVerse.enabled}
+            <div class="h-full flex flex-col">
+                <div
+                    class="p-3 md:p-4 bg-card rounded-lg border border-border h-full flex flex-col justify-between"
+                >
+                    <div>
+                        <p
+                            class="text-xs md:text-sm italic text-foreground mb-2"
+                        >
+                            "{$bibleVerse.currentVerse.text}"
+                        </p>
+                        <p
+                            class="text-[10px] md:text-xs text-muted-foreground text-right"
+                        >
+                            – {$bibleVerse.currentVerse.reference}
+                        </p>
+                    </div>
+                    <button
+                        on:click={() => bibleVerse.refreshVerse()}
+                        class="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
+                    >
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+        {/if}
     </div>
 
     <!-- Week Picker Modal/Sheet -->
