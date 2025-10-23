@@ -3,88 +3,90 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --primary: 211 100% 50%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 211 100% 50%;
-    --radius: 0.75rem;
-  }
-
-  @media (prefers-color-scheme: dark) {
     :root {
-      --background: 0 0% 0%;
-      --foreground: 0 0% 98%;
-      --card: 0 0% 10%;
-      --card-foreground: 0 0% 98%;
-      --primary: 212.7 100% 48%;
-      --primary-foreground: 0 0% 98%;
-      --secondary: 217.2 32.6% 17.5%;
-      --secondary-foreground: 0 0% 98%;
-      --muted: 217.2 32.6% 17.5%;
-      --muted-foreground: 215 20.2% 65.1%;
-      --accent: 217.2 32.6% 17.5%;
-      --accent-foreground: 0 0% 98%;
-      --destructive: 0 62.8% 50.6%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 217.2 32.6% 17.5%;
-      --input: 217.2 32.6% 17.5%;
-      --ring: 212.7 100% 48%;
+        --background: 0 0% 100%;
+        --foreground: 0 0% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 3.9%;
+        --primary: 211 100% 50%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --accent: 210 40% 96.1%;
+        --accent-foreground: 222.2 47.4% 11.2%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 214.3 31.8% 91.4%;
+        --input: 214.3 31.8% 91.4%;
+        --ring: 211 100% 50%;
+        --radius: 0.75rem;
     }
-  }
 
-  * {
-    @apply border-border;
-    -webkit-tap-highlight-color: transparent;
-  }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background: 0 0% 0%;
+            --foreground: 0 0% 98%;
+            --card: 0 0% 10%;
+            --card-foreground: 0 0% 98%;
+            --primary: 212.7 100% 48%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 0 0% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 0 0% 98%;
+            --destructive: 0 62.8% 50.6%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 212.7 100% 48%;
+        }
+    }
 
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    margin: 0;
-    padding: 0;
-    overscroll-behavior: none;
-  }
+    * {
+        @apply border-border;
+        -webkit-tap-highlight-color: transparent;
+    }
 
-  html {
-    scroll-behavior: smooth;
-  }
+    body {
+        @apply bg-background text-foreground;
+        font-feature-settings:
+            "rlig" 1,
+            "calt" 1;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        margin: 0;
+        padding: 0;
+        overscroll-behavior: none;
+    }
 
-  #app {
-    min-height: 100vh;
-    -webkit-overflow-scrolling: touch;
-  }
+    html {
+        scroll-behavior: smooth;
+    }
+
+    #app {
+        min-height: 100vh;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 @layer utilities {
-  .safe-top {
-    padding-top: env(safe-area-inset-top);
-  }
-  
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  
-  .safe-left {
-    padding-left: env(safe-area-inset-left);
-  }
-  
-  .safe-right {
-    padding-right: env(safe-area-inset-right);
-  }
+    .safe-top {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom - 10);
+    }
+
+    .safe-left {
+        padding-left: env(safe-area-inset-left);
+    }
+
+    .safe-right {
+        padding-right: env(safe-area-inset-right);
+    }
 }
