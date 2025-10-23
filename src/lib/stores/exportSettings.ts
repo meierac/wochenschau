@@ -15,6 +15,10 @@ export interface ExportSettings {
   accentColor: string;
   borderRadius: number; // 0-20
   showBorders: boolean;
+
+  // Week container styling
+  weekContainerBackgroundColor: string;
+  weekContainerBackgroundOpacity: number; // 0-100
 }
 
 const defaultSettings: ExportSettings = {
@@ -32,6 +36,10 @@ const defaultSettings: ExportSettings = {
   accentColor: "#9333ea",
   borderRadius: 8,
   showBorders: true,
+
+  // Week container styling
+  weekContainerBackgroundColor: "rgba(255, 255, 255, 0.75)",
+  weekContainerBackgroundOpacity: 75,
 };
 
 function createExportSettingsStore() {

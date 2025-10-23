@@ -64,6 +64,28 @@
         }
     }
 
+    function getWeekContainerBackgroundStyle(): string {
+        const color = $exportSettings.weekContainerBackgroundColor;
+        const opacity = $exportSettings.weekContainerBackgroundOpacity;
+
+        // If it's already an rgba color, extract and update opacity
+        if (color.includes("rgba")) {
+            return color.replace(/[\d.]+\)$/, `${opacity / 100})`);
+        }
+
+        // If it's a hex color, convert to rgba
+        if (color.startsWith("#")) {
+            const hex = color.replace("#", "");
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
+        }
+
+        // Default fallback
+        return `rgba(255, 255, 255, ${opacity / 100})`;
+    }
+
     async function generateJPGBlob(): Promise<Blob | null> {
         try {
             const { domToJpeg } = await import("modern-screenshot");
@@ -388,7 +410,7 @@
                                         {#each days as day, dayIndex}
                                             <div
                                                 class="p-2"
-                                                style="background-color: rgba(255, 255, 255, 0.75); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
+                                                style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
                                             >
                                                 <div
                                                     class="mb-2 pb-2"
@@ -447,7 +469,7 @@
                                         {#each days as day, dayIndex}
                                             <div
                                                 class="p-3"
-                                                style="background-color: rgba(255, 255, 255, 0.75); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
+                                                style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
                                             >
                                                 <div
                                                     class="mb-2 pb-2"

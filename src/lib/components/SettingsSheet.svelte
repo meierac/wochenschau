@@ -4,7 +4,12 @@
     import { subscriptions } from "../stores/ical";
     import { activities } from "../stores/activities";
     import { exportSettings, FONT_FAMILIES } from "../stores/exportSettings";
-    import type { ActivityTemplate, ICalSubscription } from "../types/index";
+    import type {
+        ActivityTemplate,
+        ICalSubscription,
+        CalendarItem,
+    } from "../types/index";
+    import { getWeekNumber } from "../utils/date";
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
 
@@ -173,6 +178,26 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
+            const text = await response.text();
+            const calendarItems = parseICalToCalendarItems(
+                text,
+                subscriptionId,
+            );
+
+            // Remove old items from this subscription
+            const oldActivities = $activities.filter(
+                (a) => a.sourceId === subscriptionId && a.source === "ical",
+            );
+            for (const oldActivity of oldActivities) {
+                activities.removeActivity(oldActivity.id);
+            }
+
+            // Add new calendar items
+            for (const item of calendarItems) {
+                activities.addActivity(item);
+            }
+
+            // Update subscription metadata
             const updated: ICalSubscription = {
                 ...subscription,
                 lastFetched: Date.now(),
@@ -227,6 +252,155 @@
         if (!isDesktop) {
             selectedSetting = null;
         }
+    }
+
+    function parseICalToCalendarItems(
+        iCalText: string,
+        subscriptionId: string,
+    ): CalendarItem[] {
+        const items: CalendarItem[] = [];
+        const lines = iCalText.split("\n");
+
+        let currentEvent: any = null;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+
+            // Handle line folding (continuation lines)
+            while (i + 1 < lines.length && lines[i + 1].match(/^[\t ]/)) {
+                i++;
+                line += lines[i].substring(1);
+            }
+
+            const trimmed = line.trim();
+
+            if (trimmed === "BEGIN:VEVENT") {
+                currentEvent = {
+                    sourceId: subscriptionId,
+                    source: "ical",
+                    description: "",
+                };
+            } else if (trimmed === "END:VEVENT" && currentEvent) {
+                // Only add if it has required fields
+                if (currentEvent.summary && currentEvent.dtstart) {
+                    const item = buildCalendarItem(currentEvent);
+                    if (item) {
+                        items.push(item);
+                    }
+                }
+                currentEvent = null;
+            } else if (currentEvent) {
+                const colonIndex = trimmed.indexOf(":");
+                if (colonIndex === -1) continue;
+
+                const field = trimmed.substring(0, colonIndex);
+                const value = trimmed.substring(colonIndex + 1);
+
+                if (field === "SUMMARY") {
+                    currentEvent.summary = decodeICalText(value);
+                } else if (field.startsWith("DTSTART")) {
+                    currentEvent.dtstart = value;
+                } else if (field.startsWith("DTEND")) {
+                    currentEvent.dtend = value;
+                } else if (field === "UID") {
+                    currentEvent.uid = value;
+                } else if (field === "DESCRIPTION") {
+                    currentEvent.description = decodeICalText(value);
+                }
+            }
+        }
+
+        return items;
+    }
+
+    function buildCalendarItem(event: any): CalendarItem | null {
+        try {
+            const dtstart = event.dtstart || "";
+            const dtend = event.dtend || dtstart;
+
+            // Parse date/time information
+            const isAllDay = !dtstart.includes("T");
+            const startDate = extractDate(dtstart);
+            const endDate = extractDate(dtend);
+            const startTime = isAllDay ? "09:00" : extractTime(dtstart);
+            const endTime = isAllDay ? "17:00" : extractTime(dtend);
+
+            if (!startDate) return null;
+
+            // Convert to Date object to calculate week and day
+            const dateObj = new Date(
+                parseInt(startDate.substring(0, 4)),
+                parseInt(startDate.substring(4, 6)) - 1,
+                parseInt(startDate.substring(6, 8)),
+            );
+
+            const day = (dateObj.getDay() + 6) % 7; // 0 = Monday
+            const week = getWeekNumber(dateObj);
+            const year = dateObj.getFullYear();
+
+            const id = event.uid
+                ? `${event.sourceId}-${event.uid.replace(/[^a-zA-Z0-9-]/g, "")}`
+                : `${event.sourceId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            const now = Date.now();
+
+            const item: CalendarItem = {
+                id,
+                summary: event.summary,
+                description: event.description,
+                dtstart,
+                dtend,
+                startDate,
+                endDate,
+                startTime,
+                endTime,
+                day,
+                week,
+                year,
+                isAllDay,
+                source: "ical",
+                sourceId: event.sourceId,
+                uid: event.uid,
+                createdAt: now,
+                lastModified: now,
+            };
+
+            return item;
+        } catch (err) {
+            console.error("Error building calendar item:", err);
+            return null;
+        }
+    }
+
+    function extractDate(iCalDateTime: string): string {
+        // Extract YYYYMMDD from iCal datetime
+        if (iCalDateTime.includes("T")) {
+            return iCalDateTime.split("T")[0];
+        }
+        return iCalDateTime;
+    }
+
+    function extractTime(iCalDateTime: string): string {
+        // Extract HH:mm from iCal datetime
+        if (!iCalDateTime.includes("T")) {
+            return "09:00";
+        }
+
+        const timePart = iCalDateTime.split("T")[1];
+        const cleanTime = timePart.replace("Z", "");
+        const hours = cleanTime.substring(0, 2);
+        const minutes = cleanTime.substring(2, 4);
+
+        return `${hours}:${minutes}`;
+    }
+
+    function decodeICalText(text: string): string {
+        // Decode iCal encoded text
+        return text
+            .replace(/\\n/g, "\n")
+            .replace(/\\,/g, ",")
+            .replace(/\\;/g, ";")
+            .replace(/\\\\/g, "\\");
     }
 
     function itemCount(subscriptionId: string): number {
@@ -892,6 +1066,59 @@
                                     </div>
                                 </div>
 
+                                <!-- Week Container Styling Section -->
+                                <div class="space-y-4">
+                                    <h4
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        Week Container
+                                    </h4>
+
+                                    <!-- Week Container Background Color -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Background Color
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input
+                                                type="color"
+                                                bind:value={
+                                                    $exportSettings.weekContainerBackgroundColor
+                                                }
+                                                class="w-12 h-10 rounded border border-input cursor-pointer"
+                                            />
+                                            <input
+                                                type="text"
+                                                bind:value={
+                                                    $exportSettings.weekContainerBackgroundColor
+                                                }
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                placeholder="rgba(255, 255, 255, 0.75)"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- Week Container Background Opacity -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Background Opacity: {$exportSettings.weekContainerBackgroundOpacity}%
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            bind:value={
+                                                $exportSettings.weekContainerBackgroundOpacity
+                                            }
+                                            class="w-full"
+                                        />
+                                    </div>
+                                </div>
+
                                 <!-- Reset Button -->
                                 <div class="pt-4 border-t border-border">
                                     <Button
@@ -1474,6 +1701,59 @@
                                     >
                                         Show borders around activities
                                     </label>
+                                </div>
+                            </div>
+
+                            <!-- Week Container Styling Section -->
+                            <div class="space-y-4">
+                                <h4
+                                    class="text-sm font-semibold text-foreground"
+                                >
+                                    Week Container
+                                </h4>
+
+                                <!-- Week Container Background Color -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Background Color
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input
+                                            type="color"
+                                            bind:value={
+                                                $exportSettings.weekContainerBackgroundColor
+                                            }
+                                            class="w-12 h-10 rounded border border-input cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            bind:value={
+                                                $exportSettings.weekContainerBackgroundColor
+                                            }
+                                            class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                            placeholder="rgba(255, 255, 255, 0.75)"
+                                        />
+                                    </div>
+                                </div>
+
+                                <!-- Week Container Background Opacity -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Background Opacity: {$exportSettings.weekContainerBackgroundOpacity}%
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        bind:value={
+                                            $exportSettings.weekContainerBackgroundOpacity
+                                        }
+                                        class="w-full"
+                                    />
                                 </div>
                             </div>
 
