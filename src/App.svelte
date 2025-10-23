@@ -144,7 +144,7 @@
         </div>
     {:else}
         <!-- Mobile Layout -->
-        <div class="h-screen flex flex-col pb-20 relative">
+        <div class="h-screen flex flex-col pb-8 relative">
             <!-- Mobile Header -->
             <div
                 class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/80 to-transparent px-4 py-3 flex items-center justify-between pointer-events-none backdrop-blur-lg"
@@ -167,6 +167,12 @@
             <div class="flex-1 overflow-hidden px-2 py-2">
                 <WeekView />
             </div>
+
+            <!-- Fade overlay for bottom -->
+            <div
+                class="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+                style="background: linear-gradient(to bottom, transparent, var(--background)); mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 100%);"
+            />
 
             <!-- Floating Navigation Bar -->
             <FloatingNav
