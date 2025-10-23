@@ -76,7 +76,6 @@
             const dataUrl = await domToJpeg(element, {
                 scale: 2,
                 quality: 0.95,
-                backgroundColor: "#ffffff",
             });
 
             // Convert data URL to blob
