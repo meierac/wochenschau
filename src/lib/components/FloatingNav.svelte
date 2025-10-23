@@ -25,7 +25,7 @@
     <!-- Floating Navigation Bar -->
     <div
         class="flex-1 bg-black/60 backdrop-blur-lg"
-        style="border-radius: 100px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(255, 255, 255, 0.05);"
+        style="border-radius: 100px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
     >
         <!-- Navigation Items -->
         <div class="flex items-center justify-around p-2 gap-0">

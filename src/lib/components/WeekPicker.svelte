@@ -34,7 +34,7 @@
     on:click={handleBackdropClick}
 >
     <div
-        class="bg-card rounded-2xl md:rounded-lg shadow-lg w-full transition-all flex flex-col md:max-w-md"
+        class="bg-card rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col md:max-w-md"
     >
         <!-- Header with centered title and icon buttons -->
         <div

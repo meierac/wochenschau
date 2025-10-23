@@ -438,13 +438,14 @@
 </script>
 
 <div
-    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4 backdrop-blur-sm"
     on:click={handleBackdropClick}
 >
     <div
-        class={`bg-card rounded-2xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
-            isDesktop ? "md:max-w-5xl md:max-h-[80vh]" : "max-h-[90vh]"
+        class={`bg-card/70 backdrop-blur-lg rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
+            isDesktop ? "md:max-w-5xl md:max-h-[80vh]" : "max-h-[95vh]"
         }`}
+        style="border-radius: 30px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
     >
         <!-- Header (Always on top) -->
         <div

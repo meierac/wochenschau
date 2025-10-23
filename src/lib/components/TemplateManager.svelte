@@ -51,7 +51,7 @@
     class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4"
 >
     <div
-        class={`bg-card rounded-2xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
+        class={`bg-card rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
             isDesktop ? "md:max-w-md" : ""
         }`}
     >
