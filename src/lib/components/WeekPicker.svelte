@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import IconButton from "./IconButton.svelte";
+    import Button from "./Button.svelte";
 
     export let currentWeek: number;
     export let currentYear: number;
@@ -34,16 +35,15 @@
     on:click={handleBackdropClick}
 >
     <div
-        class="bg-card rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col md:max-w-md"
+        class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col md:max-w-md max-h-[95vh]`}
+        style="border-radius: 36px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
     >
         <!-- Header with centered title and icon buttons -->
-        <div
-            class="border-b border-border px-4 py-4 flex items-center justify-between"
-        >
+        <div class=" px-3 py-3 flex items-center justify-between">
             <!-- Cancel button (left) -->
             <IconButton
-                variant="ghost"
-                size="md"
+                variant="secondary"
+                size="lg"
                 ariaLabel="Close"
                 on:click={handleClose}
             >
@@ -71,8 +71,8 @@
 
             <!-- Save button (right) -->
             <IconButton
-                variant="ghost"
-                size="md"
+                variant="secondary"
+                size="lg"
                 ariaLabel="Select week"
                 on:click={handleSelect}
             >
@@ -93,23 +93,23 @@
         </div>
 
         <!-- Content -->
-        <div class="p-6 space-y-6">
+        <div class="p-3 space-y-6 pb-12">
             <!-- Year Selection -->
             <div class="space-y-2">
                 <label class="text-sm font-semibold text-foreground">Year</label
                 >
                 <div class="flex gap-2">
                     {#each years as year}
-                        <button
+                        <Button
                             on:click={() => (selectedYear = year)}
                             class={`flex-1 px-4 py-2 rounded-lg font-semibold transition-colors ${
                                 selectedYear === year
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                    : "bg-muted/80 text-muted-foreground hover:bg-muted/80"
                             }`}
                         >
                             {year}
-                        </button>
+                        </Button>
                     {/each}
                 </div>
             </div>
@@ -120,16 +120,16 @@
                 >
                 <div class="grid grid-cols-6 gap-2">
                     {#each weeks as week}
-                        <button
+                        <Button
                             on:click={() => (selectedWeek = week)}
                             class={`px-2 py-2 rounded text-sm font-semibold transition-colors ${
                                 selectedWeek === week
                                     ? "bg-primary text-primary-foreground"
-                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                    : "bg-muted/50 text-muted-foreground hover:bg-muted/80"
                             }`}
                         >
                             {week}
-                        </button>
+                        </Button>
                     {/each}
                 </div>
             </div>

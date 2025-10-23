@@ -242,17 +242,16 @@
     role="presentation"
 >
     <div
-        class={`bg-card rounded-2xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
-            isDesktop ? "md:max-w-2xl md:max-h-[90vh]" : "max-h-[90vh]"
+        class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
+            isDesktop ? "md:max-w-4xl md:max-h-[95vh]" : "max-h-[95vh]"
         }`}
+        style="border-radius: 36px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
     >
         <!-- Header -->
-        <div
-            class="border-b border-border px-4 py-4 flex items-center justify-between shrink-0"
-        >
+        <div class="px-3 py-3 flex items-center justify-between shrink-0">
             <IconButton
-                variant="ghost"
-                size="md"
+                variant="secondary"
+                size="lg"
                 ariaLabel="Close"
                 on:click={handleClose}
             >
@@ -281,7 +280,7 @@
         </div>
 
         <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <div class="flex-1 overflow-y-auto p-3 space-y-6">
             {#if exportError}
                 <div
                     class="p-4 bg-destructive/10 border border-destructive/30 rounded-lg"
