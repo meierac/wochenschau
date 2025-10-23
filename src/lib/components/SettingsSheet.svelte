@@ -442,24 +442,55 @@
     on:click={handleBackdropClick}
 >
     <div
-        class={`bg-card/70 backdrop-blur-lg rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
+        class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
             isDesktop ? "md:max-w-5xl md:max-h-[80vh]" : "max-h-[95vh]"
         }`}
-        style="border-radius: 30px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
+        style="border-radius: 36px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
     >
         <!-- Header (Always on top) -->
         <div
-            class="border-b border-border px-4 py-4 flex items-center justify-between shrink-0"
+            class={`${isDesktop ? "border-b border-border" : ""} px-4 py-4 flex items-center justify-center relative shrink-0`}
         >
-            <!-- Mobile: Back button when viewing details -->
+            <!-- Mobile: Back button when viewing details (left position) -->
             {#if !isDesktop && selectedSetting}
-                <button
-                    on:click={backToList}
-                    class="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
-                    aria-label="Back to settings"
+                <div class="absolute left-3 top-3">
+                    <Button
+                        on:click={backToList}
+                        variants="secondary"
+                        class="bg-muted hover:bg-muted/80 flex items-center gap-2"
+                        aria-label="Back to settings"
+                    >
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15 19l-7-7 7-7"
+                            />
+                        </svg>
+                        Back
+                    </Button>
+                </div>
+            {/if}
+
+            <!-- Centered title -->
+            <h3 class="text-lg pt-2 font-semibold text-foreground">Settings</h3>
+
+            <!-- Close button (right position) -->
+            <div class="absolute right-3 top-3">
+                <IconButton
+                    variant="secondary"
+                    size="lg"
+                    ariaLabel="Close settings"
+                    on:click={handleClose}
                 >
                     <svg
-                        class="w-4 h-4"
+                        class="w-6 h-6"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -468,36 +499,11 @@
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
-                            d="M15 19l-7-7 7-7"
+                            d="M6 18L18 6M6 6l12 12"
                         />
                     </svg>
-                    Back
-                </button>
-            {:else}
-                <h3 class="text-lg font-semibold text-foreground">Settings</h3>
-            {/if}
-
-            <!-- Close button -->
-            <IconButton
-                variant="ghost"
-                size="md"
-                ariaLabel="Close settings"
-                on:click={handleClose}
-            >
-                <svg
-                    class="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                    />
-                </svg>
-            </IconButton>
+                </IconButton>
+            </div>
         </div>
 
         <!-- Content Container -->
@@ -506,12 +512,13 @@
             {#if !isDesktop}
                 {#if selectedSetting === null}
                     <!-- Mobile: Settings Menu List -->
-                    <div class="w-full overflow-y-auto p-6">
+                    <div class="w-full overflow-y-auto p-3">
                         <div class="space-y-2">
                             {#each settingItems as item}
                                 <button
                                     on:click={() => selectSetting(item.id)}
-                                    class="w-full p-4 bg-muted rounded-lg border border-border hover:border-primary transition-colors text-left flex items-center justify-between"
+                                    style="border-radius: 28px;"
+                                    class="w-full p-4 bg-muted/50 border border-border hover:border-primary transition-colors text-left flex items-center justify-between"
                                 >
                                     <div>
                                         <div
