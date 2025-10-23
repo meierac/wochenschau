@@ -54,18 +54,17 @@
     on:click={handleBackdropClick}
 >
     <div
-        class={`bg-card rounded-2xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
-            isDesktop ? "md:max-w-md" : ""
+        class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
+            isDesktop ? "md:max-w-md md:max-h-[90vh]" : "max-h-[90vh]"
         }`}
+        style="border-radius: 36px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
     >
         <!-- Header with centered title and icon buttons -->
-        <div
-            class="border-b border-border px-4 py-4 flex items-center justify-between"
-        >
+        <div class=" px-3 py-3 flex items-center justify-between">
             <!-- Cancel button (left) -->
             <IconButton
-                variant="ghost"
-                size="md"
+                variant="secondary"
+                size="lg"
                 ariaLabel="Close"
                 on:click={handleCancel}
             >
@@ -93,8 +92,8 @@
 
             <!-- Save button (right) -->
             <IconButton
-                variant="ghost"
-                size="md"
+                variant="secondary"
+                size="lg"
                 ariaLabel="Save changes"
                 disabled={!hasChanges}
                 on:click={handleSave}
@@ -116,7 +115,7 @@
         </div>
 
         <!-- Content -->
-        <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div class="p-3 space-y-4 max-h-[60vh] overflow-y-auto">
             <!-- Activity Name -->
             <div>
                 <label

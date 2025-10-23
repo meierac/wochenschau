@@ -120,16 +120,6 @@
         dispatch("close");
     }
 
-    function handleBackToSelectDay() {
-        step = "selectDay";
-        selectedDay = null;
-        activityName = "";
-        startTime = "09:00";
-        endTime = "10:00";
-        saveAsTemplate = false;
-        selectedTemplate = null;
-    }
-
     function handleClose() {
         dispatch("close");
     }
