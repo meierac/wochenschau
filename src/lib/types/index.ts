@@ -81,3 +81,13 @@ export const WEEKDAYS = [
   "Saturday",
   "Sunday",
 ] as const;
+
+export const WEEKDAYS_DE = [
+  "Montag",
+  "Dienstag",
+  "Mittwoch",
+  "Donnerstag",
+  "Freitag",
+  "Samstag",
+  "Sonntag",
+] as const;

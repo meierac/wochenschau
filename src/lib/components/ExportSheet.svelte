@@ -3,8 +3,8 @@
     import { activities } from "../stores/activities";
     import { currentWeek, currentYear } from "../stores/week";
     import { exportSettings } from "../stores/exportSettings";
-    import { formatDateRange, getDaysOfWeek } from "../utils/date";
-    import { WEEKDAYS } from "../types/index";
+    import { getDaysOfWeek } from "../utils/date";
+    import { WEEKDAYS_DE } from "../types/index";
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
 
@@ -396,10 +396,7 @@
                                         class="text-lg font-semibold"
                                         style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.8;"
                                     >
-                                        Week {$currentWeek} · {formatDateRange(
-                                            $currentWeek,
-                                            $currentYear,
-                                        )}
+                                        KW{$currentWeek}
                                     </p>
                                 </div>
 
@@ -420,7 +417,7 @@
                                                         class="font-semibold text-sm"
                                                         style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                                                     >
-                                                        {WEEKDAYS[dayIndex]}
+                                                        {WEEKDAYS_DE[dayIndex]}
                                                     </div>
                                                     <div
                                                         class="text-xs"
@@ -479,9 +476,8 @@
                                                         class="font-semibold"
                                                         style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                                                     >
-                                                        {WEEKDAYS[dayIndex]} · {formatDate(
-                                                            day,
-                                                        )}
+                                                        {WEEKDAYS_DE[dayIndex]} ·
+                                                        {formatDate(day)}
                                                     </div>
                                                 </div>
                                                 <div class="space-y-2">
