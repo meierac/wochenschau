@@ -17,8 +17,9 @@
     export let isDesktop = false;
 
     const dispatch = createEventDispatcher();
+    const APP_VERSION = "1.0.0";
 
-    type SettingType = "templates" | "ical" | "export" | "bibleVerse";
+    type SettingType = "templates" | "ical" | "export" | "bibleVerse" | "about";
 
     interface SettingItem {
         id: SettingType;
@@ -51,6 +52,12 @@
             label: "Bible Verse of the Day",
             icon: "✝️",
             description: $bibleVerse.enabled ? "Enabled" : "Disabled",
+        },
+        {
+            id: "about",
+            label: "About",
+            icon: "ℹ️",
+            description: `Version ${APP_VERSION}`,
         },
     ];
 
@@ -425,6 +432,9 @@
     // Reactive: Update setting items descriptions
     $: settingItems[0].description = `${$templates.length} template${$templates.length !== 1 ? "s" : ""}`;
     $: settingItems[1].description = `${$subscriptions.length} subscription${$subscriptions.length !== 1 ? "s" : ""}`;
+    $: settingItems[3].description = $bibleVerse.enabled
+        ? "Enabled"
+        : "Disabled";
 </script>
 
 <div
@@ -871,6 +881,116 @@
                                     {/if}
                                 </div>
                             </div>
+                        {:else if selectedSetting === "about"}
+                            <!-- About Section -->
+                            <div class="space-y-6">
+                                <h3
+                                    class="text-lg font-semibold text-foreground mb-4"
+                                >
+                                    About Wochenschau
+                                </h3>
+
+                                <!-- App Info -->
+                                <div
+                                    class="p-4 bg-muted rounded-lg border border-border space-y-3"
+                                >
+                                    <div>
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Version
+                                        </p>
+                                        <p
+                                            class="text-sm font-semibold text-foreground"
+                                        >
+                                            {APP_VERSION}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Created in the heart of
+                                        </p>
+                                        <p
+                                            class="text-sm font-semibold text-foreground"
+                                        >
+                                            Kaiserstuhl 🍇
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden Gems -->
+                                <div>
+                                    <p
+                                        class="text-sm font-semibold text-foreground mb-3"
+                                    >
+                                        🎁 Hidden Gems
+                                    </p>
+                                    <div class="space-y-2">
+                                        <div
+                                            class="p-3 bg-background rounded border border-border text-sm"
+                                        >
+                                            <p class="text-foreground mb-1">
+                                                <span class="font-semibold"
+                                                    >Swipe to Navigate</span
+                                                >
+                                            </p>
+                                            <p
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                Swipe left or right on your
+                                                calendar to switch weeks
+                                            </p>
+                                        </div>
+                                        <div
+                                            class="p-3 bg-background rounded border border-border text-sm"
+                                        >
+                                            <p class="text-foreground mb-1">
+                                                <span class="font-semibold"
+                                                    >Export & Share</span
+                                                >
+                                            </p>
+                                            <p
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                Export your week as a beautiful
+                                                image and share it with friends
+                                            </p>
+                                        </div>
+                                        <div
+                                            class="p-3 bg-background rounded border border-border text-sm"
+                                        >
+                                            <p class="text-foreground mb-1">
+                                                <span class="font-semibold"
+                                                    >Calendar Sync</span
+                                                >
+                                            </p>
+                                            <p
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                Subscribe to iCal calendars to
+                                                automatically import events
+                                            </p>
+                                        </div>
+                                        <div
+                                            class="p-3 bg-background rounded border border-border text-sm"
+                                        >
+                                            <p class="text-foreground mb-1">
+                                                <span class="font-semibold"
+                                                    >Daily Inspiration</span
+                                                >
+                                            </p>
+                                            <p
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                Enable Bible verses of the day
+                                                for daily inspiration
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         {:else if selectedSetting === "export"}
                             <h3
                                 class="text-lg font-semibold text-foreground mb-4"
@@ -1203,7 +1323,7 @@
                 <!-- Desktop: Two Column Layout (left menu, right details) -->
                 <!-- Left Column: Settings Menu -->
                 <div
-                    class="w-48 border-r border-border overflow-y-auto bg-muted/30 shrink-0"
+                    class="w-48 min-w-[300px] border-r border-border overflow-y-auto bg-muted/30 shrink-0"
                 >
                     <div class="p-4 space-y-1">
                         {#each settingItems as item}
@@ -1512,6 +1632,109 @@
                                 {isLoading ? "Refreshing..." : "Refresh All"}
                             </Button>
                         {/if}
+                    {:else if selectedSetting === "about"}
+                        <h3 class="text-xl font-semibold text-foreground mb-4">
+                            About Wochenschau
+                        </h3>
+
+                        <div class="space-y-6">
+                            <!-- App Info -->
+                            <div
+                                class="p-4 bg-muted rounded-lg border border-border space-y-3"
+                            >
+                                <div>
+                                    <p class="text-xs text-muted-foreground">
+                                        Version
+                                    </p>
+                                    <p
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        {APP_VERSION}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-muted-foreground">
+                                        Created in the heart of
+                                    </p>
+                                    <p
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        Kaiserstuhl 🍇
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Hidden Gems -->
+                            <div>
+                                <p
+                                    class="text-sm font-semibold text-foreground mb-3"
+                                >
+                                    🎁 Hidden Gems
+                                </p>
+                                <div class="space-y-2">
+                                    <div
+                                        class="p-3 bg-background rounded border border-border text-sm"
+                                    >
+                                        <p class="text-foreground mb-1">
+                                            <span class="font-semibold"
+                                                >Swipe to Navigate</span
+                                            >
+                                        </p>
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Swipe left or right on your calendar
+                                            to switch weeks
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="p-3 bg-background rounded border border-border text-sm"
+                                    >
+                                        <p class="text-foreground mb-1">
+                                            <span class="font-semibold"
+                                                >Export & Share</span
+                                            >
+                                        </p>
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Export your week as a beautiful
+                                            image and share it with friends
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="p-3 bg-background rounded border border-border text-sm"
+                                    >
+                                        <p class="text-foreground mb-1">
+                                            <span class="font-semibold"
+                                                >Calendar Sync</span
+                                            >
+                                        </p>
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Subscribe to iCal calendars to
+                                            automatically import events
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="p-3 bg-background rounded border border-border text-sm"
+                                    >
+                                        <p class="text-foreground mb-1">
+                                            <span class="font-semibold"
+                                                >Daily Inspiration</span
+                                            >
+                                        </p>
+                                        <p
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Enable Bible verses of the day for
+                                            daily inspiration
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     {:else if selectedSetting === "export"}
                         <h3 class="text-xl font-semibold text-foreground mb-4">
                             Export Settings
@@ -1832,6 +2055,62 @@
                                 >
                                     Reset to Defaults
                                 </Button>
+                            </div>
+                        </div>
+                    {:else if selectedSetting === "bibleVerse"}
+                        <h3 class="text-xl font-semibold text-foreground mb-4">
+                            Bible Verse of the Day
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div
+                                class="p-4 bg-muted rounded-lg border border-border space-y-3"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="enableBibleVerse"
+                                        checked={$bibleVerse.enabled}
+                                        on:change={(e) =>
+                                            bibleVerse.toggleEnabled(
+                                                e.currentTarget.checked,
+                                            )}
+                                        class="w-4 h-4 rounded border-input"
+                                    />
+                                    <label
+                                        for="enableBibleVerse"
+                                        class="text-sm font-medium text-foreground cursor-pointer"
+                                    >
+                                        Show Bible Verse on Export
+                                    </label>
+                                </div>
+
+                                {#if $bibleVerse.enabled}
+                                    <div
+                                        class="mt-4 p-3 bg-background rounded border border-input space-y-2"
+                                    >
+                                        <p
+                                            class="text-sm italic text-foreground"
+                                        >
+                                            "{$bibleVerse.currentVerse.text}"
+                                        </p>
+                                        <p
+                                            class="text-xs text-muted-foreground text-right"
+                                        >
+                                            – {$bibleVerse.currentVerse
+                                                .reference}
+                                        </p>
+                                    </div>
+
+                                    <Button
+                                        variant="secondary"
+                                        class="w-full"
+                                        on:click={() =>
+                                            bibleVerse.refreshVerse()}
+                                    >
+                                        🔄 Get New Verse
+                                    </Button>
+                                {/if}
                             </div>
                         </div>
                     {/if}

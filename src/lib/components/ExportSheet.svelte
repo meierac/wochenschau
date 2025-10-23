@@ -464,24 +464,18 @@
 
                                         {#if $bibleVerse.enabled}
                                             <div
-                                                class="p-2"
-                                                style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
+                                                class="p-2 text-center flex flex-col justify-center items-center h-full"
+                                                style="border-radius: {$exportSettings.borderRadius}px;"
                                             >
-                                                <div
-                                                    class="font-semibold text-xs mb-2"
-                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                                >
-                                                    Wort des Tages
-                                                </div>
                                                 <p
-                                                    class="text-[9px] italic mb-1"
+                                                    class="text-sm italic mb-1"
                                                     style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                                                 >
                                                     "{$bibleVerse.currentVerse
                                                         .text}"
                                                 </p>
                                                 <p
-                                                    class="text-[8px]"
+                                                    class="text-xs"
                                                     style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
                                                 >
                                                     – {$bibleVerse.currentVerse
@@ -546,37 +540,23 @@
 
                                         {#if $bibleVerse.enabled}
                                             <div
-                                                class="p-3"
-                                                style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
+                                                class="p-3 text-center"
+                                                style="border-radius: {$exportSettings.borderRadius}px;"
                                             >
-                                                <div
-                                                    class="mb-2 pb-2"
-                                                    style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
+                                                <p
+                                                    class="text-sm italic mb-2"
+                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                                                 >
-                                                    <div
-                                                        class="font-semibold text-sm"
-                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                                    >
-                                                        Wort des Tages
-                                                    </div>
-                                                </div>
-                                                <div class="space-y-2">
-                                                    <p
-                                                        class="text-[9px] italic"
-                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                                    >
-                                                        "{$bibleVerse
-                                                            .currentVerse.text}"
-                                                    </p>
-                                                    <p
-                                                        class="text-[8px]"
-                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                    >
-                                                        – {$bibleVerse
-                                                            .currentVerse
-                                                            .reference}
-                                                    </p>
-                                                </div>
+                                                    "{$bibleVerse.currentVerse
+                                                        .text}"
+                                                </p>
+                                                <p
+                                                    class="text-xs"
+                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                >
+                                                    – {$bibleVerse.currentVerse
+                                                        .reference}
+                                                </p>
                                             </div>
                                         {/if}
                                     </div>

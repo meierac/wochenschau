@@ -62,23 +62,23 @@
         {#if $bibleVerse.enabled}
             <div class="h-full flex flex-col">
                 <div
-                    class="p-3 md:p-4 bg-card rounded-lg border border-border h-full flex flex-col justify-between"
+                    class="flex flex-col h-full bg-card rounded-lg border border-border p-2 md:p-3"
                 >
-                    <div>
+                    <div
+                        class="flex-1 flex flex-col justify-center items-center text-center"
+                    >
                         <p
                             class="text-xs md:text-sm italic text-foreground mb-2"
                         >
                             "{$bibleVerse.currentVerse.text}"
                         </p>
-                        <p
-                            class="text-[10px] md:text-xs text-muted-foreground text-right"
-                        >
+                        <p class="text-[10px] md:text-xs text-muted-foreground">
                             – {$bibleVerse.currentVerse.reference}
                         </p>
                     </div>
                     <button
                         on:click={() => bibleVerse.refreshVerse()}
-                        class="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors text-center"
+                        class="mt-4 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors text-center"
                     >
                         🔄 Refresh
                     </button>
