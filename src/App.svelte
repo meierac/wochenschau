@@ -45,7 +45,7 @@
 
 <svelte:window on:resize={handleResize} />
 
-<main class="min-h-screen bg-background text-foreground">
+<main class="h-screen bg-background text-foreground overflow-hidden">
     {#if isDesktop}
         <!-- Desktop Layout -->
         <div class="max-w-7xl mx-auto px-4 py-6 h-screen flex flex-col">

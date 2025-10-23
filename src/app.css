@@ -51,6 +51,7 @@
         -webkit-tap-highlight-color: transparent;
     }
 
+    html,
     body {
         @apply bg-background text-foreground;
         font-feature-settings:
@@ -60,11 +61,10 @@
         -moz-osx-font-smoothing: grayscale;
         margin: 0;
         padding: 0;
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
         overscroll-behavior: none;
-    }
-
-    html {
-        scroll-behavior: smooth;
     }
 
     #app {
