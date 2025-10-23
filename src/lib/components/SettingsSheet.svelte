@@ -443,7 +443,7 @@
 >
     <div
         class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
-            isDesktop ? "md:max-w-5xl md:max-h-[80vh]" : "max-h-[95vh]"
+            isDesktop ? "md:max-w-5xl md:h-[80vh]" : "max-h-[90vh]"
         }`}
         style="border-radius: 36px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
     >
