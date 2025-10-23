@@ -414,13 +414,13 @@
                                                     style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
                                                 >
                                                     <div
-                                                        class="font-semibold text-sm"
+                                                        class="font-semibold text-xs"
                                                         style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                                                     >
                                                         {WEEKDAYS_DE[dayIndex]}
                                                     </div>
                                                     <div
-                                                        class="text-xs"
+                                                        class="text-[10px]"
                                                         style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
                                                     >
                                                         {formatDate(day)}
@@ -473,7 +473,7 @@
                                                     style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
                                                 >
                                                     <div
-                                                        class="font-semibold"
+                                                        class="font-semibold text-sm"
                                                         style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                                                     >
                                                         {WEEKDAYS_DE[dayIndex]} ·
