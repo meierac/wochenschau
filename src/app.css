@@ -79,7 +79,7 @@
     }
 
     .safe-bottom {
-        padding-bottom: env(safe-area-inset-bottom - 5);
+        padding-bottom: env(safe-area-inset-bottom);
     }
 
     .safe-left {

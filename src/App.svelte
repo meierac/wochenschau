@@ -144,7 +144,7 @@
         </div>
     {:else}
         <!-- Mobile Layout -->
-        <div class="h-screen flex flex-col pb-0 relative">
+        <div class="h-screen flex flex-col pb-0 relative overflow-hidden">
             <!-- Mobile Header -->
             <div
                 class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/80 to-transparent px-4 py-3 flex items-center justify-between pointer-events-none backdrop-blur-lg"
