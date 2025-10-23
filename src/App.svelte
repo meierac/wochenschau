@@ -153,7 +153,9 @@
                 <h1 class="text-2xl font-bold pointer-events-auto">
                     📅 Wochenschau
                 </h1>
-                <div class="text-sm text-muted-foreground pointer-events-auto">
+                <div
+                    class="hidden sm:block text-sm text-muted-foreground pointer-events-auto"
+                >
                     W{$currentWeek} • {formatDateRange(
                         $currentWeek,
                         $currentYear,

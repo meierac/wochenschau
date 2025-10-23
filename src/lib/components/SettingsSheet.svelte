@@ -3,6 +3,7 @@
     import { templates } from "../stores/templates";
     import { subscriptions } from "../stores/ical";
     import { activities } from "../stores/activities";
+    import { exportSettings, FONT_FAMILIES } from "../stores/exportSettings";
     import type { ActivityTemplate, ICalSubscription } from "../types/index";
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
@@ -11,7 +12,7 @@
 
     const dispatch = createEventDispatcher();
 
-    type SettingType = "templates" | "ical";
+    type SettingType = "templates" | "ical" | "export";
 
     interface SettingItem {
         id: SettingType;
@@ -33,10 +34,16 @@
             icon: "🔗",
             description: `${$subscriptions.length} subscription${$subscriptions.length !== 1 ? "s" : ""}`,
         },
+        {
+            id: "export",
+            label: "Export Settings",
+            icon: "🎨",
+            description: "Customize export appearance",
+        },
     ];
 
     // Mobile: currently selected setting (null = showing list)
-    let selectedSetting: SettingType | null = isDesktop ? "templates" : null;
+    let selectedSetting: SettingType | null = isDesktop ? "export" : null;
 
     // Template state
     let showNewTemplate = false;
@@ -54,6 +61,43 @@
     };
     let isLoading = false;
     let error = "";
+
+    // Export settings state
+    let fileInput: HTMLInputElement;
+
+    function handleBackgroundImageUpload(e: Event) {
+        const target = e.target as HTMLInputElement;
+        const file = target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            alert("Please select an image file");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const imageData = event.target?.result as string;
+            exportSettings.setBackgroundImage(imageData);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function handleRemoveBackgroundImage() {
+        exportSettings.setBackgroundImage(null);
+        if (fileInput) {
+            fileInput.value = "";
+        }
+    }
+
+    function handleResetExportSettings() {
+        if (confirm("Reset all export settings to default?")) {
+            exportSettings.reset();
+            if (fileInput) {
+                fileInput.value = "";
+            }
+        }
+    }
 
     // Template operations
     function handleAddTemplate() {
@@ -196,6 +240,10 @@
             dispatch("close");
         }
     }
+
+    // Reactive: Update setting items descriptions
+    $: settingItems[0].description = `${$templates.length} template${$templates.length !== 1 ? "s" : ""}`;
+    $: settingItems[1].description = `${$subscriptions.length} subscription${$subscriptions.length !== 1 ? "s" : ""}`;
 </script>
 
 <div
@@ -582,6 +630,278 @@
                                         : "Refresh All"}
                                 </Button>
                             {/if}
+                        {:else if selectedSetting === "export"}
+                            <h3
+                                class="text-xl font-semibold text-foreground mb-4"
+                            >
+                                Export Settings
+                            </h3>
+
+                            <div class="space-y-6">
+                                <!-- Typography Section -->
+                                <div class="space-y-4">
+                                    <h4
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        Typography
+                                    </h4>
+
+                                    <!-- Header Font Family -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Header Font (Wochenschau)
+                                        </label>
+                                        <select
+                                            bind:value={
+                                                $exportSettings.headerFontFamily
+                                            }
+                                            class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        >
+                                            {#each FONT_FAMILIES as font}
+                                                <option value={font.value}
+                                                    >{font.name}</option
+                                                >
+                                            {/each}
+                                        </select>
+                                    </div>
+
+                                    <!-- Body Font Family -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Body Font (Activities)
+                                        </label>
+                                        <select
+                                            bind:value={
+                                                $exportSettings.bodyFontFamily
+                                            }
+                                            class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        >
+                                            {#each FONT_FAMILIES as font}
+                                                <option value={font.value}
+                                                    >{font.name}</option
+                                                >
+                                            {/each}
+                                        </select>
+                                    </div>
+
+                                    <!-- Text Color -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Text Color
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input
+                                                type="color"
+                                                bind:value={
+                                                    $exportSettings.textColor
+                                                }
+                                                class="w-12 h-10 rounded border border-input cursor-pointer"
+                                            />
+                                            <input
+                                                type="text"
+                                                bind:value={
+                                                    $exportSettings.textColor
+                                                }
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                placeholder="#000000"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Background Section -->
+                                <div class="space-y-4">
+                                    <h4
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        Background
+                                    </h4>
+
+                                    <!-- Background Image -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Background Image
+                                        </label>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            bind:this={fileInput}
+                                            on:change={handleBackgroundImageUpload}
+                                            class="hidden"
+                                        />
+                                        {#if $exportSettings.backgroundImage}
+                                            <div class="space-y-2">
+                                                <div
+                                                    class="relative w-full h-32 rounded border border-input overflow-hidden"
+                                                >
+                                                    <img
+                                                        src={$exportSettings.backgroundImage}
+                                                        alt="Background preview"
+                                                        class="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div class="flex gap-2">
+                                                    <Button
+                                                        variant="secondary"
+                                                        class="flex-1"
+                                                        on:click={() =>
+                                                            fileInput.click()}
+                                                    >
+                                                        Change Image
+                                                    </Button>
+                                                    <Button
+                                                        variant="secondary"
+                                                        on:click={handleRemoveBackgroundImage}
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        {:else}
+                                            <Button
+                                                variant="secondary"
+                                                on:click={() =>
+                                                    fileInput.click()}
+                                            >
+                                                + Upload Image
+                                            </Button>
+                                        {/if}
+                                    </div>
+
+                                    <!-- Background Color -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Background Color
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input
+                                                type="color"
+                                                bind:value={
+                                                    $exportSettings.backgroundColor
+                                                }
+                                                class="w-12 h-10 rounded border border-input cursor-pointer"
+                                            />
+                                            <input
+                                                type="text"
+                                                bind:value={
+                                                    $exportSettings.backgroundColor
+                                                }
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                placeholder="#ffffff"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- Background Opacity -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Background Opacity: {$exportSettings.backgroundOpacity}%
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            bind:value={
+                                                $exportSettings.backgroundOpacity
+                                            }
+                                            class="w-full"
+                                        />
+                                    </div>
+                                </div>
+
+                                <!-- Styling Section -->
+                                <div class="space-y-4">
+                                    <h4
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        Styling
+                                    </h4>
+
+                                    <!-- Accent Color -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Accent Color (Borders)
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input
+                                                type="color"
+                                                bind:value={
+                                                    $exportSettings.accentColor
+                                                }
+                                                class="w-12 h-10 rounded border border-input cursor-pointer"
+                                            />
+                                            <input
+                                                type="text"
+                                                bind:value={
+                                                    $exportSettings.accentColor
+                                                }
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                placeholder="#9333ea"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- Border Radius -->
+                                    <div>
+                                        <label
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Border Radius: {$exportSettings.borderRadius}px
+                                        </label>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="20"
+                                            bind:value={
+                                                $exportSettings.borderRadius
+                                            }
+                                            class="w-full"
+                                        />
+                                    </div>
+
+                                    <!-- Show Borders -->
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="showBorders"
+                                            bind:checked={
+                                                $exportSettings.showBorders
+                                            }
+                                            class="w-4 h-4 rounded border-input"
+                                        />
+                                        <label
+                                            for="showBorders"
+                                            class="text-xs font-medium text-muted-foreground cursor-pointer"
+                                        >
+                                            Show borders around activities
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Reset Button -->
+                                <div class="pt-4 border-t border-border">
+                                    <Button
+                                        variant="secondary"
+                                        on:click={handleResetExportSettings}
+                                    >
+                                        Reset to Defaults
+                                    </Button>
+                                </div>
+                            </div>
                         {/if}
                     </div>
                 {/if}
@@ -898,6 +1218,275 @@
                                 {isLoading ? "Refreshing..." : "Refresh All"}
                             </Button>
                         {/if}
+                    {:else if selectedSetting === "export"}
+                        <h3 class="text-xl font-semibold text-foreground mb-4">
+                            Export Settings
+                        </h3>
+
+                        <div class="space-y-6">
+                            <!-- Typography Section -->
+                            <div class="space-y-4">
+                                <h4
+                                    class="text-sm font-semibold text-foreground"
+                                >
+                                    Typography
+                                </h4>
+
+                                <!-- Header Font Family -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Header Font (Wochenschau)
+                                    </label>
+                                    <select
+                                        bind:value={
+                                            $exportSettings.headerFontFamily
+                                        }
+                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                    >
+                                        {#each FONT_FAMILIES as font}
+                                            <option value={font.value}
+                                                >{font.name}</option
+                                            >
+                                        {/each}
+                                    </select>
+                                </div>
+
+                                <!-- Body Font Family -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Body Font (Activities)
+                                    </label>
+                                    <select
+                                        bind:value={
+                                            $exportSettings.bodyFontFamily
+                                        }
+                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                    >
+                                        {#each FONT_FAMILIES as font}
+                                            <option value={font.value}
+                                                >{font.name}</option
+                                            >
+                                        {/each}
+                                    </select>
+                                </div>
+
+                                <!-- Text Color -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Text Color
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input
+                                            type="color"
+                                            bind:value={
+                                                $exportSettings.textColor
+                                            }
+                                            class="w-12 h-10 rounded border border-input cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            bind:value={
+                                                $exportSettings.textColor
+                                            }
+                                            class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                            placeholder="#000000"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Background Section -->
+                            <div class="space-y-4">
+                                <h4
+                                    class="text-sm font-semibold text-foreground"
+                                >
+                                    Background
+                                </h4>
+
+                                <!-- Background Image -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Background Image
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        bind:this={fileInput}
+                                        on:change={handleBackgroundImageUpload}
+                                        class="hidden"
+                                    />
+                                    {#if $exportSettings.backgroundImage}
+                                        <div class="space-y-2">
+                                            <div
+                                                class="relative w-full h-32 rounded border border-input overflow-hidden"
+                                            >
+                                                <img
+                                                    src={$exportSettings.backgroundImage}
+                                                    alt="Background preview"
+                                                    class="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <Button
+                                                    variant="secondary"
+                                                    class="flex-1"
+                                                    on:click={() =>
+                                                        fileInput.click()}
+                                                >
+                                                    Change Image
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    on:click={handleRemoveBackgroundImage}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    {:else}
+                                        <Button
+                                            variant="secondary"
+                                            on:click={() => fileInput.click()}
+                                        >
+                                            + Upload Image
+                                        </Button>
+                                    {/if}
+                                </div>
+
+                                <!-- Background Color -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Background Color
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input
+                                            type="color"
+                                            bind:value={
+                                                $exportSettings.backgroundColor
+                                            }
+                                            class="w-12 h-10 rounded border border-input cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            bind:value={
+                                                $exportSettings.backgroundColor
+                                            }
+                                            class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                            placeholder="#ffffff"
+                                        />
+                                    </div>
+                                </div>
+
+                                <!-- Background Opacity -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Background Opacity: {$exportSettings.backgroundOpacity}%
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        bind:value={
+                                            $exportSettings.backgroundOpacity
+                                        }
+                                        class="w-full"
+                                    />
+                                </div>
+                            </div>
+
+                            <!-- Styling Section -->
+                            <div class="space-y-4">
+                                <h4
+                                    class="text-sm font-semibold text-foreground"
+                                >
+                                    Styling
+                                </h4>
+
+                                <!-- Accent Color -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Accent Color (Borders)
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input
+                                            type="color"
+                                            bind:value={
+                                                $exportSettings.accentColor
+                                            }
+                                            class="w-12 h-10 rounded border border-input cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            bind:value={
+                                                $exportSettings.accentColor
+                                            }
+                                            class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                            placeholder="#9333ea"
+                                        />
+                                    </div>
+                                </div>
+
+                                <!-- Border Radius -->
+                                <div>
+                                    <label
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Border Radius: {$exportSettings.borderRadius}px
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="20"
+                                        bind:value={
+                                            $exportSettings.borderRadius
+                                        }
+                                        class="w-full"
+                                    />
+                                </div>
+
+                                <!-- Show Borders -->
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="showBorders"
+                                        bind:checked={
+                                            $exportSettings.showBorders
+                                        }
+                                        class="w-4 h-4 rounded border-input"
+                                    />
+                                    <label
+                                        for="showBorders"
+                                        class="text-xs font-medium text-muted-foreground cursor-pointer"
+                                    >
+                                        Show borders around activities
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Reset Button -->
+                            <div class="pt-4 border-t border-border">
+                                <Button
+                                    variant="secondary"
+                                    on:click={handleResetExportSettings}
+                                >
+                                    Reset to Defaults
+                                </Button>
+                            </div>
+                        </div>
                     {/if}
                 </div>
             {/if}

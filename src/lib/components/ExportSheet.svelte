@@ -1,7 +1,8 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import { activities } from "../stores/activities";
     import { currentWeek, currentYear } from "../stores/week";
+    import { exportSettings } from "../stores/exportSettings";
     import { formatDateRange, getDaysOfWeek } from "../utils/date";
     import { WEEKDAYS } from "../types/index";
     import IconButton from "./IconButton.svelte";
@@ -16,6 +17,43 @@
     let layoutMode: "grid" | "list" = "grid";
     let showPreview = true;
 
+    // Load preferences from localStorage on mount
+    function loadPreferences() {
+        if (typeof window !== "undefined") {
+            const savedLayoutMode = localStorage.getItem("exportLayoutMode");
+            const savedShowPreview = localStorage.getItem("exportShowPreview");
+
+            if (savedLayoutMode === "list" || savedLayoutMode === "grid") {
+                layoutMode = savedLayoutMode;
+            }
+            if (savedShowPreview === "false") {
+                showPreview = false;
+            } else if (savedShowPreview === "true") {
+                showPreview = true;
+            }
+        }
+    }
+
+    // Save preferences to localStorage
+    function saveLayoutMode(mode: "grid" | "list") {
+        layoutMode = mode;
+        if (typeof window !== "undefined") {
+            localStorage.setItem("exportLayoutMode", mode);
+        }
+    }
+
+    function toggleShowPreview() {
+        showPreview = !showPreview;
+        if (typeof window !== "undefined") {
+            localStorage.setItem("exportShowPreview", String(showPreview));
+        }
+    }
+
+    // Initialize on component mount
+    onMount(() => {
+        loadPreferences();
+    });
+
     function handleClose() {
         dispatch("close");
     }
@@ -28,29 +66,24 @@
 
     async function generateJPGBlob(): Promise<Blob | null> {
         try {
-            const html2canvas = (await import("html2canvas")).default as any;
+            const { domToJpeg } = await import("modern-screenshot");
 
             const element = document.getElementById("export-preview");
             if (!element) {
                 throw new Error("Export preview element not found");
             }
 
-            const canvas = await html2canvas(element, {
-                backgroundColor: "#ffffff",
+            const dataUrl = await domToJpeg(element, {
                 scale: 2,
-                useCORS: true,
-                allowTaint: true,
+                quality: 0.95,
+                backgroundColor: "#ffffff",
             });
 
-            return new Promise((resolve) => {
-                canvas.toBlob(
-                    (blob: Blob | null) => {
-                        resolve(blob);
-                    },
-                    "image/jpeg",
-                    0.95,
-                );
-            });
+            // Convert data URL to blob
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+
+            return blob;
         } catch (error) {
             exportError =
                 error instanceof Error ? error.message : "Export failed";
@@ -241,186 +274,232 @@
                     <label class="text-sm font-semibold text-foreground"
                         >Preview</label
                     >
-                    <div class="flex gap-2">
-                        <IconButton
-                            variant="ghost"
-                            size="md"
-                            ariaLabel={showPreview
+                    <div class="flex gap-2 items-center">
+                        <!-- Preview Visibility Toggle -->
+                        <button
+                            class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {showPreview
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'}"
+                            on:click={toggleShowPreview}
+                            title={showPreview
                                 ? "Hide preview"
                                 : "Show preview"}
-                            on:click={() => (showPreview = !showPreview)}
                         >
-                            <svg
-                                class="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                {#if showPreview}
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                    />
-                                {:else}
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                {/if}
-                            </svg>
-                        </IconButton>
+                            {showPreview ? "Preview On" : "Preview Off"}
+                        </button>
 
-                        <IconButton
-                            variant="ghost"
-                            size="md"
-                            ariaLabel={layoutMode === "grid"
-                                ? "Switch to list view"
-                                : "Switch to grid view"}
-                            on:click={() =>
-                                (layoutMode =
-                                    layoutMode === "grid" ? "list" : "grid")}
-                        >
-                            <svg
-                                class="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                        <!-- Grid/List View Buttons -->
+                        <div class="flex gap-1 bg-muted p-1 rounded-md">
+                            <button
+                                class="px-3 py-1.5 rounded text-sm font-medium transition-colors {layoutMode ===
+                                'grid'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-transparent text-foreground hover:bg-muted-foreground/10'}"
+                                on:click={() => saveLayoutMode("grid")}
+                                title="Grid view"
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"
-                                />
-                            </svg>
-                        </IconButton>
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"
+                                    />
+                                </svg>
+                            </button>
+                            <button
+                                class="px-3 py-1.5 rounded text-sm font-medium transition-colors {layoutMode ===
+                                'list'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-transparent text-foreground hover:bg-muted-foreground/10'}"
+                                on:click={() => saveLayoutMode("list")}
+                                title="List view"
+                            >
+                                <svg
+                                    class="w-4 h-4"
+                                    fill="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Preview -->
                 {#if showPreview}
                     <div
-                        class="bg-white text-black p-6 rounded-lg border border-border max-h-96 overflow-auto"
+                        class="bg-background rounded-lg border border-border overflow-auto max-h-[55vh]"
                     >
-                        <div id="export-preview" class="space-y-4">
-                            <div class="mb-6 text-center">
-                                <h2 class="text-3xl font-bold mb-2">
-                                    Wochenschau
-                                </h2>
-                                <p class="text-lg font-semibold text-gray-700">
-                                    Week {$currentWeek} · {formatDateRange(
-                                        $currentWeek,
-                                        $currentYear,
-                                    )}
-                                </p>
-                            </div>
+                        <div
+                            class={layoutMode === "list"
+                                ? "flex justify-center min-w-full"
+                                : ""}
+                        >
+                            <div
+                                id="export-preview"
+                                class="space-y-4"
+                                style="width: {layoutMode === 'grid'
+                                    ? '900px'
+                                    : '400px'}; min-width: {layoutMode ===
+                                'grid'
+                                    ? '900px'
+                                    : '400px'}; max-width: {layoutMode ===
+                                'grid'
+                                    ? '900px'
+                                    : '400px'}; position: relative; background-color: {$exportSettings.backgroundColor}; background-image: {$exportSettings.backgroundImage
+                                    ? `url(${$exportSettings.backgroundImage})`
+                                    : 'none'}; background-size: cover; background-position: center; color: {$exportSettings.textColor}; padding: 1.5rem;"
+                            >
+                                <!-- Background Overlay -->
+                                {#if $exportSettings.backgroundImage}
+                                    <div
+                                        style="position: absolute; inset: 0; background-color: {$exportSettings.backgroundColor}; opacity: {(100 -
+                                            $exportSettings.backgroundOpacity) /
+                                            100}; pointer-events: none; z-index: 1;"
+                                    ></div>
+                                {/if}
 
-                            {#if layoutMode === "grid"}
-                                <div class="grid grid-cols-4 gap-3">
-                                    {#each days as day, dayIndex}
-                                        <div
-                                            class="border border-gray-300 rounded-lg p-2 bg-gray-50"
-                                        >
+                                <div class="mb-6 text-center relative z-10">
+                                    <h2
+                                        class="text-3xl font-bold mb-2"
+                                        style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor};"
+                                    >
+                                        Wochenschau
+                                    </h2>
+                                    <p
+                                        class="text-lg font-semibold"
+                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.8;"
+                                    >
+                                        Week {$currentWeek} · {formatDateRange(
+                                            $currentWeek,
+                                            $currentYear,
+                                        )}
+                                    </p>
+                                </div>
+
+                                {#if layoutMode === "grid"}
+                                    <div
+                                        class="grid grid-cols-4 gap-3 relative z-10"
+                                    >
+                                        {#each days as day, dayIndex}
                                             <div
-                                                class="mb-2 pb-2 border-b border-gray-300"
+                                                class="p-2"
+                                                style="background-color: rgba(255, 255, 255, 0.75); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
                                             >
                                                 <div
-                                                    class="font-semibold text-sm text-gray-900"
+                                                    class="mb-2 pb-2"
+                                                    style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
                                                 >
-                                                    {WEEKDAYS[dayIndex]}
-                                                </div>
-                                                <div
-                                                    class="text-xs text-gray-600"
-                                                >
-                                                    {formatDate(day)}
-                                                </div>
-                                            </div>
-                                            <div class="space-y-2">
-                                                {#if getDayActivities(dayIndex).length === 0}
                                                     <div
-                                                        class="text-xs text-gray-500 text-center"
+                                                        class="font-semibold text-sm"
+                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                                                     >
-                                                        No activities
+                                                        {WEEKDAYS[dayIndex]}
                                                     </div>
-                                                {:else}
-                                                    {#each getDayActivities(dayIndex) as activity}
+                                                    <div
+                                                        class="text-xs"
+                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                    >
+                                                        {formatDate(day)}
+                                                    </div>
+                                                </div>
+                                                <div class="space-y-2">
+                                                    {#if getDayActivities(dayIndex).length === 0}
                                                         <div
-                                                            class="p-1.5 bg-white rounded border-l-2 text-xs"
-                                                            style="border-color: {activity.color ||
-                                                                '#9333ea'}"
+                                                            class="text-xs text-center"
+                                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
                                                         >
-                                                            <div
-                                                                class="font-semibold text-gray-900 truncate"
-                                                            >
-                                                                {activity.summary}
-                                                            </div>
-                                                            <div
-                                                                class="text-gray-600 text-xs"
-                                                            >
-                                                                {activity.startTime}
-                                                                - {activity.endTime}
-                                                            </div>
+                                                            No activities
                                                         </div>
-                                                    {/each}
-                                                {/if}
+                                                    {:else}
+                                                        {#each getDayActivities(dayIndex) as activity}
+                                                            <div
+                                                                class="px-1.5 text-xs"
+                                                                style="border-left: 3px solid {activity.color ||
+                                                                    $exportSettings.accentColor};"
+                                                            >
+                                                                <div
+                                                                    class="font-semibold truncate"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                                >
+                                                                    {activity.summary}
+                                                                </div>
+                                                                <div
+                                                                    class="text-xs"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                >
+                                                                    {activity.startTime}
+                                                                    - {activity.endTime}
+                                                                </div>
+                                                            </div>
+                                                        {/each}
+                                                    {/if}
+                                                </div>
                                             </div>
-                                        </div>
-                                    {/each}
-                                </div>
-                            {:else}
-                                <div class="space-y-4">
-                                    {#each days as day, dayIndex}
-                                        <div
-                                            class="border-l-4 border-primary pl-3"
-                                        >
+                                        {/each}
+                                    </div>
+                                {:else}
+                                    <div class="space-y-4 relative z-10">
+                                        {#each days as day, dayIndex}
                                             <div
-                                                class="mb-2 pb-2 border-b border-gray-300"
+                                                class="p-3"
+                                                style="background-color: rgba(255, 255, 255, 0.75); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
                                             >
                                                 <div
-                                                    class="font-semibold text-gray-900"
+                                                    class="mb-2 pb-2"
+                                                    style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
                                                 >
-                                                    {WEEKDAYS[dayIndex]} · {formatDate(
-                                                        day,
-                                                    )}
+                                                    <div
+                                                        class="font-semibold"
+                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                    >
+                                                        {WEEKDAYS[dayIndex]} · {formatDate(
+                                                            day,
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div class="space-y-2">
+                                                    {#if getDayActivities(dayIndex).length === 0}
+                                                        <div
+                                                            class="text-sm text-center"
+                                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
+                                                        >
+                                                            No activities
+                                                        </div>
+                                                    {:else}
+                                                        {#each getDayActivities(dayIndex) as activity}
+                                                            <div
+                                                                class="px-2 text-sm"
+                                                                style="border-left: 3px solid {activity.color ||
+                                                                    $exportSettings.accentColor};"
+                                                            >
+                                                                <div
+                                                                    class="font-semibold"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                                >
+                                                                    {activity.summary}
+                                                                </div>
+                                                                <div
+                                                                    class="text-xs"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                >
+                                                                    {activity.startTime}
+                                                                    - {activity.endTime}
+                                                                </div>
+                                                            </div>
+                                                        {/each}
+                                                    {/if}
                                                 </div>
                                             </div>
-                                            <div class="space-y-2">
-                                                {#if getDayActivities(dayIndex).length === 0}
-                                                    <div
-                                                        class="text-sm text-gray-500 text-center"
-                                                    >
-                                                        No activities
-                                                    </div>
-                                                {:else}
-                                                    {#each getDayActivities(dayIndex) as activity}
-                                                        <div
-                                                            class="p-2 bg-gray-50 rounded border-l-2 text-sm"
-                                                            style="border-color: {activity.color ||
-                                                                '#9333ea'}"
-                                                        >
-                                                            <div
-                                                                class="font-semibold text-gray-900"
-                                                            >
-                                                                {activity.summary}
-                                                            </div>
-                                                            <div
-                                                                class="text-gray-600 text-xs"
-                                                            >
-                                                                {activity.startTime}
-                                                                - {activity.endTime}
-                                                            </div>
-                                                        </div>
-                                                    {/each}
-                                                {/if}
-                                            </div>
-                                        </div>
-                                    {/each}
-                                </div>
-                            {/if}
+                                        {/each}
+                                    </div>
+                                {/if}
+                            </div>
                         </div>
                     </div>
                 {/if}
@@ -510,9 +589,6 @@
                             {/if}
                         </Button>
                     </div>
-                    <p class="text-xs text-muted-foreground text-center">
-                        Download or copy the weekly agenda as an image to share
-                    </p>
                 {:else}
                     <!-- Mobile: Native Share -->
                     <Button
@@ -553,10 +629,6 @@
                             Share
                         {/if}
                     </Button>
-                    <p class="text-xs text-muted-foreground text-center">
-                        Share your agenda with all available options on your
-                        device
-                    </p>
                 {/if}
             </div>
         </div>
