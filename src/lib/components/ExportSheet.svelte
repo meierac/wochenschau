@@ -234,6 +234,20 @@
             day: "numeric",
         });
     }
+
+    function isAllDayEvent(activity: any): boolean {
+        // Check if explicitly marked as all-day
+        if (activity.isAllDay) return true;
+
+        // Check if start time equals end time
+        if (activity.startTime === activity.endTime) return true;
+
+        // Check if spans entire day (00:00 to 23:59)
+        if (activity.startTime === "00:00" && activity.endTime === "23:59")
+            return true;
+
+        return false;
+    }
 </script>
 
 <div
@@ -447,13 +461,22 @@
                                                                 >
                                                                     {activity.summary}
                                                                 </div>
-                                                                <div
-                                                                    class="text-xs"
-                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                                >
-                                                                    {activity.startTime}
-                                                                    - {activity.endTime}
-                                                                </div>
+                                                                {#if isAllDayEvent(activity)}
+                                                                    <div
+                                                                        class="text-xs"
+                                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    >
+                                                                        All-Day
+                                                                    </div>
+                                                                {:else}
+                                                                    <div
+                                                                        class="text-xs"
+                                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    >
+                                                                        {activity.startTime}
+                                                                        - {activity.endTime}
+                                                                    </div>
+                                                                {/if}
                                                             </div>
                                                         {/each}
                                                     {/if}
@@ -523,13 +546,22 @@
                                                                 >
                                                                     {activity.summary}
                                                                 </div>
-                                                                <div
-                                                                    class="text-xs"
-                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                                >
-                                                                    {activity.startTime}
-                                                                    - {activity.endTime}
-                                                                </div>
+                                                                {#if isAllDayEvent(activity)}
+                                                                    <div
+                                                                        class="text-xs"
+                                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    >
+                                                                        All-Day
+                                                                    </div>
+                                                                {:else}
+                                                                    <div
+                                                                        class="text-xs"
+                                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    >
+                                                                        {activity.startTime}
+                                                                        - {activity.endTime}
+                                                                    </div>
+                                                                {/if}
                                                             </div>
                                                         {/each}
                                                     {/if}

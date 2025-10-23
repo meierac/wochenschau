@@ -4,7 +4,7 @@
     import { templates } from "../stores/templates";
     import { currentWeek, currentYear } from "../stores/week";
     import {
-        WEEKDAYS,
+        WEEKDAYS_DE,
         type CalendarItem,
         type ActivityTemplate,
     } from "../types/index";
@@ -67,6 +67,13 @@
         const dayDate = new Date(weekStart);
         dayDate.setDate(weekStart.getDate() + dayIndex);
         return dayDate;
+    }
+
+    function formatDateForDisplay(date: Date): string {
+        return date.toLocaleDateString("de-DE", {
+            month: "short",
+            day: "numeric",
+        });
     }
 
     function handleSaveActivity() {
@@ -139,18 +146,17 @@
     on:click={handleBackdropClick}
 >
     <div
-        class={`bg-card rounded-2xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
-            isDesktop ? "md:max-w-md" : ""
+        class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
+            isDesktop ? "md:max-w-md md:max-h-[80vh]" : "max-h-[95vh]"
         }`}
+        style="border-radius: 36px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
     >
         <!-- Header with centered title and icon buttons -->
-        <div
-            class="border-b border-border px-4 py-4 flex items-center justify-between"
-        >
+        <div class=" px-3 py-3 flex items-center justify-between">
             <!-- Cancel button (left) -->
             <IconButton
-                variant="ghost"
-                size="md"
+                variant="secondary"
+                size="lg"
                 ariaLabel="Close"
                 on:click={handleClose}
             >
@@ -178,8 +184,8 @@
 
             <!-- Next/Save button (right) -->
             <IconButton
-                variant="ghost"
-                size="md"
+                variant="secondary"
+                size="lg"
                 ariaLabel={step === "selectDay" ? "Next" : "Save activity"}
                 disabled={step === "selectDay"
                     ? selectedDay === null
@@ -227,20 +233,24 @@
         </div>
 
         <!-- Content -->
-        <div class="p-6 max-h-[60vh] overflow-y-auto">
+        <div class="p-3 pb-8 max-h-[60vh] overflow-y-auto">
             {#if step === "selectDay"}
                 <!-- Day Selection -->
-                <div class="space-y-3">
+                <div class="space-y-2">
                     <p class="text-sm text-muted-foreground mb-4">
                         Select a day to add activity
                     </p>
-                    <div class="grid grid-cols-7 gap-2">
-                        {#each WEEKDAYS as day, index}
+                    <div class="space-y-2">
+                        {#each WEEKDAYS_DE as day, index}
+                            {@const dayDate = getDayDate(index)}
                             <button
                                 on:click={() => handleSelectDay(index)}
-                                class="p-2 rounded-lg font-semibold text-sm transition-colors bg-muted hover:bg-primary hover:text-primary-foreground active:opacity-80"
+                                class="w-full p-3 rounded-2xl font-semibold text-sm transition-colors bg-muted/50 hover:bg-primary hover:text-primary-foreground active:opacity-80 flex items-center justify-between"
                             >
-                                {day.slice(0, 3)}
+                                <span>{day}</span>
+                                <span class="text-xs opacity-70">
+                                    {formatDateForDisplay(dayDate)}
+                                </span>
                             </button>
                         {/each}
                     </div>
@@ -250,7 +260,7 @@
                 <div class="space-y-4">
                     <!-- Templates Section -->
                     {#if filteredTemplates.length > 0}
-                        <div class="space-y-2 p-3 bg-muted rounded-lg">
+                        <div class="space-y-2 p-3 bg-muted/50 rounded-2xl">
                             <label class="text-xs font-semibold text-foreground"
                                 >Use Template</label
                             >
@@ -287,7 +297,7 @@
                             type="text"
                             bind:value={activityName}
                             placeholder="Enter activity name"
-                            class="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                     </div>
 
@@ -301,7 +311,7 @@
                             <input
                                 type="time"
                                 bind:value={startTime}
-                                class="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                             />
                         </div>
                         <div>
@@ -312,7 +322,7 @@
                             <input
                                 type="time"
                                 bind:value={endTime}
-                                class="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                             />
                         </div>
                     </div>
@@ -339,39 +349,16 @@
                     </label>
 
                     <!-- Selected Day Info -->
-                    <div class="p-2 bg-muted rounded-lg text-sm">
+                    <div class="p-2 rounded-lg text-sm">
                         <span class="text-muted-foreground">Adding to:</span>
                         <span class="font-semibold text-foreground ml-1"
-                            >{WEEKDAYS[selectedDay]}</span
+                            >{WEEKDAYS_DE[selectedDay]} ({formatDateForDisplay(
+                                getDayDate(selectedDay),
+                            )})</span
                         >
                     </div>
                 </div>
             {/if}
         </div>
-
-        <!-- Back button at bottom (only on details step) -->
-        {#if step === "details"}
-            <div class="border-t border-border px-6 py-4">
-                <button
-                    on:click={handleBackToSelectDay}
-                    class="flex items-center gap-2 w-full px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted rounded-lg transition-colors"
-                >
-                    <svg
-                        class="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 19l-7-7 7-7"
-                        />
-                    </svg>
-                    Back
-                </button>
-            </div>
-        {/if}
     </div>
 </div>

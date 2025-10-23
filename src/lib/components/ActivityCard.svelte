@@ -84,6 +84,20 @@
         return h * 60 + m;
     }
 
+    function isAllDayEvent(): boolean {
+        // Check if explicitly marked as all-day
+        if (activity.isAllDay) return true;
+
+        // Check if start time equals end time
+        if (activity.startTime === activity.endTime) return true;
+
+        // Check if spans entire day (00:00 to 23:59)
+        if (activity.startTime === "00:00" && activity.endTime === "23:59")
+            return true;
+
+        return false;
+    }
+
     $: duration =
         timeToMinutes(activity.endTime) - timeToMinutes(activity.startTime);
     $: durationStr = `${Math.floor(duration / 60)}h ${duration % 60}m`;
@@ -134,12 +148,16 @@
                 >
                     {activity.summary}
                 </div>
-                <div class="text-sm text-muted-foreground">
-                    {activity.startTime} - {activity.endTime}
-                </div>
-                <div class="text-sm text-muted-foreground">
-                    {durationStr}
-                </div>
+                {#if isAllDayEvent()}
+                    <div class="text-sm text-muted-foreground">All-Day</div>
+                {:else}
+                    <div class="text-sm text-muted-foreground">
+                        {activity.startTime} - {activity.endTime}
+                    </div>
+                    <div class="text-sm text-muted-foreground">
+                        {durationStr}
+                    </div>
+                {/if}
             </div>
 
             <!-- Action buttons - visible on mobile, hover overlay on desktop -->
