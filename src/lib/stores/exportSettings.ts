@@ -10,7 +10,6 @@ export interface ExportSettings {
   // Title/Headline
   title: string;
   titleFontSize: number; // in pixels
-  titleFontWeight: "light" | "medium" | "bold"; // Font weight of title
   showWeekNumber: boolean; // Show "KW XX" below title
 
   // Background
@@ -40,7 +39,6 @@ const defaultSettings: ExportSettings = {
   // Title/Headline
   title: "Wochenschau",
   titleFontSize: 48,
-  titleFontWeight: "bold",
   showWeekNumber: false,
 
   // Background
@@ -236,54 +234,29 @@ function createExportSettingsStore() {
 
 export const exportSettings = createExportSettingsStore();
 
-// Font family options - organized by category
+// Font family options - LOCAL FONTS ONLY
+// Only fonts that are available in /public/fonts/
 export const FONT_FAMILIES = [
-  // Handwriting & Calligraphy
-  { name: "Great Vibes (Calligraphy)", value: "'Great Vibes', cursive" },
-  { name: "Pacifico (Handwriting)", value: "'Pacifico', cursive" },
+  // Handwriting & Script (Local)
   { name: "Dancing Script (Script)", value: "'Dancing Script', cursive" },
-  { name: "Satisfy (Handwriting)", value: "'Satisfy', cursive" },
-  { name: "Caveat (Handwriting)", value: "'Caveat', cursive" },
-  { name: "Allura (Calligraphy)", value: "'Allura', cursive" },
-  { name: "Pinyon Script (Formal)", value: "'Pinyon Script', cursive" },
-  { name: "Alex Brush (Elegant)", value: "'Alex Brush', cursive" },
-  { name: "Parisienne (Elegant)", value: "'Parisienne', cursive" },
-  { name: "Bad Script (Casual)", value: "'Bad Script', cursive" },
+  { name: "Edu QLD Hand (Handwriting)", value: "'Edu QLD Hand', cursive" },
+  { name: "Edu SA Hand (Handwriting)", value: "'Edu SA Hand', cursive" },
+  { name: "Handlee (Handwriting)", value: "'Handlee', cursive" },
+  { name: "Ms Madi (Script)", value: "'Ms Madi', cursive" },
 
-  // Serif Fonts
-  { name: "Playfair Display (Serif)", value: "'Playfair Display', serif" },
-  { name: "Merriweather (Serif)", value: "'Merriweather', serif" },
+  // Serif Fonts (Local)
   { name: "Lora (Serif)", value: "'Lora', serif" },
-  { name: "Noto Serif (Serif)", value: "'Noto Serif', serif" },
-  { name: "PT Serif (Serif)", value: "'PT Serif', serif" },
-  { name: "Alegreya (Serif)", value: "'Alegreya', serif" },
-  { name: "Spectral (Serif)", value: "'Spectral', serif" },
-  { name: "Rokkitt (Serif)", value: "'Rokkitt', serif" },
-  { name: "Old Standard TT (Classic)", value: "'Old Standard TT', serif" },
-  { name: "Aleo (Modern Serif)", value: "'Aleo', serif" },
 
-  // Sans-Serif Fonts
-  { name: "Roboto (Sans-Serif)", value: "'Roboto', sans-serif" },
-  { name: "Open Sans (Sans-Serif)", value: "'Open Sans', sans-serif" },
-  { name: "Lato (Sans-Serif)", value: "'Lato', sans-serif" },
-  { name: "Montserrat (Sans-Serif)", value: "'Montserrat', sans-serif" },
-  { name: "Poppins (Sans-Serif)", value: "'Poppins', sans-serif" },
-  { name: "Inter (Sans-Serif)", value: "'Inter', sans-serif" },
-  { name: "Nunito (Sans-Serif)", value: "'Nunito', sans-serif" },
-  { name: "Raleway (Sans-Serif)", value: "'Raleway', sans-serif" },
-  { name: "Rubik (Sans-Serif)", value: "'Rubik', sans-serif" },
+  // Sans-Serif Fonts (Local)
+  { name: "Archivo (Sans-Serif)", value: "'Archivo', sans-serif" },
   { name: "Manrope (Sans-Serif)", value: "'Manrope', sans-serif" },
-  { name: "Fira Sans (Sans-Serif)", value: "'Fira Sans', sans-serif" },
   { name: "Noto Sans (Sans-Serif)", value: "'Noto Sans', sans-serif" },
-  { name: "Public Sans (Sans-Serif)", value: "'Public Sans', sans-serif" },
-  { name: "Barlow (Sans-Serif)", value: "'Barlow', sans-serif" },
 
-  // Monospace Fonts
-  { name: "Fira Code (Mono)", value: "'Fira Code', monospace" },
-  { name: "Inconsolata (Mono)", value: "'Inconsolata', monospace" },
+  // Display/Decorative (Local)
+  { name: "Pirata One (Display)", value: "'Pirata One', display" },
+
+  // Monospace Fonts (Local)
   { name: "Space Mono (Mono)", value: "'Space Mono', monospace" },
-  { name: "Victor Mono (Mono)", value: "'Victor Mono', monospace" },
-  { name: "M PLUS Code Latin (Mono)", value: "'M PLUS Code Latin', monospace" },
 
   // System Default (Fallback)
   { name: "System Default", value: "system-ui, -apple-system, sans-serif" },

@@ -1020,29 +1020,6 @@
                                         />
                                     </div>
 
-                                    <!-- Title Font Weight -->
-                                    <div>
-                                        <label
-                                            for="title-font-weight-export"
-                                            class="block text-xs font-medium text-muted-foreground mb-2"
-                                        >
-                                            Title Font Weight
-                                        </label>
-                                        <select
-                                            id="title-font-weight-export"
-                                            bind:value={
-                                                $exportSettings.titleFontWeight
-                                            }
-                                            class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
-                                        >
-                                            <option value="light">Light</option>
-                                            <option value="medium"
-                                                >Medium</option
-                                            >
-                                            <option value="bold">Bold</option>
-                                        </select>
-                                    </div>
-
                                     <!-- Show Week Number -->
                                     <div
                                         class="flex items-center justify-between"
@@ -1766,27 +1743,6 @@
                                             $exportSettings.titleFontSize
                                         }
                                     />
-                                </div>
-
-                                <!-- Title Font Weight -->
-                                <div>
-                                    <label
-                                        for="title-font-weight-export-desktop"
-                                        class="block text-xs font-medium text-muted-foreground mb-2"
-                                    >
-                                        Title Font Weight
-                                    </label>
-                                    <select
-                                        id="title-font-weight-export-desktop"
-                                        bind:value={
-                                            $exportSettings.titleFontWeight
-                                        }
-                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
-                                    >
-                                        <option value="light">Light</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="bold">Bold</option>
-                                    </select>
                                 </div>
 
                                 <!-- Show Week Number -->

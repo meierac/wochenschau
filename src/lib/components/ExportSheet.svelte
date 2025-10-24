@@ -649,14 +649,8 @@
                         >
                             <div class="mb-6 text-center">
                                 <h2
-                                    class="mb-2"
-                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px; font-weight: {$exportSettings.titleFontWeight ===
-                                    'light'
-                                        ? '300'
-                                        : $exportSettings.titleFontWeight ===
-                                            'medium'
-                                          ? '500'
-                                          : '700'};"
+                                    class="mb-2 font-medium"
+                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px;"
                                 >
                                     {$exportSettings.title}
                                 </h2>
