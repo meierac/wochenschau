@@ -11,22 +11,36 @@
     let currentTranslate = 0;
     let isDragging = false;
     let startTime = 0;
+    let containerElement: HTMLElement | null = null;
+
+    // Detect PWA standalone mode
+    const isStandalone =
+        typeof window !== "undefined" &&
+        (window.matchMedia("(display-mode: standalone)").matches ||
+            (window.navigator as any).standalone === true);
 
     function swipeAction(node: HTMLElement) {
         if (isDesktop) return {};
 
-        let animationFrame: number | undefined;
+        let rafId: number | null = null;
 
         function handleStart(e: TouchEvent) {
+            // Don't prevent default on start to allow clicks
             const touch = e.touches[0];
+            if (!touch) return;
+
             startY = touch.clientY;
             startTime = Date.now();
             isDragging = true;
             currentTranslate = 0;
 
-            // Cancel any ongoing animation
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
+            // Remove any transitions
+            node.style.transition = "none";
+
+            // Cancel any pending animation
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
             }
         }
 
@@ -34,20 +48,30 @@
             if (!isDragging) return;
 
             const touch = e.touches[0];
-            const deltaY = touch.clientY - startY;
+            if (!touch) return;
 
-            // Only allow downward swipes
+            const currentY = touch.clientY;
+            const deltaY = currentY - startY;
+
+            // Only allow downward drags
             if (deltaY > 0) {
                 currentTranslate = deltaY;
 
-                // Update transform directly
-                requestAnimationFrame(() => {
-                    node.style.transform = `translateY(${currentTranslate}px)`;
+                // Update transform immediately using RAF
+                if (rafId !== null) {
+                    cancelAnimationFrame(rafId);
+                }
+
+                rafId = requestAnimationFrame(() => {
+                    node.style.transform = `translate3d(0, ${currentTranslate}px, 0)`;
+                    rafId = null;
                 });
 
-                // Prevent scroll if dragging significantly
-                if (deltaY > 10) {
+                // CRITICAL: Prevent default to stop iOS bounce/overscroll in PWA
+                // Only prevent if we've dragged significantly
+                if (deltaY > 5) {
                     e.preventDefault();
+                    e.stopPropagation();
                 }
             }
         }
@@ -56,17 +80,21 @@
             if (!isDragging) return;
 
             isDragging = false;
+
             const endTime = Date.now();
             const timeDiff = endTime - startTime;
-            const velocity = currentTranslate / timeDiff;
+            const velocity = timeDiff > 0 ? currentTranslate / timeDiff : 0;
 
             // Dismiss if:
-            // 1. Dragged more than 100px
-            // 2. Fast swipe (velocity > 0.5)
-            if (currentTranslate > 100 || velocity > 0.5) {
-                // Animate out then close
+            // 1. Dragged more than 120px (slightly higher threshold for PWA)
+            // 2. Fast swipe (velocity > 0.4)
+            const shouldDismiss = currentTranslate > 120 || velocity > 0.4;
+
+            if (shouldDismiss) {
+                // Animate out
                 node.style.transition = "transform 0.25s ease-out";
-                node.style.transform = "translateY(100vh)";
+                node.style.transform = "translate3d(0, 100vh, 0)";
+
                 setTimeout(() => {
                     dispatch("close");
                 }, 250);
@@ -74,19 +102,25 @@
                 // Snap back
                 node.style.transition =
                     "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)";
-                node.style.transform = "translateY(0)";
+                node.style.transform = "translate3d(0, 0, 0)";
                 currentTranslate = 0;
             }
         }
 
-        // Add listeners with passive: false
-        node.addEventListener("touchstart", handleStart, { passive: true });
-        node.addEventListener("touchmove", handleMove, { passive: false });
-        node.addEventListener("touchend", handleEnd, { passive: true });
-        node.addEventListener("touchcancel", handleEnd, { passive: true });
+        // For PWA mode, we need to be more aggressive with touch handling
+        const passiveOption = { passive: false };
+        const passiveTrue = { passive: true };
+
+        node.addEventListener("touchstart", handleStart, passiveTrue);
+        node.addEventListener("touchmove", handleMove, passiveOption);
+        node.addEventListener("touchend", handleEnd, passiveTrue);
+        node.addEventListener("touchcancel", handleEnd, passiveTrue);
 
         return {
             destroy() {
+                if (rafId !== null) {
+                    cancelAnimationFrame(rafId);
+                }
                 node.removeEventListener("touchstart", handleStart);
                 node.removeEventListener("touchmove", handleMove);
                 node.removeEventListener("touchend", handleEnd);
@@ -109,17 +143,31 @@
 
     onMount(() => {
         if (!isDesktop) {
+            // In PWA mode, prevent body scroll more aggressively
             const scrollY = window.scrollY;
+            const originalOverflow = document.body.style.overflow;
+            const originalPosition = document.body.style.position;
+            const originalTop = document.body.style.top;
+            const originalWidth = document.body.style.width;
+            const originalTouchAction = document.body.style.touchAction;
+
             document.body.style.overflow = "hidden";
             document.body.style.position = "fixed";
             document.body.style.top = `-${scrollY}px`;
             document.body.style.width = "100%";
+            document.body.style.touchAction = "none";
+
+            // Also prevent touch on the backdrop container
+            if (containerElement) {
+                containerElement.style.touchAction = "none";
+            }
 
             return () => {
-                document.body.style.overflow = "";
-                document.body.style.position = "";
-                document.body.style.top = "";
-                document.body.style.width = "";
+                document.body.style.overflow = originalOverflow;
+                document.body.style.position = originalPosition;
+                document.body.style.top = originalTop;
+                document.body.style.width = originalWidth;
+                document.body.style.touchAction = originalTouchAction;
                 window.scrollTo(0, scrollY);
             };
         }
@@ -129,9 +177,12 @@
 <svelte:window on:keydown={handleKeydown} />
 
 <div
+    bind:this={containerElement}
     class="backdrop"
     class:desktop={isDesktop}
+    class:pwa={isStandalone}
     on:click={handleBackdropClick}
+    on:touchmove|preventDefault|stopPropagation
     role="presentation"
     transition:fade={{ duration: 200 }}
 >
@@ -141,6 +192,7 @@
         class:desktop={isDesktop}
         class:mobile={!isDesktop}
         class:dragging={isDragging}
+        class:pwa={isStandalone}
         style:max-height={isDesktop ? "80vh" : maxHeight}
         role="dialog"
         aria-modal="true"
@@ -164,10 +216,23 @@
         display: flex;
         align-items: flex-end;
         justify-content: center;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: auto;
     }
 
     .backdrop.desktop {
         align-items: center;
+    }
+
+    /* PWA-specific fixes */
+    .backdrop.pwa {
+        /* Prevent iOS overscroll in standalone mode */
+        position: fixed;
+        overflow: hidden;
+        touch-action: none;
     }
 
     .sheet {
@@ -182,22 +247,36 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
         will-change: transform;
-        /* Animation for initial slide up */
         animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Critical for PWA */
+        position: relative;
+        touch-action: pan-y;
+        -webkit-transform: translate3d(0, 0, 0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
     }
 
     .sheet.mobile {
         border-top-left-radius: 24px;
         border-top-right-radius: 24px;
-        touch-action: pan-y;
     }
 
     .sheet.desktop {
         border-radius: 8px;
-        max-width: 28rem; /* md:max-w-md default */
+        max-width: 28rem;
         touch-action: auto;
+    }
+
+    /* PWA-specific sheet fixes */
+    .sheet.pwa {
+        /* Force GPU acceleration in PWA mode */
+        transform: translate3d(0, 0, 0);
+        -webkit-transform: translate3d(0, 0, 0);
+        /* Prevent iOS rubber banding */
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: auto;
     }
 
     /* Remove transition when actively dragging */
@@ -212,6 +291,7 @@
         padding: 12px 0 8px 0;
         flex-shrink: 0;
         pointer-events: none;
+        touch-action: none;
     }
 
     .handle {
@@ -228,17 +308,18 @@
 
     @keyframes slideUp {
         from {
-            transform: translateY(100%);
+            transform: translate3d(0, 100%, 0);
         }
         to {
-            transform: translateY(0);
+            transform: translate3d(0, 0, 0);
         }
     }
 
-    /* Ensure child content can scroll */
+    /* Scrollable content within sheet */
     :global(.sheet-content) {
         overflow-y: auto;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
     }
 </style>
