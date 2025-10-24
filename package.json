@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "modern-screenshot": "^4.6.6",
     "tailwind-merge": "^3.3.1",

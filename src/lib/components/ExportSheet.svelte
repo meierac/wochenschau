@@ -125,197 +125,92 @@
         return `rgba(255, 255, 255, ${opacity / 100})`;
     }
 
-    // Helper function to wait for all images in an element to be loaded
-    async function waitForImagesToLoad(element: HTMLElement): Promise<void> {
-        const images = element.querySelectorAll("img");
-        const imagePromises = Array.from(images).map((img) => {
-            if (img.complete) {
-                return Promise.resolve();
-            }
-            return new Promise<void>((resolve) => {
-                img.onload = () => resolve();
-                img.onerror = () => resolve(); // Resolve even on error to not block
-            });
-        });
-
-        // Also check for background images in the element itself
-        const style = window.getComputedStyle(element);
-        const backgroundImage = style.backgroundImage;
-
-        if (backgroundImage && backgroundImage !== "none") {
-            const urlMatch = backgroundImage.match(/url\(["']?([^"']*)["']?\)/);
-            if (urlMatch && urlMatch[1]) {
-                const bgImg = new Image();
-                const bgPromise = new Promise<void>((resolve) => {
-                    const timeout = setTimeout(() => resolve(), 5000); // 5s timeout
-                    bgImg.onload = () => {
-                        clearTimeout(timeout);
-                        bgImg
-                            .decode()
-                            .then(() => resolve())
-                            .catch(() => resolve());
-                    };
-                    bgImg.onerror = () => {
-                        clearTimeout(timeout);
-                        resolve();
-                    };
-                    bgImg.src = urlMatch[1];
-                });
-                imagePromises.push(bgPromise);
-            }
-        }
-
-        await Promise.all(imagePromises);
-        console.log("[ExportSheet] All images in DOM loaded");
-    }
-
-    async function generateJPGBlob(): Promise<Blob | null> {
+    async function generateImageBlob(): Promise<Blob | null> {
         try {
             console.log(
-                "[ExportSheet] Generating JPG. Background mode:",
+                "[ExportSheet] Generating PNG. Background mode:",
                 $exportSettings.backgroundMode,
             );
             console.log(
                 "[ExportSheet] Background image exists:",
                 !!$exportSettings.backgroundImage,
             );
-            const { domToJpeg } = await import("modern-screenshot");
+
+            const { toBlob } = await import("html-to-image");
 
             const element = document.getElementById("export-preview");
             if (!element) {
                 throw new Error("Export preview element not found");
             }
 
-            // Wait for fonts to load - use more robust checking
+            // Wait for fonts to load
             console.log("[ExportSheet] Waiting for fonts to load...");
             try {
                 await document.fonts.ready;
 
-                // Additional font check: verify specific fonts are loaded
-                const fontsToCheck = [
+                // Explicitly load and verify the fonts being used
+                const fontsToLoad = [
                     $exportSettings.headerFontFamily,
                     $exportSettings.bodyFontFamily,
                 ];
 
-                for (const fontFamily of fontsToCheck) {
+                for (const fontFamily of fontsToLoad) {
                     // Extract font name from family string (e.g., "'Playfair Display', serif" -> "Playfair Display")
                     const fontMatch = fontFamily.match(/'([^']+)'/);
                     if (fontMatch) {
                         const fontName = fontMatch[1];
 
-                        // Load multiple font weights to ensure all variants are available
+                        // Try to load multiple weights to ensure font is available
                         const weights = ["300", "400", "500", "600", "700"];
-                        const loadPromises = weights.map(async (weight) => {
+                        for (const weight of weights) {
                             try {
-                                const fontSpec = `${weight} 16px "${fontName}"`;
-                                const isLoaded = document.fonts.check(fontSpec);
-
-                                if (!isLoaded) {
-                                    await document.fonts.load(fontSpec);
-                                    console.log(
-                                        `[ExportSheet] Loaded font: ${fontName} weight ${weight}`,
-                                    );
-                                }
-                            } catch (e) {
-                                // Silently continue if a weight doesn't exist
-                                console.log(
-                                    `[ExportSheet] Font ${fontName} weight ${weight} not available`,
+                                await document.fonts.load(
+                                    `${weight} 16px "${fontName}"`,
                                 );
+                            } catch (e) {
+                                // Weight might not exist, continue
                             }
-                        });
+                        }
 
-                        await Promise.all(loadPromises);
-                        console.log(
-                            `[ExportSheet] Font ${fontName} all weights loaded`,
-                        );
+                        console.log(`[ExportSheet] Loaded font: ${fontName}`);
                     }
                 }
 
                 console.log("[ExportSheet] All fonts loaded successfully");
-
-                // Force font rendering by measuring text
-                const tempCanvas = document.createElement("canvas");
-                const ctx = tempCanvas.getContext("2d");
-                if (ctx) {
-                    fontsToCheck.forEach((fontFamily) => {
-                        ctx.font = `16px ${fontFamily}`;
-                        ctx.measureText("Test"); // Forces browser to load and render font
-                    });
-                }
             } catch (error) {
                 console.warn("[ExportSheet] Font loading failed:", error);
             }
 
-            // Wait for background image to load if it exists and is active
-            if (
-                $exportSettings.backgroundMode === "image" &&
-                $exportSettings.backgroundImage
-            ) {
-                console.log("[ExportSheet] Loading background image...");
-                const img = new Image();
-                await new Promise<void>((resolve, reject) => {
-                    const timeout = setTimeout(() => {
-                        reject(new Error("Background image loading timeout"));
-                    }, 10000); // 10 second timeout
-
-                    img.onload = () => {
-                        clearTimeout(timeout);
-                        // Ensure the image is decoded
-                        img.decode()
-                            .then(() => {
-                                console.log(
-                                    "[ExportSheet] Background image decoded successfully",
-                                );
-                                resolve();
-                            })
-                            .catch(() => {
-                                console.log(
-                                    "[ExportSheet] Background image loaded (decode not supported)",
-                                );
-                                resolve();
-                            });
-                    };
-                    img.onerror = () => {
-                        clearTimeout(timeout);
-                        reject(new Error("Failed to load background image"));
-                    };
-                    img.src = $exportSettings.backgroundImage!;
-                });
-                console.log(
-                    "[ExportSheet] Background image loaded successfully",
-                );
-            }
-
-            // Wait for all images in the DOM to be loaded
-            await waitForImagesToLoad(element);
-
-            // Detect if we're on mobile and add extra delay
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(
-                navigator.userAgent,
-            );
-            const delay = isMobile ? 500 : 200; // Longer delay on mobile
+            // Longer delay to ensure fonts are fully rendered
+            await new Promise((resolve) => setTimeout(resolve, 800));
 
             console.log(
-                `[ExportSheet] Waiting ${delay}ms for render (mobile: ${isMobile})...`,
+                "[ExportSheet] Starting screenshot capture with html-to-image...",
             );
-            await new Promise((resolve) => setTimeout(resolve, delay));
 
-            // Force a reflow to ensure everything is rendered
-            element.getBoundingClientRect();
-
-            console.log("[ExportSheet] Starting screenshot capture...");
-
-            const dataUrl = await domToJpeg(element, {
-                scale: 2,
-                quality: 0.95,
-                // Use high quality settings to ensure fonts and images are properly captured
-                debug: false,
+            // Capture with html-to-image
+            // More reliable than html2canvas for fonts and images
+            const blob = await toBlob(element, {
+                cacheBust: true,
+                pixelRatio: 2,
+                backgroundColor:
+                    $exportSettings.backgroundMode === "color"
+                        ? $exportSettings.backgroundColor
+                        : null,
+                filter: (node) => {
+                    const element = node as HTMLElement;
+                    return !element.classList?.contains("no-export");
+                },
+                // Font embedding options
+                skipFonts: false,
+                preferredFontFormat: "woff2",
             });
 
-            // Convert data URL to blob
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
+            if (!blob) {
+                throw new Error("Failed to generate image blob");
+            }
 
+            console.log("[ExportSheet] Export successful");
             return blob;
         } catch (error) {
             exportError =
@@ -325,17 +220,17 @@
         }
     }
 
-    async function exportAsJPG() {
+    async function exportAsImage() {
         isExporting = true;
         exportError = "";
 
         try {
-            const blob = await generateJPGBlob();
+            const blob = await generateImageBlob();
             if (blob) {
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                link.download = `Wochenschau_W${$currentWeek}_${$currentYear}.jpg`;
+                link.download = `Wochenschau_W${$currentWeek}_${$currentYear}.png`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -359,14 +254,14 @@
         exportError = "";
 
         try {
-            const blob = await generateJPGBlob();
+            const blob = await generateImageBlob();
             if (!blob) {
                 throw new Error("Failed to generate image");
             }
 
             try {
                 await navigator.clipboard.write([
-                    new ClipboardItem({ "image/jpeg": blob }),
+                    new ClipboardItem({ "image/png": blob }),
                 ]);
 
                 setTimeout(() => {
@@ -390,15 +285,15 @@
         exportError = "";
 
         try {
-            const blob = await generateJPGBlob();
+            const blob = await generateImageBlob();
             if (!blob) {
                 throw new Error("Failed to generate image");
             }
 
             const file = new File(
                 [blob],
-                `Wochenschau_W${$currentWeek}_${$currentYear}.jpg`,
-                { type: "image/jpeg" },
+                `Wochenschau_W${$currentWeek}_${$currentYear}.png`,
+                { type: "image/png" },
             );
 
             if (navigator.share) {
@@ -815,7 +710,7 @@
                     <Button
                         variant="default"
                         disabled={isExporting}
-                        on:click={exportAsJPG}
+                        on:click={exportAsImage}
                     >
                         {#if isExporting}
                             <svg
@@ -846,7 +741,7 @@
                                     d="M12 16v-4m0 0V8m0 4H8m4 0h4m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
                                 />
                             </svg>
-                            Download JPG
+                            Download PNG
                         {/if}
                     </Button>
 
