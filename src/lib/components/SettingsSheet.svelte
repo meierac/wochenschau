@@ -13,6 +13,7 @@
     import { getWeekNumber } from "../utils/date";
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
+    import DefaultBackgroundSelector from "./DefaultBackgroundSelector.svelte";
 
     export let isDesktop = false;
 
@@ -81,47 +82,9 @@
     let isLoading = false;
     let error = "";
 
-    // Export settings state
-    let fileInputExport: HTMLInputElement;
-    let fileInputList: HTMLInputElement;
-
-    function handleBackgroundImageUpload(e: Event) {
-        const target = e.target as HTMLInputElement;
-        const file = target.files?.[0];
-        if (!file) return;
-
-        if (!file.type.startsWith("image/")) {
-            alert("Please select an image file");
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const imageData = event.target?.result as string;
-            exportSettings.setBackgroundImage(imageData);
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function handleRemoveBackgroundImage() {
-        exportSettings.setBackgroundImage(null);
-        if (fileInputExport) {
-            fileInputExport.value = "";
-        }
-        if (fileInputList) {
-            fileInputList.value = "";
-        }
-    }
-
     function handleResetExportSettings() {
         if (confirm("Reset all export settings to default?")) {
             exportSettings.reset();
-            if (fileInputExport) {
-                fileInputExport.value = "";
-            }
-            if (fileInputList) {
-                fileInputList.value = "";
-            }
         }
     }
 
@@ -1020,7 +983,6 @@
                             >
                                 Export Settings
                             </h3>
-
                             <div class="space-y-6">
                                 <!-- Typography Section -->
                                 <div class="space-y-4">
@@ -1113,74 +1075,8 @@
                                         Background
                                     </h4>
 
-                                    <!-- Background Image -->
-                                    <div>
-                                        <label
-                                            for="bg-image-export"
-                                            class="block text-xs font-medium text-muted-foreground mb-2"
-                                        >
-                                            Background Image
-                                        </label>
-                                        <input
-                                            id="bg-image-export"
-                                            type="file"
-                                            accept="image/*"
-                                            bind:this={fileInputExport}
-                                            on:change={handleBackgroundImageUpload}
-                                            class="hidden"
-                                        />
-                                        {#if $exportSettings.backgroundImage}
-                                            <div class="space-y-2">
-                                                <div
-                                                    class="relative w-full h-32 rounded border border-input overflow-hidden"
-                                                >
-                                                    <img
-                                                        src={$exportSettings.backgroundImage}
-                                                        alt="Background preview"
-                                                        class="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div class="flex gap-2">
-                                                    <Button
-                                                        variant="secondary"
-                                                        class="flex-1"
-                                                        on:click={() =>
-                                                            fileInputExport.click()}
-                                                    >
-                                                        Change Image
-                                                    </Button>
-                                                    <button
-                                                        on:click={handleRemoveBackgroundImage}
-                                                        class="px-3 py-1.5 bg-destructive text-destructive-foreground rounded text-xs font-semibold hover:opacity-90 transition-opacity"
-                                                    >
-                                                        Remove
-                                                    </button>
-                                                    <button
-                                                        on:click={() =>
-                                                            fileInputList?.click()}
-                                                        class="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-semibold hover:opacity-90 transition-opacity"
-                                                    >
-                                                        Upload New
-                                                    </button>
-                                                    <button
-                                                        on:click={() =>
-                                                            fileInputExport?.click()}
-                                                        class="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-semibold hover:opacity-90 transition-opacity"
-                                                    >
-                                                        Upload New
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        {:else}
-                                            <Button
-                                                variant="secondary"
-                                                on:click={() =>
-                                                    fileInputList.click()}
-                                            >
-                                                + Upload Image
-                                            </Button>
-                                        {/if}
-                                    </div>
+                                    <!-- Background Image Selector -->
+                                    <DefaultBackgroundSelector />
 
                                     <!-- Background Color -->
                                     <div>
@@ -1889,59 +1785,8 @@
                                     Background
                                 </h4>
 
-                                <!-- Background Image -->
-                                <div>
-                                    <label
-                                        for="bg-image-list"
-                                        class="block text-xs font-medium text-muted-foreground mb-2"
-                                    >
-                                        Background Image
-                                    </label>
-                                    <input
-                                        id="bg-image-list"
-                                        type="file"
-                                        accept="image/*"
-                                        bind:this={fileInputList}
-                                        on:change={handleBackgroundImageUpload}
-                                        class="hidden"
-                                    />
-                                    {#if $exportSettings.backgroundImage}
-                                        <div class="space-y-2">
-                                            <div
-                                                class="relative w-full h-32 rounded border border-input overflow-hidden"
-                                            >
-                                                <img
-                                                    src={$exportSettings.backgroundImage}
-                                                    alt="Background preview"
-                                                    class="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                            <div class="flex gap-2">
-                                                <Button
-                                                    variant="secondary"
-                                                    on:click={() =>
-                                                        fileInputList.click()}
-                                                >
-                                                    Change Image
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    on:click={handleRemoveBackgroundImage}
-                                                >
-                                                    Remove
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    {:else}
-                                        <Button
-                                            variant="secondary"
-                                            on:click={() =>
-                                                fileInputList.click()}
-                                        >
-                                            + Upload Image
-                                        </Button>
-                                    {/if}
-                                </div>
+                                <!-- Background Image Selector -->
+                                <DefaultBackgroundSelector />
 
                                 <!-- Background Color -->
                                 <div>

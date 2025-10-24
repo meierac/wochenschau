@@ -8,6 +8,8 @@ export interface ExportSettings {
 
   // Background
   backgroundImage: string | null; // base64 or URL
+  backgroundImageUrl: string | null; // Original URL/ID for tracking selection
+  backgroundImageType: "default" | "custom" | null; // Track image source
   backgroundColor: string;
   backgroundOpacity: number; // 0-100
 
@@ -29,6 +31,8 @@ const defaultSettings: ExportSettings = {
 
   // Background
   backgroundImage: null,
+  backgroundImageUrl: null,
+  backgroundImageType: null,
   backgroundColor: "#ffffff",
   backgroundOpacity: 100,
 
@@ -44,9 +48,20 @@ const defaultSettings: ExportSettings = {
 
 function createExportSettingsStore() {
   const stored = localStorage.getItem("exportSettings");
-  const initial = stored
-    ? { ...defaultSettings, ...JSON.parse(stored) }
-    : defaultSettings;
+  let initial: ExportSettings;
+
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    // Ensure new fields exist for backward compatibility
+    initial = {
+      ...defaultSettings,
+      ...parsed,
+      backgroundImageUrl: parsed.backgroundImageUrl ?? null,
+      backgroundImageType: parsed.backgroundImageType ?? null,
+    };
+  } else {
+    initial = defaultSettings;
+  }
 
   const { subscribe, set, update } = writable<ExportSettings>(initial);
 
@@ -67,9 +82,18 @@ function createExportSettingsStore() {
       localStorage.setItem("exportSettings", JSON.stringify(defaultSettings));
       set(defaultSettings);
     },
-    setBackgroundImage: (imageData: string | null) => {
+    setBackgroundImage: (
+      imageData: string | null,
+      url: string | null = null,
+      type: "default" | "custom" | null = null,
+    ) => {
       update((current) => {
-        const updated = { ...current, backgroundImage: imageData };
+        const updated = {
+          ...current,
+          backgroundImage: imageData,
+          backgroundImageUrl: url,
+          backgroundImageType: type,
+        };
         localStorage.setItem("exportSettings", JSON.stringify(updated));
         return updated;
       });
