@@ -32,8 +32,8 @@ export interface ExportSettings {
 
 const defaultSettings: ExportSettings = {
   // Typography
-  headerFontFamily: "'Playfair Display', serif",
-  bodyFontFamily: "'Inter', sans-serif",
+  headerFontFamily: "'Lora', serif",
+  bodyFontFamily: "'Manrope', sans-serif",
   textColor: "#000000",
 
   // Title/Headline
@@ -253,7 +253,7 @@ export const FONT_FAMILIES = [
   { name: "Noto Sans (Sans-Serif)", value: "'Noto Sans', sans-serif" },
 
   // Display/Decorative (Local)
-  { name: "Pirata One (Display)", value: "'Pirata One', display" },
+  { name: "Pirata One (Display)", value: "'Pirata One', serif" },
 
   // Monospace Fonts (Local)
   { name: "Space Mono (Mono)", value: "'Space Mono', monospace" },

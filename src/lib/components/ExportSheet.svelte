@@ -125,129 +125,10 @@
         return `rgba(255, 255, 255, ${opacity / 100})`;
     }
 
-    async function embedFontsAsBase64(): Promise<HTMLStyleElement | null> {
-        try {
-            console.log("[ExportSheet] Embedding local fonts as base64...");
-
-            const fontsToEmbed = [
-                $exportSettings.headerFontFamily,
-                $exportSettings.bodyFontFamily,
-            ];
-
-            // Remove duplicates
-            const uniqueFonts = [...new Set(fontsToEmbed)];
-
-            // Map font family names to their local file paths
-            const FONT_FILE_MAP: Record<string, string> = {
-                Archivo: "/fonts/Archivo-VariableFont_wdth,wght.ttf",
-                "Dancing Script": "/fonts/DancingScript-VariableFont_wght.ttf",
-                "Edu QLD Hand": "/fonts/EduQLDHand-VariableFont_wght.ttf",
-                "Edu SA Hand": "/fonts/EduSAHand-VariableFont_wght.ttf",
-                Handlee: "/fonts/Handlee-Regular.ttf",
-                Lora: "/fonts/Lora-VariableFont_wght.ttf",
-                Manrope: "/fonts/Manrope-VariableFont_wght.ttf",
-                "Ms Madi": "/fonts/MsMadi-Regular.ttf",
-                "Noto Sans": "/fonts/NotoSans-VariableFont_wdth,wght.ttf",
-                "Pirata One": "/fonts/PirataOne-Regular.ttf",
-                "Space Mono": "/fonts/SpaceMono-Regular.ttf",
-            };
-
-            let fontFaceCSS = "";
-
-            for (const fontFamily of uniqueFonts) {
-                // Extract font name from family string (e.g., "'Lora', serif" -> "Lora")
-                const fontMatch = fontFamily.match(/'([^']+)'/);
-                if (!fontMatch) {
-                    console.log(
-                        `[ExportSheet] Skipping font family: ${fontFamily} (no match)`,
-                    );
-                    continue;
-                }
-
-                const fontName = fontMatch[1];
-                console.log(`[ExportSheet] Processing font: ${fontName}`);
-
-                // Get the font file path
-                const fontPath = FONT_FILE_MAP[fontName];
-                if (!fontPath) {
-                    console.warn(
-                        `[ExportSheet] Font file not found for: ${fontName}`,
-                    );
-                    continue;
-                }
-
-                try {
-                    console.log(
-                        `[ExportSheet] Fetching font file: ${fontPath}`,
-                    );
-
-                    // Fetch the local font file
-                    const response = await fetch(fontPath);
-                    if (!response.ok) {
-                        console.warn(
-                            `[ExportSheet] Failed to fetch font: ${fontPath}`,
-                        );
-                        continue;
-                    }
-
-                    const arrayBuffer = await response.arrayBuffer();
-
-                    // Convert to base64
-                    const base64 = btoa(
-                        new Uint8Array(arrayBuffer).reduce(
-                            (data, byte) => data + String.fromCharCode(byte),
-                            "",
-                        ),
-                    );
-
-                    console.log(
-                        `[ExportSheet] Font converted to base64 (${base64.length} chars)`,
-                    );
-
-                    // Create @font-face rule with embedded font
-                    // Using font-weight 100 900 to support all weights for variable fonts
-                    fontFaceCSS += `
-                        @font-face {
-                            font-family: '${fontName}';
-                            src: url(data:font/truetype;base64,${base64}) format('truetype');
-                            font-weight: 100 900;
-                            font-style: normal;
-                            font-display: block;
-                        }
-                    `;
-
-                    console.log(
-                        `[ExportSheet] Successfully embedded font: ${fontName}`,
-                    );
-                } catch (error) {
-                    console.error(
-                        `[ExportSheet] Failed to process font ${fontName}:`,
-                        error,
-                    );
-                }
-            }
-
-            if (fontFaceCSS) {
-                // Create and inject style element with embedded fonts
-                const style = document.createElement("style");
-                style.setAttribute("data-font-embed", "true");
-                style.textContent = fontFaceCSS;
-                document.head.appendChild(style);
-                console.log("[ExportSheet] Font embedding complete");
-                return style;
-            }
-
-            console.log("[ExportSheet] No fonts to embed");
-            return null;
-        } catch (error) {
-            console.error("[ExportSheet] Font embedding failed:", error);
-            return null;
-        }
-    }
+    // Removed custom embedFontsAsBase64 implementation.
+    // snapdom's built-in font embedding will be used instead (embedFonts: true).
 
     async function generateImageBlob(): Promise<Blob | null> {
-        let embeddedFontStyle: HTMLStyleElement | null = null;
-
         try {
             console.log(
                 "[ExportSheet] Generating PNG. Background mode:",
@@ -265,66 +146,28 @@
                 throw new Error("Export preview element not found");
             }
 
-            // Wait for fonts to load normally first
-            console.log("[ExportSheet] Waiting for fonts to load...");
-            try {
-                await document.fonts.ready;
+            // Wait for all fonts declared in CSS to finish loading
+            await document.fonts.ready;
 
-                // Explicitly load and verify the fonts being used
-                const fontsToLoad = [
-                    $exportSettings.headerFontFamily,
-                    $exportSettings.bodyFontFamily,
-                ];
-
-                for (const fontFamily of fontsToLoad) {
-                    // Extract font name from family string
-                    const fontMatch = fontFamily.match(/'([^']+)'/);
-                    if (fontMatch) {
-                        const fontName = fontMatch[1];
-
-                        // Try to load multiple weights
-                        const weights = ["300", "400", "500", "600", "700"];
-                        for (const weight of weights) {
-                            try {
-                                await document.fonts.load(
-                                    `${weight} 16px "${fontName}"`,
-                                );
-                            } catch (e) {
-                                // Weight might not exist, continue
-                            }
-                        }
-
-                        console.log(`[ExportSheet] Loaded font: ${fontName}`);
-                    }
-                }
-
-                console.log("[ExportSheet] All fonts loaded successfully");
-            } catch (error) {
-                console.warn("[ExportSheet] Font loading failed:", error);
-            }
-
-            // Embed fonts as base64 for html-to-image
-            embeddedFontStyle = await embedFontsAsBase64();
-
-            // Delay to ensure fonts are fully rendered
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            // Small delay to allow layout & paint to settle
+            await new Promise((resolve) => setTimeout(resolve, 150));
 
             console.log(
                 "[ExportSheet] Starting screenshot capture with snapdom...",
             );
 
-            // Capture with snapdom at high quality (4x scale for crisp exports)
+            // 4. Capture with snapdom at high resolution
             const blob = await snapdom.toBlob(element, {
                 type: "png",
-                scale: 4, // 4x scale for very high quality (3600px or 1600px output)
-                embedFonts: false, // We manually embed fonts as base64
+                scale: 4,
+                embedFonts: true, // Let snapdom handle font embedding
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
                         ? $exportSettings.backgroundColor
                         : null,
                 filter: (node) => {
-                    const element = node as Element;
-                    return !element.classList?.contains("no-export");
+                    const el = node as Element;
+                    return !el.classList?.contains("no-export");
                 },
             });
 
@@ -340,11 +183,7 @@
             console.error("Export error:", error);
             return null;
         } finally {
-            // Clean up embedded font style
-            if (embeddedFontStyle && embeddedFontStyle.parentNode) {
-                embeddedFontStyle.parentNode.removeChild(embeddedFontStyle);
-                console.log("[ExportSheet] Cleaned up embedded font styles");
-            }
+            // No manual font cleanup needed (using snapdom embedFonts)
         }
     }
 
