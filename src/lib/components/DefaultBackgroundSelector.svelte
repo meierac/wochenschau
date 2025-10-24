@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { exportSettings } from "../stores/exportSettings";
     import IconButton from "./IconButton.svelte";
 
@@ -7,6 +8,38 @@
     let fileInput: HTMLInputElement;
     let errorMessage: string | null = null;
     let isLoading = false;
+
+    onMount(() => {
+        console.log("[DefaultBackgroundSelector] Component mounted");
+        console.log(
+            "[DefaultBackgroundSelector] Current backgroundImage:",
+            $exportSettings.backgroundImage
+                ? `exists (${$exportSettings.backgroundImage.length} chars)`
+                : "null",
+        );
+        console.log(
+            "[DefaultBackgroundSelector] Current backgroundImageUrl:",
+            $exportSettings.backgroundImageUrl,
+        );
+        console.log(
+            "[DefaultBackgroundSelector] Current backgroundImageType:",
+            $exportSettings.backgroundImageType,
+        );
+    });
+
+    // Reactive statement to track changes
+    $: {
+        console.log(
+            "[DefaultBackgroundSelector] Reactive update - backgroundImage:",
+            $exportSettings.backgroundImage
+                ? `exists (${$exportSettings.backgroundImage.length} chars)`
+                : "null",
+        );
+        console.log(
+            "[DefaultBackgroundSelector] Reactive update - backgroundImageUrl:",
+            $exportSettings.backgroundImageUrl,
+        );
+    }
 
     // Predefined images from public/backgrounds folder
     const predefinedImages = [
@@ -25,17 +58,13 @@
         "IMG_3186.JPG",
     ].map((filename) => ({
         id: filename,
-        url: `/backgrounds/${filename}`,
+        url: `/wochenschau/backgrounds/${filename}`,
         name: filename.replace(/\.(JPG|PNG)$/i, ""),
     }));
 
     // Initialize background type based on current settings
     $: {
-        if ($exportSettings.backgroundImage) {
-            backgroundType = "image";
-        } else {
-            backgroundType = "color";
-        }
+        backgroundType = $exportSettings.backgroundMode;
     }
 
     $: selectedImageId = $exportSettings.backgroundImageUrl;
@@ -58,8 +87,12 @@
         isLoading = true;
         errorMessage = null;
         try {
+            console.log("Loading image from URL:", url);
             const base64 = await loadImageAsBase64(url);
+            console.log("Image loaded, base64 length:", base64.length);
             await exportSettings.setBackgroundImage(base64, id, "default");
+            exportSettings.setBackgroundMode("image");
+            console.log("Background image set successfully");
         } catch (error) {
             console.error("Error loading background:", error);
             errorMessage = "Failed to load background image.";
@@ -98,6 +131,7 @@
                     "custom",
                     "custom",
                 );
+                exportSettings.setBackgroundMode("image");
                 errorMessage = null;
             } catch (error) {
                 console.error("Error uploading image:", error);
@@ -125,10 +159,7 @@
     }
 
     function handleTypeChange(type: BackgroundType) {
-        backgroundType = type;
-        if (type === "color") {
-            handleClearImage();
-        }
+        exportSettings.setBackgroundMode(type);
     }
 </script>
 

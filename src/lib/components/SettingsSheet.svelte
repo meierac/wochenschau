@@ -1906,7 +1906,7 @@
                                 <!-- Background Image Selector -->
                                 <DefaultBackgroundSelector />
 
-                                {#if !$exportSettings.backgroundImage}
+                                {#if $exportSettings.backgroundMode === "color"}
                                     <!-- Background Color -->
                                     <div>
                                         <label

@@ -14,6 +14,7 @@ export interface ExportSettings {
   showWeekNumber: boolean; // Show "KW XX" below title
 
   // Background
+  backgroundMode: "color" | "image"; // Which background to use
   backgroundImage: string | null; // base64 or URL (loaded from IndexedDB)
   backgroundImageUrl: string | null; // Original URL/ID for tracking selection
   backgroundImageType: "default" | "custom" | null; // Track image source
@@ -43,6 +44,7 @@ const defaultSettings: ExportSettings = {
   showWeekNumber: false,
 
   // Background
+  backgroundMode: "color",
   backgroundImage: null,
   backgroundImageUrl: null,
   backgroundImageType: null,
@@ -69,6 +71,7 @@ function createExportSettingsStore() {
     initial = {
       ...defaultSettings,
       ...parsed,
+      backgroundMode: parsed.backgroundMode ?? "color",
       backgroundImageUrl: parsed.backgroundImageUrl ?? null,
       backgroundImageType: parsed.backgroundImageType ?? null,
       // Don't load backgroundImage from localStorage - will load from IndexedDB
@@ -89,11 +92,12 @@ function createExportSettingsStore() {
         if (base64) {
           // Update with current settings merged with image
           update((current) => {
-            const updated = {
+            const updated: ExportSettings = {
               ...current,
               backgroundImage: base64,
               backgroundImageUrl: metadata.url,
               backgroundImageType: metadata.type,
+              backgroundMode: "image" as const, // Set mode to image when loading from IndexedDB
             };
             console.log("Background image loaded from IndexedDB:", {
               url: metadata.url,
@@ -121,11 +125,12 @@ function createExportSettingsStore() {
           if (base64) {
             // Update with current settings merged with image
             update((current) => {
-              const updated = {
+              const updated: ExportSettings = {
                 ...current,
                 backgroundImage: base64,
                 backgroundImageUrl: parsed.backgroundImageUrl ?? null,
                 backgroundImageType: parsed.backgroundImageType ?? null,
+                backgroundMode: "image" as const, // Set mode to image when migrating
               };
               return updated;
             });
@@ -215,6 +220,17 @@ function createExportSettingsStore() {
     },
     // Expose initialize function for manual refresh if needed
     refreshImage: initializeImage,
+    setBackgroundMode: (mode: "color" | "image") => {
+      update((current) => {
+        const updated = {
+          ...current,
+          backgroundMode: mode,
+        };
+        saveToLocalStorage(updated);
+        console.log("Background mode set to:", mode);
+        return updated;
+      });
+    },
   };
 }
 

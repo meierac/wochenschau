@@ -54,7 +54,50 @@
     // Initialize on component mount
     onMount(() => {
         loadPreferences();
+        console.log(
+            "ExportSheet mounted. Background image:",
+            $exportSettings.backgroundImage
+                ? `${$exportSettings.backgroundImage.substring(0, 50)}...`
+                : "none",
+        );
+        console.log(
+            "Background image URL:",
+            $exportSettings.backgroundImageUrl,
+        );
+        console.log(
+            "Background image type:",
+            $exportSettings.backgroundImageType,
+        );
     });
+
+    // Reactive debugging - log when background image changes
+    $: {
+        console.log(
+            "[ExportSheet] Background image changed:",
+            $exportSettings.backgroundImage
+                ? `Data URL of length ${$exportSettings.backgroundImage.length}`
+                : "null",
+        );
+        console.log(
+            "[ExportSheet] Background URL ID:",
+            $exportSettings.backgroundImageUrl,
+        );
+        console.log(
+            "[ExportSheet] Background type:",
+            $exportSettings.backgroundImageType,
+        );
+        console.log(
+            "[ExportSheet] Background MODE:",
+            $exportSettings.backgroundMode,
+        );
+        console.log(
+            "[ExportSheet] Will use:",
+            $exportSettings.backgroundMode === "image" &&
+                $exportSettings.backgroundImage
+                ? "BACKGROUND IMAGE"
+                : "SOLID COLOR",
+        );
+    }
 
     function handleClose() {
         dispatch("close");
@@ -84,11 +127,34 @@
 
     async function generateJPGBlob(): Promise<Blob | null> {
         try {
+            console.log(
+                "[ExportSheet] Generating JPG. Background mode:",
+                $exportSettings.backgroundMode,
+            );
+            console.log(
+                "[ExportSheet] Background image exists:",
+                !!$exportSettings.backgroundImage,
+            );
             const { domToJpeg } = await import("modern-screenshot");
 
             const element = document.getElementById("export-preview");
             if (!element) {
                 throw new Error("Export preview element not found");
+            }
+
+            // Wait for background image to load if it exists and is active
+            if (
+                $exportSettings.backgroundMode === "image" &&
+                $exportSettings.backgroundImage
+            ) {
+                const img = new Image();
+                await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve();
+                    img.onerror = () =>
+                        reject(new Error("Failed to load background image"));
+                    img.src = $exportSettings.backgroundImage!;
+                });
+                console.log("Background image loaded successfully");
             }
 
             const dataUrl = await domToJpeg(element, {
@@ -373,12 +439,13 @@
                             ? '900px'
                             : '400px'}; max-width: {layoutMode === 'grid'
                             ? '900px'
-                            : '400px'}; position: relative; background-color: {$exportSettings.backgroundColor}; background-image: {$exportSettings.backgroundImage
-                            ? `url(${$exportSettings.backgroundImage})`
-                            : 'none'}; background-size: cover; background-position: center; color: {$exportSettings.textColor}; padding: 1.5rem;"
+                            : '400px'}; position: relative; {$exportSettings.backgroundMode ===
+                            'image' && $exportSettings.backgroundImage
+                            ? `background-image: url(${$exportSettings.backgroundImage}); background-size: cover; background-position: center;`
+                            : `background-color: ${$exportSettings.backgroundColor};`} color: {$exportSettings.textColor}; padding: 1.5rem;"
                     >
-                        <!-- Background Overlay -->
-                        {#if $exportSettings.backgroundImage}
+                        <!-- Background Overlay (only for solid color mode) -->
+                        {#if $exportSettings.backgroundMode === "color"}
                             <div
                                 style="position: absolute; inset: 0; background-color: {$exportSettings.backgroundColor}; opacity: {(100 -
                                     $exportSettings.backgroundOpacity) /
