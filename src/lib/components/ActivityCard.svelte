@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { CalendarItem } from "../types/index";
     import { createEventDispatcher } from "svelte";
+    import IconButton from "./IconButton.svelte";
 
     export let activity: CalendarItem;
 
@@ -151,51 +152,56 @@
             </div>
 
             <!-- Action buttons - visible on mobile, hover overlay on desktop -->
-            {#if !isDesktop}
-                <!-- Mobile: Always visible buttons -->
-                <div class="flex gap-0 shrink-0">
-                    <button
-                        on:click={handleEdit}
-                        class="px-3 py-2 hover:bg-primary/20 rounded-xl text-primary transition-colors font-semibold md:text-lg active:bg-primary/30"
-                        aria-label="Edit activity"
-                        title="Edit activity"
+
+            <!-- Mobile: Always visible buttons -->
+            <div
+                class="bg-muted flex gap-0 shrink-0 absolute right-1 top-1 {isHovering &&
+                isDesktop
+                    ? 'opacity-100'
+                    : 'opacity-0 pointer-events-none'}"
+            >
+                <IconButton
+                    on:click={handleEdit}
+                    class="px-1 py-1 hover:bg-primary/20 rounded text-primary transition-colors font-semibold md:text-lg active:bg-primary/30"
+                    aria-label="Edit activity"
+                    title="Edit activity"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        /></svg
                     >
-                        ✏️
-                    </button>
-                    <button
-                        on:click={handleDelete}
-                        class="px-3 py-2 hover:bg-destructive/20 rounded-xl text-destructive transition-colors font-semibold md:text-lg active:bg-destructive/30"
-                        aria-label="Delete activity"
-                        title="Delete activity"
-                    >
-                        🗑️
-                    </button>
-                </div>
-            {:else}
-                <!-- Desktop: Hover overlay buttons -->
-                <div
-                    class="absolute inset-0 rounded flex items-center justify-end gap-2 pr-3 transition-opacity duration-200 {isHovering
+                </IconButton>
+                <IconButton
+                    on:click={handleDelete}
+                    class="px-1 py-1 hover:bg-destructive/20 rounded text-destructive transition-colors font-semibold md:text-lg active:bg-destructive/30 {isHovering &&
+                    isDesktop
                         ? 'opacity-100'
                         : 'opacity-0 pointer-events-none'}"
+                    aria-label="Delete activity"
+                    title="Delete activity"
                 >
-                    <button
-                        on:click={handleEdit}
-                        class="px-2 py-1 bg-primary/80 hover:bg-primary text-white rounded transition-colors font-semibold text-sm flex items-center justify-center"
-                        aria-label="Edit activity"
-                        title="Edit activity"
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        ><path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        /></svg
                     >
-                        ✎
-                    </button>
-                    <button
-                        on:click={handleDelete}
-                        class="px-2 py-1 bg-destructive/80 hover:bg-destructive text-white rounded transition-colors font-semibold text-sm flex items-center justify-center"
-                        aria-label="Delete activity"
-                        title="Delete activity"
-                    >
-                        ✕
-                    </button>
-                </div>
-            {/if}
+                </IconButton>
+            </div>
         </div>
     </div>
 </div>

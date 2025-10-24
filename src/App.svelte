@@ -415,7 +415,7 @@
         <!-- Desktop Layout -->
         <div class="max-w-7xl mx-auto px-4 py-0 h-screen flex flex-col">
             <!-- Desktop Header -->
-            <div class="mb-4 flex items-center justify-between">
+            <div class="m-4 flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <h1 class="text-4xl font-bold">📅 Wochenschau</h1>
                     <button
