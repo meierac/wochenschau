@@ -15,6 +15,7 @@
     import Button from "./Button.svelte";
     import DefaultBackgroundSelector from "./DefaultBackgroundSelector.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
+    import SettingIcon from "./SettingIcon.svelte";
 
     export let isDesktop = false;
 
@@ -34,31 +35,31 @@
         {
             id: "templates",
             label: "Activity Templates",
-            icon: "⭐",
+            icon: "star",
             description: `${$templates.length} template${$templates.length !== 1 ? "s" : ""}`,
         },
         {
             id: "ical",
             label: "Calendar Subscriptions",
-            icon: "🔗",
+            icon: "link",
             description: `${$subscriptions.length} subscription${$subscriptions.length !== 1 ? "s" : ""}`,
         },
         {
             id: "export",
             label: "Export Settings",
-            icon: "🎨",
+            icon: "palette",
             description: "Customize export appearance",
         },
         {
             id: "bibleVerse",
             label: "Bible Verse of the Day",
-            icon: "✝️",
+            icon: "book",
             description: $bibleVerse.enabled ? "Enabled" : "Disabled",
         },
         {
             id: "about",
             label: "About",
-            icon: "ℹ️",
+            icon: "info",
             description: `Version ${APP_VERSION}`,
         },
     ];
@@ -475,23 +476,19 @@
                                 <button
                                     on:click={() => selectSetting(item.id)}
                                     style="border-radius: 28px;"
-                                    class="w-full p-4 bg-muted/50 border border-border hover:border-primary transition-colors text-left flex items-center justify-between"
+                                    class="w-full p-4 bg-muted/50 border border-border hover:border-primary transition-colors text-left flex items-center justify-between gap-3"
                                 >
-                                    <div>
+                                    <div class="shrink-0 self-center">
+                                        <SettingIcon icon={item.icon} />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
                                         <div
-                                            class="flex items-center gap-3 mb-1"
+                                            class="font-semibold text-foreground mb-1"
                                         >
-                                            <span class="text-xl"
-                                                >{item.icon}</span
-                                            >
-                                            <span
-                                                class="font-semibold text-foreground"
-                                            >
-                                                {item.label}
-                                            </span>
+                                            {item.label}
                                         </div>
                                         <div
-                                            class="text-xs text-muted-foreground ml-9"
+                                            class="text-xs text-muted-foreground"
                                         >
                                             {item.description}
                                         </div>
@@ -844,7 +841,19 @@
                                             on:click={() =>
                                                 bibleVerse.refreshVerse()}
                                         >
-                                            🔄 Get New Verse
+                                            <svg
+                                                class="w-4 h-4 inline-block mr-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                ><path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                /></svg
+                                            >
+                                            Get New Verse
                                         </Button>
                                     {/if}
                                 </div>
@@ -1352,27 +1361,31 @@
                         {#each settingItems as item}
                             <button
                                 on:click={() => selectSetting(item.id)}
-                                class={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
+                                style="border-radius: 28px;"
+                                class={`w-full p-3 transition-colors text-left flex items-center justify-between gap-3 ${
                                     selectedSetting === item.id
                                         ? "bg-primary text-primary-foreground"
-                                        : "text-foreground hover:bg-muted"
+                                        : "hover:bg-muted/50"
                                 }`}
                             >
-                                <div class="flex items-center gap-3">
-                                    <span class="text-lg">{item.icon}</span>
-                                    <div>
-                                        <div class="font-semibold text-sm">
-                                            {item.label}
-                                        </div>
-                                        <div
-                                            class={`text-xs ${
-                                                selectedSetting === item.id
-                                                    ? "text-primary-foreground/70"
-                                                    : "text-muted-foreground"
-                                            }`}
-                                        >
-                                            {item.description}
-                                        </div>
+                                <div class="shrink-0 self-center">
+                                    <SettingIcon
+                                        icon={item.icon}
+                                        size="w-5 h-5"
+                                    />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-semibold text-sm">
+                                        {item.label}
+                                    </div>
+                                    <div
+                                        class={`text-xs ${
+                                            selectedSetting === item.id
+                                                ? "text-primary-foreground/70"
+                                                : "text-muted-foreground"
+                                        }`}
+                                    >
+                                        {item.description}
                                     </div>
                                 </div>
                             </button>
@@ -2182,7 +2195,19 @@
                                         on:click={() =>
                                             bibleVerse.refreshVerse()}
                                     >
-                                        🔄 Get New Verse
+                                        <svg
+                                            class="w-4 h-4 inline-block mr-1"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            ><path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                            /></svg
+                                        >
+                                        Get New Verse
                                     </Button>
                                 {/if}
                             </div>

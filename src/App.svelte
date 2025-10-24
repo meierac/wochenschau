@@ -32,7 +32,7 @@
         { subscription: any; items: CalendarItem[] }
     > = new Map();
 
-    const REFRESH_INTERVAL_HOURS = 24; // Auto-refresh if data is older than 24 hours
+    const REFRESH_INTERVAL_HOURS = 72; // Auto-refresh if data is older than 24 hours
 
     function handleResize() {
         isDesktop = window.innerWidth >= 768;
@@ -417,7 +417,16 @@
             <!-- Desktop Header -->
             <div class="m-4 flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <h1 class="text-4xl font-bold">📅 Wochenschau</h1>
+                    <h1 class="text-4xl font-bold flex items-center gap-3">
+                        <img
+                            src="/wochenschau/favicon.svg"
+                            alt="Wochenschau Logo"
+                            width="40"
+                            height="40"
+                            class="rounded-lg"
+                        />
+                        Wochenschau
+                    </h1>
                     <button
                         on:click={() => (showWeekPicker = true)}
                         class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
@@ -537,8 +546,17 @@
                 class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/80 to-transparent px-4 py-3 flex items-center justify-between pointer-events-none backdrop-blur-lg"
                 style="mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
             >
-                <h1 class="text-2xl font-bold pointer-events-auto">
-                    📅 Wochenschau
+                <h1
+                    class="text-2xl font-bold pointer-events-auto flex items-center gap-2"
+                >
+                    <img
+                        src="/wochenschau/favicon.svg"
+                        alt="Wochenschau Logo"
+                        width="32"
+                        height="32"
+                        class="rounded-lg"
+                    />
+                    Wochenschau
                 </h1>
                 <button
                     on:click={handleRefreshSubscriptions}
