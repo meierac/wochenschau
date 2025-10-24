@@ -21,7 +21,6 @@
     let lastTime = 0;
     let lastY = 0;
     let sheetElement: HTMLDivElement | null = null;
-    let contentElement: HTMLElement | null = null;
 
     const SWIPE_THRESHOLD = 100; // Distance in pixels to trigger close
     const VELOCITY_THRESHOLD = 0.5; // Velocity threshold for quick swipe
@@ -30,6 +29,21 @@
         if (e.target === e.currentTarget) {
             dispatch("close");
         }
+    }
+
+    function findScrollableParent(element: HTMLElement): HTMLElement | null {
+        let current = element;
+        while (current && current !== sheetElement) {
+            const overflowY = window.getComputedStyle(current).overflowY;
+            if (
+                (overflowY === "auto" || overflowY === "scroll") &&
+                current.scrollHeight > current.clientHeight
+            ) {
+                return current;
+            }
+            current = current.parentElement as HTMLElement;
+        }
+        return null;
     }
 
     function handleTouchStart(e: TouchEvent) {
@@ -51,21 +65,6 @@
         lastTime = Date.now();
         isDragging = true;
         velocity = 0;
-    }
-
-    function findScrollableParent(element: HTMLElement): HTMLElement | null {
-        let current = element;
-        while (current && current !== sheetElement) {
-            const overflowY = window.getComputedStyle(current).overflowY;
-            if (
-                (overflowY === "auto" || overflowY === "scroll") &&
-                current.scrollHeight > current.clientHeight
-            ) {
-                return current;
-            }
-            current = current.parentElement as HTMLElement;
-        }
-        return null;
     }
 
     function handleTouchMove(e: TouchEvent) {
@@ -132,11 +131,40 @@
         // Prevent body scroll when sheet is open on mobile
         if (!isDesktop) {
             document.body.style.overflow = "hidden";
+
+            // Add touch event listeners with passive: false for iOS
+            if (sheetElement) {
+                sheetElement.addEventListener("touchstart", handleTouchStart, {
+                    passive: false,
+                });
+                sheetElement.addEventListener("touchmove", handleTouchMove, {
+                    passive: false,
+                });
+                sheetElement.addEventListener("touchend", handleTouchEnd, {
+                    passive: false,
+                });
+            }
         }
 
         return () => {
             if (!isDesktop) {
                 document.body.style.overflow = "";
+
+                // Clean up event listeners
+                if (sheetElement) {
+                    sheetElement.removeEventListener(
+                        "touchstart",
+                        handleTouchStart,
+                    );
+                    sheetElement.removeEventListener(
+                        "touchmove",
+                        handleTouchMove,
+                    );
+                    sheetElement.removeEventListener(
+                        "touchend",
+                        handleTouchEnd,
+                    );
+                }
             }
         };
     });
@@ -163,23 +191,21 @@
          border-radius: 36px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
             max-height: {isDesktop ? '80vh' : maxHeight};
-            transform: translateY({isDragging ? translateY : 0}px);
+            transform: translateY({translateY}px);
             transition: {isDragging
             ? 'none'
             : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'};
             touch-action: none;
+            will-change: transform;
         "
-        on:touchstart={handleTouchStart}
-        on:touchmove={handleTouchMove}
-        on:touchend={handleTouchEnd}
         in:fly={{ y: isDesktop ? 0 : 500, duration: 300, easing: quintOut }}
         out:fly={{ y: isDesktop ? 0 : 500, duration: 250, easing: quintOut }}
     >
         <!-- Swipe indicator for mobile -->
         {#if !isDesktop}
             <div
-                class="absolute w-full top-0 flex justify-center pt-1 pb-0 cursor-grab active:cursor-grabbing"
-                style="touch-action: none; -webkit-user-select: none; user-select: none;"
+                class="absolute w-full top-0 flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+                style="touch-action: none; -webkit-user-select: none; user-select: none; pointer-events: none;"
             >
                 <div
                     class="w-10 h-1 rounded-full bg-muted-foreground/30"
