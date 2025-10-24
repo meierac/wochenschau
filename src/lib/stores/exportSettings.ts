@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+import { imageStorage } from "./imageStorage";
 
 export interface ExportSettings {
   // Typography
@@ -13,7 +14,7 @@ export interface ExportSettings {
   showWeekNumber: boolean; // Show "KW XX" below title
 
   // Background
-  backgroundImage: string | null; // base64 or URL
+  backgroundImage: string | null; // base64 or URL (loaded from IndexedDB)
   backgroundImageUrl: string | null; // Original URL/ID for tracking selection
   backgroundImageType: "default" | "custom" | null; // Track image source
   backgroundColor: string;
@@ -70,6 +71,8 @@ function createExportSettingsStore() {
       ...parsed,
       backgroundImageUrl: parsed.backgroundImageUrl ?? null,
       backgroundImageType: parsed.backgroundImageType ?? null,
+      // Don't load backgroundImage from localStorage - will load from IndexedDB
+      backgroundImage: null,
     };
   } else {
     initial = defaultSettings;
@@ -77,39 +80,141 @@ function createExportSettingsStore() {
 
   const { subscribe, set, update } = writable<ExportSettings>(initial);
 
+  // Initialize and load background image from IndexedDB
+  const initializeImage = async () => {
+    try {
+      const metadata = await imageStorage.getImageMetadata();
+      if (metadata) {
+        const base64 = await imageStorage.getImageAsBase64();
+        if (base64) {
+          // Update with current settings merged with image
+          update((current) => {
+            const updated = {
+              ...current,
+              backgroundImage: base64,
+              backgroundImageUrl: metadata.url,
+              backgroundImageType: metadata.type,
+            };
+            console.log("Background image loaded from IndexedDB:", {
+              url: metadata.url,
+              type: metadata.type,
+              hasImage: !!base64,
+            });
+            return updated;
+          });
+          return;
+        }
+      }
+
+      // Migration: Check if old localStorage has image data
+      const stored = localStorage.getItem("exportSettings");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.backgroundImage) {
+          console.log(
+            "Migrating background image from localStorage to IndexedDB...",
+          );
+          // Migrate to IndexedDB
+          await imageStorage.migrateFromLocalStorage(parsed.backgroundImage);
+          // Load it back
+          const base64 = await imageStorage.getImageAsBase64();
+          if (base64) {
+            // Update with current settings merged with image
+            update((current) => {
+              const updated = {
+                ...current,
+                backgroundImage: base64,
+                backgroundImageUrl: parsed.backgroundImageUrl ?? null,
+                backgroundImageType: parsed.backgroundImageType ?? null,
+              };
+              return updated;
+            });
+          }
+          // Clean up localStorage - remove the large base64 string
+          delete parsed.backgroundImage;
+          localStorage.setItem("exportSettings", JSON.stringify(parsed));
+          console.log("Migration complete");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load background image from IndexedDB:", error);
+    }
+  };
+
+  // Start loading image immediately
+  initializeImage();
+
+  // Helper to save settings to localStorage (without backgroundImage)
+  const saveToLocalStorage = (settings: ExportSettings) => {
+    const { backgroundImage, ...settingsWithoutImage } = settings;
+    localStorage.setItem(
+      "exportSettings",
+      JSON.stringify(settingsWithoutImage),
+    );
+  };
+
   return {
     subscribe,
     set: (value: ExportSettings) => {
-      localStorage.setItem("exportSettings", JSON.stringify(value));
+      saveToLocalStorage(value);
       set(value);
     },
     update: (updater: (value: ExportSettings) => ExportSettings) => {
       update((current) => {
         const updated = updater(current);
-        localStorage.setItem("exportSettings", JSON.stringify(updated));
+        saveToLocalStorage(updated);
         return updated;
       });
     },
-    reset: () => {
-      localStorage.setItem("exportSettings", JSON.stringify(defaultSettings));
+    reset: async () => {
+      // Clear IndexedDB image
+      try {
+        await imageStorage.deleteImage();
+      } catch (error) {
+        console.error("Failed to delete image from IndexedDB:", error);
+      }
+      saveToLocalStorage(defaultSettings);
       set(defaultSettings);
     },
-    setBackgroundImage: (
+    setBackgroundImage: async (
       imageData: string | null,
       url: string | null = null,
       type: "default" | "custom" | null = null,
     ) => {
-      update((current) => {
-        const updated = {
-          ...current,
-          backgroundImage: imageData,
-          backgroundImageUrl: url,
-          backgroundImageType: type,
-        };
-        localStorage.setItem("exportSettings", JSON.stringify(updated));
-        return updated;
-      });
+      try {
+        if (imageData) {
+          // Store in IndexedDB
+          await imageStorage.setImageFromBase64(imageData, url, type);
+          console.log("Image stored in IndexedDB:", { url, type });
+        } else {
+          // Clear from IndexedDB
+          await imageStorage.deleteImage();
+          console.log("Image cleared from IndexedDB");
+        }
+
+        // Update store with the image data and metadata
+        update((current) => {
+          const updated = {
+            ...current,
+            backgroundImage: imageData,
+            backgroundImageUrl: url,
+            backgroundImageType: type,
+          };
+          saveToLocalStorage(updated);
+          console.log("Store updated with background image:", {
+            hasImage: !!imageData,
+            url,
+            type,
+          });
+          return updated;
+        });
+      } catch (error) {
+        console.error("Failed to save background image:", error);
+        throw error;
+      }
     },
+    // Expose initialize function for manual refresh if needed
+    refreshImage: initializeImage,
   };
 }
 

@@ -1155,54 +1155,6 @@
 
                                     <!-- Background Image Selector -->
                                     <DefaultBackgroundSelector />
-
-                                    <!-- Background Color -->
-                                    <div>
-                                        <label
-                                            for="bg-color-export"
-                                            class="block text-xs font-medium text-muted-foreground mb-2"
-                                        >
-                                            Background Color
-                                        </label>
-                                        <div class="flex gap-2">
-                                            <input
-                                                id="bg-color-list"
-                                                type="color"
-                                                bind:value={
-                                                    $exportSettings.backgroundColor
-                                                }
-                                                class="w-full h-10 rounded cursor-pointer border border-input"
-                                            />
-                                            <input
-                                                type="text"
-                                                bind:value={
-                                                    $exportSettings.backgroundColor
-                                                }
-                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
-                                                placeholder="#ffffff"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <!-- Background Opacity -->
-                                    <div>
-                                        <label
-                                            for="bg-opacity-export"
-                                            class="block text-xs font-medium text-muted-foreground mb-2"
-                                        >
-                                            Background Opacity: {$exportSettings.backgroundOpacity}%
-                                        </label>
-                                        <input
-                                            id="bg-opacity-export"
-                                            type="range"
-                                            min="0"
-                                            max="100"
-                                            bind:value={
-                                                $exportSettings.backgroundOpacity
-                                            }
-                                            class="w-full"
-                                        />
-                                    </div>
                                 </div>
 
                                 <!-- Styling Section -->
@@ -1954,53 +1906,55 @@
                                 <!-- Background Image Selector -->
                                 <DefaultBackgroundSelector />
 
-                                <!-- Background Color -->
-                                <div>
-                                    <label
-                                        for="bg-color-list"
-                                        class="block text-xs font-medium text-muted-foreground mb-2"
-                                    >
-                                        Background Color
-                                    </label>
-                                    <div class="flex gap-2">
+                                {#if !$exportSettings.backgroundImage}
+                                    <!-- Background Color -->
+                                    <div>
+                                        <label
+                                            for="bg-color-list"
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Background Color
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input
+                                                id="bg-color-export"
+                                                type="color"
+                                                bind:value={
+                                                    $exportSettings.backgroundColor
+                                                }
+                                                class="w-12 h-10 rounded border border-input cursor-pointer"
+                                            />
+                                            <input
+                                                type="text"
+                                                bind:value={
+                                                    $exportSettings.backgroundColor
+                                                }
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                placeholder="#ffffff"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- Background Opacity -->
+                                    <div>
+                                        <label
+                                            for="bg-opacity-list"
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Background Opacity: {$exportSettings.backgroundOpacity}%
+                                        </label>
                                         <input
-                                            id="bg-color-export"
-                                            type="color"
+                                            id="bg-opacity-list"
+                                            type="range"
+                                            min="0"
+                                            max="100"
                                             bind:value={
-                                                $exportSettings.backgroundColor
+                                                $exportSettings.backgroundOpacity
                                             }
-                                            class="w-12 h-10 rounded border border-input cursor-pointer"
-                                        />
-                                        <input
-                                            type="text"
-                                            bind:value={
-                                                $exportSettings.backgroundColor
-                                            }
-                                            class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
-                                            placeholder="#ffffff"
+                                            class="w-full"
                                         />
                                     </div>
-                                </div>
-
-                                <!-- Background Opacity -->
-                                <div>
-                                    <label
-                                        for="bg-opacity-list"
-                                        class="block text-xs font-medium text-muted-foreground mb-2"
-                                    >
-                                        Background Opacity: {$exportSettings.backgroundOpacity}%
-                                    </label>
-                                    <input
-                                        id="bg-opacity-list"
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        bind:value={
-                                            $exportSettings.backgroundOpacity
-                                        }
-                                        class="w-full"
-                                    />
-                                </div>
+                                {/if}
                             </div>
 
                             <!-- Styling Section -->
