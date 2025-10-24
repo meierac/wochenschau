@@ -4,7 +4,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/",
+  base: "/wochenschau/",
   plugins: [
     svelte(),
     VitePWA({
@@ -24,8 +24,8 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
-        scope: "/",
-        start_url: "/",
+        scope: "/wochenschau/",
+        start_url: "/wochenschau/",
         icons: [
           {
             src: "web-app-manifest-192x192.png",

@@ -5,6 +5,7 @@
         getBackgroundsByCategory,
         getAllCategories,
     } from "../stores/defaultBackgrounds";
+    import IconButton from "./IconButton.svelte";
 
     let selectedCategory: "gradient" | "solid" | "nature" = "gradient";
     let isLoading = false;
@@ -152,7 +153,7 @@
                 />
             </svg>
             <p class="text-xs text-destructive flex-1">{errorMessage}</p>
-            <button
+            <IconButton
                 on:click={() => (errorMessage = null)}
                 class="text-destructive hover:text-destructive/80"
             >
@@ -169,7 +170,7 @@
                         d="M6 18L18 6M6 6l12 12"
                     />
                 </svg>
-            </button>
+            </IconButton>
         </div>
     {/if}
 
