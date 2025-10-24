@@ -245,7 +245,12 @@
     }
 </script>
 
-<SwipeableSheet {isDesktop} maxHeight="95vh" on:close={handleClose}>
+<SwipeableSheet
+    {isDesktop}
+    maxHeight="95vh"
+    desktopMaxWidth="56rem"
+    on:close={handleClose}
+>
     <!-- Header -->
     <div class="px-3 py-3 flex items-center justify-between shrink-0">
         <IconButton

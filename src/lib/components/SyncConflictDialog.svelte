@@ -31,7 +31,7 @@
     ];
 </script>
 
-<SwipeableSheet {isDesktop} on:close={handleClose}>
+<SwipeableSheet {isDesktop} desktopMaxWidth="28rem" on:close={handleClose}>
     <div class="flex flex-col h-full">
         <div class="flex items-center justify-center relative px-6 pt-6 pb-4">
             <h3 class="text-lg font-semibold text-foreground">

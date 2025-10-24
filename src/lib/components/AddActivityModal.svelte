@@ -126,7 +126,12 @@
     }
 </script>
 
-<SwipeableSheet {isDesktop} maxHeight="95vh" on:close={handleClose}>
+<SwipeableSheet
+    {isDesktop}
+    desktopMaxWidth="28rem"
+    maxHeight="95vh"
+    on:close={handleClose}
+>
     <!-- Header with centered title and icon buttons -->
     <div class="px-3 py-3 flex items-center justify-between">
         <!-- Cancel button (left) -->

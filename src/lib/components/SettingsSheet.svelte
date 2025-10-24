@@ -402,7 +402,7 @@
         : "Disabled";
 </script>
 
-<SwipeableSheet {isDesktop} on:close={handleClose}>
+<SwipeableSheet {isDesktop} desktopMaxWidth="56rem" on:close={handleClose}>
     <div class={`flex flex-col ${isDesktop ? "md:h-[80vh]" : "max-h-[90vh]"}`}>
         <!-- Header (Always on top) -->
         <div

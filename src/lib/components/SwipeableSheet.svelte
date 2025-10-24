@@ -4,6 +4,7 @@
 
     export let isDesktop = false;
     export let maxHeight = "90vh";
+    export let desktopMaxWidth = "28rem"; // Default: md:max-w-md
 
     const dispatch = createEventDispatcher();
 
@@ -194,6 +195,7 @@
         class:dragging={isDragging}
         class:pwa={isStandalone}
         style:max-height={isDesktop ? "80vh" : maxHeight}
+        style:max-width={isDesktop ? desktopMaxWidth : "600px"}
         role="dialog"
         aria-modal="true"
     >
@@ -241,7 +243,7 @@
         -webkit-backdrop-filter: blur(40px);
         box-shadow:
             0 -4px 24px rgba(0, 0, 0, 0.2),
-            0 0 0 1px rgba(255, 255, 255, 0.1);
+            0 0 0 1px rgb(36, 40, 53);
         width: 100%;
         max-width: 100%;
         display: flex;
@@ -259,13 +261,12 @@
     }
 
     .sheet.mobile {
-        border-top-left-radius: 24px;
-        border-top-right-radius: 24px;
+        margin: 5px;
+        border-radius: 36px;
     }
 
     .sheet.desktop {
-        border-radius: 8px;
-        max-width: 28rem;
+        border-radius: 36px;
         touch-action: auto;
     }
 
@@ -285,17 +286,19 @@
     }
 
     .handle-wrapper {
+        position: absolute;
+        top: 0;
         width: 100%;
         display: flex;
         justify-content: center;
-        padding: 12px 0 8px 0;
+        padding: 3px 0 0px 0;
         flex-shrink: 0;
         pointer-events: none;
         touch-action: none;
     }
 
     .handle {
-        width: 40px;
+        width: 80px;
         height: 4px;
         border-radius: 2px;
         background: hsl(var(--muted-foreground) / 0.3);
