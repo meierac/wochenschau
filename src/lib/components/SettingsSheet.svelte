@@ -16,6 +16,7 @@
     import DefaultBackgroundSelector from "./DefaultBackgroundSelector.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
     import SettingIcon from "./SettingIcon.svelte";
+    import RangeSlider from "./RangeSlider.svelte";
 
     export let isDesktop = false;
 
@@ -1008,16 +1009,14 @@
                                         >
                                             Title Font Size: {$exportSettings.titleFontSize}px
                                         </label>
-                                        <input
+                                        <RangeSlider
                                             id="title-font-size-export"
-                                            type="range"
-                                            min="24"
-                                            max="72"
-                                            step="2"
+                                            min={24}
+                                            max={72}
+                                            step={2}
                                             bind:value={
                                                 $exportSettings.titleFontSize
                                             }
-                                            class="w-full"
                                         />
                                     </div>
 
@@ -1201,15 +1200,13 @@
                                         >
                                             Border Radius: {$exportSettings.borderRadius}px
                                         </label>
-                                        <input
+                                        <RangeSlider
                                             id="border-radius-export"
-                                            type="range"
-                                            min="0"
-                                            max="20"
+                                            min={0}
+                                            max={20}
                                             bind:value={
                                                 $exportSettings.borderRadius
                                             }
-                                            class="w-full"
                                         />
                                     </div>
 
@@ -1276,15 +1273,13 @@
                                         >
                                             Background Opacity: {$exportSettings.weekContainerBackgroundOpacity}%
                                         </label>
-                                        <input
+                                        <RangeSlider
                                             id="week-bg-opacity-export"
-                                            type="range"
-                                            min="0"
-                                            max="100"
+                                            min={0}
+                                            max={100}
                                             bind:value={
                                                 $exportSettings.weekContainerBackgroundOpacity
                                             }
-                                            class="w-full"
                                         />
                                     </div>
                                 </div>
@@ -1762,16 +1757,14 @@
                                     >
                                         Title Font Size: {$exportSettings.titleFontSize}px
                                     </label>
-                                    <input
+                                    <RangeSlider
                                         id="title-font-size-export-desktop"
-                                        type="range"
-                                        min="24"
-                                        max="72"
-                                        step="2"
+                                        min={24}
+                                        max={72}
+                                        step={2}
                                         bind:value={
                                             $exportSettings.titleFontSize
                                         }
-                                        class="w-full"
                                     />
                                 </div>
 
@@ -1943,15 +1936,13 @@
                                         >
                                             Background Opacity: {$exportSettings.backgroundOpacity}%
                                         </label>
-                                        <input
+                                        <RangeSlider
                                             id="bg-opacity-list"
-                                            type="range"
-                                            min="0"
-                                            max="100"
+                                            min={0}
+                                            max={100}
                                             bind:value={
                                                 $exportSettings.backgroundOpacity
                                             }
-                                            class="w-full"
                                         />
                                     </div>
                                 {/if}
@@ -2001,15 +1992,13 @@
                                     >
                                         Border Radius: {$exportSettings.borderRadius}px
                                     </label>
-                                    <input
+                                    <RangeSlider
                                         id="border-radius-list"
-                                        type="range"
-                                        min="0"
-                                        max="20"
+                                        min={0}
+                                        max={20}
                                         bind:value={
                                             $exportSettings.borderRadius
                                         }
-                                        class="w-full"
                                     />
                                 </div>
 
@@ -2076,14 +2065,13 @@
                                     >
                                         Background Opacity: {$exportSettings.weekContainerBackgroundOpacity}%
                                     </label>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
+                                    <RangeSlider
+                                        id="week-bg-opacity-desktop"
+                                        min={0}
+                                        max={100}
                                         bind:value={
                                             $exportSettings.weekContainerBackgroundOpacity
                                         }
-                                        class="w-full"
                                     />
                                 </div>
                             </div>
