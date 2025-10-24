@@ -127,112 +127,103 @@
 
     async function embedFontsAsBase64(): Promise<HTMLStyleElement | null> {
         try {
-            console.log(
-                "[ExportSheet] Fetching and embedding fonts as base64...",
-            );
+            console.log("[ExportSheet] Embedding local fonts as base64...");
 
             const fontsToEmbed = [
                 $exportSettings.headerFontFamily,
                 $exportSettings.bodyFontFamily,
             ];
 
+            // Remove duplicates
+            const uniqueFonts = [...new Set(fontsToEmbed)];
+
+            // Map font family names to their local file paths
+            const FONT_FILE_MAP: Record<string, string> = {
+                Archivo: "/fonts/Archivo-VariableFont_wdth,wght.ttf",
+                "Dancing Script": "/fonts/DancingScript-VariableFont_wght.ttf",
+                "Edu QLD Hand": "/fonts/EduQLDHand-VariableFont_wght.ttf",
+                "Edu SA Hand": "/fonts/EduSAHand-VariableFont_wght.ttf",
+                Handlee: "/fonts/Handlee-Regular.ttf",
+                Lora: "/fonts/Lora-VariableFont_wght.ttf",
+                Manrope: "/fonts/Manrope-VariableFont_wght.ttf",
+                "Ms Madi": "/fonts/MsMadi-Regular.ttf",
+                "Noto Sans": "/fonts/NotoSans-VariableFont_wdth,wght.ttf",
+                "Pirata One": "/fonts/PirataOne-Regular.ttf",
+                "Space Mono": "/fonts/SpaceMono-Regular.ttf",
+            };
+
             let fontFaceCSS = "";
 
-            for (const fontFamily of fontsToEmbed) {
-                // Extract font name from family string (e.g., "'Playfair Display', serif" -> "Playfair Display")
+            for (const fontFamily of uniqueFonts) {
+                // Extract font name from family string (e.g., "'Lora', serif" -> "Lora")
                 const fontMatch = fontFamily.match(/'([^']+)'/);
-                if (!fontMatch) continue;
+                if (!fontMatch) {
+                    console.log(
+                        `[ExportSheet] Skipping font family: ${fontFamily} (no match)`,
+                    );
+                    continue;
+                }
 
                 const fontName = fontMatch[1];
                 console.log(`[ExportSheet] Processing font: ${fontName}`);
 
-                // Get all loaded font faces for this font
-                const loadedFonts = Array.from(document.fonts).filter(
-                    (font) =>
-                        font.family === fontName ||
-                        font.family === `'${fontName}'`,
-                );
-
-                console.log(
-                    `[ExportSheet] Found ${loadedFonts.length} font face(s) for ${fontName}`,
-                );
-
-                // Fetch the Google Fonts CSS to get font URLs
-                const googleFontsLink = document.querySelector(
-                    'link[href*="fonts.googleapis.com"]',
-                ) as HTMLLinkElement;
-
-                if (!googleFontsLink) {
-                    console.warn("[ExportSheet] Google Fonts link not found");
+                // Get the font file path
+                const fontPath = FONT_FILE_MAP[fontName];
+                if (!fontPath) {
+                    console.warn(
+                        `[ExportSheet] Font file not found for: ${fontName}`,
+                    );
                     continue;
                 }
 
-                // Fetch the CSS file
-                const cssResponse = await fetch(googleFontsLink.href);
-                const cssText = await cssResponse.text();
+                try {
+                    console.log(
+                        `[ExportSheet] Fetching font file: ${fontPath}`,
+                    );
 
-                // Extract font URLs for this specific font family
-                const fontFaceRegex = new RegExp(
-                    `@font-face\\s*{[^}]*font-family:\\s*['"]${fontName}['"][^}]*}`,
-                    "gi",
-                );
-                const fontFaces = cssText.match(fontFaceRegex) || [];
-
-                console.log(
-                    `[ExportSheet] Found ${fontFaces.length} @font-face rule(s) for ${fontName}`,
-                );
-
-                for (const fontFace of fontFaces) {
-                    // Extract the font URL
-                    const urlMatch = fontFace.match(/url\(([^)]+)\)/);
-                    if (!urlMatch) continue;
-
-                    let fontUrl = urlMatch[1].replace(/['"]/g, "");
-
-                    try {
-                        console.log(
-                            `[ExportSheet] Fetching font file: ${fontUrl.substring(0, 80)}...`,
-                        );
-
-                        // Fetch the font file
-                        const fontResponse = await fetch(fontUrl);
-                        const fontArrayBuffer =
-                            await fontResponse.arrayBuffer();
-
-                        // Convert to base64
-                        const base64 = btoa(
-                            new Uint8Array(fontArrayBuffer).reduce(
-                                (data, byte) =>
-                                    data + String.fromCharCode(byte),
-                                "",
-                            ),
-                        );
-
-                        // Determine format (woff2, woff, ttf, etc.)
-                        let format = "woff2";
-                        if (fontUrl.includes(".woff2")) format = "woff2";
-                        else if (fontUrl.includes(".woff")) format = "woff";
-                        else if (fontUrl.includes(".ttf")) format = "truetype";
-                        else if (fontUrl.includes(".otf")) format = "opentype";
-
-                        const dataUrl = `data:font/${format};base64,${base64}`;
-
-                        // Replace the URL in the font-face rule with base64 data URL
-                        const embeddedFontFace = fontFace.replace(
-                            /url\([^)]+\)/,
-                            `url(${dataUrl})`,
-                        );
-
-                        fontFaceCSS += embeddedFontFace + "\n";
-                        console.log(
-                            `[ExportSheet] Embedded font file (${base64.length} chars)`,
-                        );
-                    } catch (fetchError) {
+                    // Fetch the local font file
+                    const response = await fetch(fontPath);
+                    if (!response.ok) {
                         console.warn(
-                            `[ExportSheet] Failed to fetch font file:`,
-                            fetchError,
+                            `[ExportSheet] Failed to fetch font: ${fontPath}`,
                         );
+                        continue;
                     }
+
+                    const arrayBuffer = await response.arrayBuffer();
+
+                    // Convert to base64
+                    const base64 = btoa(
+                        new Uint8Array(arrayBuffer).reduce(
+                            (data, byte) => data + String.fromCharCode(byte),
+                            "",
+                        ),
+                    );
+
+                    console.log(
+                        `[ExportSheet] Font converted to base64 (${base64.length} chars)`,
+                    );
+
+                    // Create @font-face rule with embedded font
+                    // Using font-weight 100 900 to support all weights for variable fonts
+                    fontFaceCSS += `
+                        @font-face {
+                            font-family: '${fontName}';
+                            src: url(data:font/truetype;base64,${base64}) format('truetype');
+                            font-weight: 100 900;
+                            font-style: normal;
+                            font-display: block;
+                        }
+                    `;
+
+                    console.log(
+                        `[ExportSheet] Successfully embedded font: ${fontName}`,
+                    );
+                } catch (error) {
+                    console.error(
+                        `[ExportSheet] Failed to process font ${fontName}:`,
+                        error,
+                    );
                 }
             }
 
@@ -246,9 +237,10 @@
                 return style;
             }
 
+            console.log("[ExportSheet] No fonts to embed");
             return null;
         } catch (error) {
-            console.warn("[ExportSheet] Font embedding failed:", error);
+            console.error("[ExportSheet] Font embedding failed:", error);
             return null;
         }
     }
