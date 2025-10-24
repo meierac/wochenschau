@@ -1,12 +1,22 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import WeekView from "./lib/components/WeekView.svelte";
     import FloatingNav from "./lib/components/FloatingNav.svelte";
     import AddActivityModal from "./lib/components/AddActivityModal.svelte";
     import SettingsSheet from "./lib/components/SettingsSheet.svelte";
     import ExportSheet from "./lib/components/ExportSheet.svelte";
+    import SyncConflictDialog from "./lib/components/SyncConflictDialog.svelte";
     import { currentWeek, currentYear } from "./lib/stores/week";
+    import { subscriptions } from "./lib/stores/ical";
+    import { activities } from "./lib/stores/activities";
     import { formatDateRange } from "./lib/utils/date";
     import WeekPicker from "./lib/components/WeekPicker.svelte";
+    import { getWeekNumber } from "./lib/utils/date";
+    import type {
+        CalendarItem,
+        SyncConflict,
+        ConflictResolution,
+    } from "./lib/types/index";
 
     let isDesktop =
         typeof window !== "undefined" ? window.innerWidth >= 768 : false;
@@ -14,6 +24,15 @@
     let showSettings = false;
     let showWeekPicker = false;
     let showExport = false;
+    let isSyncing = false;
+    let showConflictDialog = false;
+    let pendingConflicts: SyncConflict[] = [];
+    let pendingSyncData: Map<
+        string,
+        { subscription: any; items: CalendarItem[] }
+    > = new Map();
+
+    const REFRESH_INTERVAL_HOURS = 24; // Auto-refresh if data is older than 24 hours
 
     function handleResize() {
         isDesktop = window.innerWidth >= 768;
@@ -42,6 +61,316 @@
     function handleOpenExport() {
         showExport = true;
     }
+
+    // iCal parsing functions
+    function parseICalToCalendarItems(
+        iCalText: string,
+        subscriptionId: string,
+    ): CalendarItem[] {
+        const items: CalendarItem[] = [];
+        const lines = iCalText.split("\n");
+        let currentEvent: any = null;
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+
+            // Handle line folding
+            while (i + 1 < lines.length && lines[i + 1].match(/^[\t ]/)) {
+                i++;
+                line += lines[i].substring(1);
+            }
+
+            const trimmed = line.trim();
+
+            if (trimmed === "BEGIN:VEVENT") {
+                currentEvent = {
+                    sourceId: subscriptionId,
+                    source: "ical",
+                    description: "",
+                };
+            } else if (trimmed === "END:VEVENT" && currentEvent) {
+                if (currentEvent.summary && currentEvent.dtstart) {
+                    const item = buildCalendarItem(currentEvent);
+                    if (item) items.push(item);
+                }
+                currentEvent = null;
+            } else if (currentEvent) {
+                const colonIndex = trimmed.indexOf(":");
+                if (colonIndex === -1) continue;
+
+                const field = trimmed.substring(0, colonIndex);
+                const value = trimmed.substring(colonIndex + 1);
+
+                if (field === "SUMMARY") {
+                    currentEvent.summary = decodeICalText(value);
+                } else if (field.startsWith("DTSTART")) {
+                    currentEvent.dtstart = value;
+                } else if (field.startsWith("DTEND")) {
+                    currentEvent.dtend = value;
+                } else if (field === "UID") {
+                    currentEvent.uid = value;
+                } else if (field === "DESCRIPTION") {
+                    currentEvent.description = decodeICalText(value);
+                }
+            }
+        }
+
+        return items;
+    }
+
+    function buildCalendarItem(event: any): CalendarItem | null {
+        try {
+            const dtstart = event.dtstart || "";
+            const dtend = event.dtend || dtstart;
+
+            const isAllDay = !dtstart.includes("T");
+            const startDate = extractDate(dtstart);
+            const endDate = extractDate(dtend);
+            const startTime = isAllDay ? "09:00" : extractTime(dtstart);
+            const endTime = isAllDay ? "17:00" : extractTime(dtend);
+
+            if (!startDate) return null;
+
+            const dateObj = new Date(
+                parseInt(startDate.substring(0, 4)),
+                parseInt(startDate.substring(4, 6)) - 1,
+                parseInt(startDate.substring(6, 8)),
+            );
+
+            const day = (dateObj.getDay() + 6) % 7;
+            const week = getWeekNumber(dateObj);
+            const year = dateObj.getFullYear();
+
+            const id = event.uid
+                ? `${event.sourceId}-${event.uid.replace(/[^a-zA-Z0-9-]/g, "")}`
+                : `${event.sourceId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            const now = Date.now();
+
+            return {
+                id,
+                summary: event.summary,
+                description: event.description,
+                dtstart,
+                dtend,
+                startDate,
+                endDate,
+                startTime,
+                endTime,
+                day,
+                week,
+                year,
+                isAllDay,
+                source: "ical",
+                sourceId: event.sourceId,
+                uid: event.uid,
+                createdAt: now,
+                lastModified: now,
+            };
+        } catch (err) {
+            console.error("Error building calendar item:", err);
+            return null;
+        }
+    }
+
+    function extractDate(iCalDateTime: string): string {
+        if (iCalDateTime.includes("T")) {
+            return iCalDateTime.split("T")[0];
+        }
+        return iCalDateTime;
+    }
+
+    function extractTime(iCalDateTime: string): string {
+        if (!iCalDateTime.includes("T")) {
+            return "09:00";
+        }
+
+        const timePart = iCalDateTime.split("T")[1];
+        const cleanTime = timePart.replace("Z", "");
+        const hours = cleanTime.substring(0, 2);
+        const minutes = cleanTime.substring(2, 4);
+
+        return `${hours}:${minutes}`;
+    }
+
+    function decodeICalText(text: string): string {
+        return text
+            .replace(/\\n/g, "\n")
+            .replace(/\\,/g, ",")
+            .replace(/\\;/g, ";")
+            .replace(/\\\\/g, "\\");
+    }
+
+    async function refreshSubscription(
+        subscriptionId: string,
+        skipConflictCheck = false,
+    ) {
+        try {
+            const subscription = $subscriptions.find(
+                (s) => s.id === subscriptionId,
+            );
+            if (!subscription || !subscription.enabled) return;
+
+            console.log(`Fetching iCal subscription: ${subscription.name}`);
+
+            const response = await fetch(subscription.url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const text = await response.text();
+            const calendarItems = parseICalToCalendarItems(
+                text,
+                subscriptionId,
+            );
+
+            // Find old items from this subscription
+            const oldActivities = $activities.filter(
+                (a) => a.sourceId === subscriptionId && a.source === "ical",
+            );
+
+            // Detect conflicts: items that have been locally modified
+            if (!skipConflictCheck) {
+                const conflicts: SyncConflict[] = [];
+                const subscriptionLastFetched = subscription.lastFetched || 0;
+
+                for (const oldActivity of oldActivities) {
+                    // Check if item was modified after the last sync
+                    const wasModifiedLocally =
+                        oldActivity.lastModified > subscriptionLastFetched;
+
+                    // Check if item has local overrides
+                    const hasLocalOverrides =
+                        oldActivity.localOverrides &&
+                        Object.keys(oldActivity.localOverrides).length > 0;
+
+                    if (wasModifiedLocally || hasLocalOverrides) {
+                        // Find corresponding incoming item
+                        const incomingItem = calendarItems.find(
+                            (item) => item.uid === oldActivity.uid,
+                        );
+
+                        conflicts.push({
+                            localItem: oldActivity,
+                            incomingItem: incomingItem || null,
+                            subscriptionName: subscription.name,
+                        });
+                    }
+                }
+
+                // If there are conflicts, store the sync data and show dialog
+                if (conflicts.length > 0) {
+                    pendingConflicts = [...pendingConflicts, ...conflicts];
+                    pendingSyncData.set(subscriptionId, {
+                        subscription,
+                        items: calendarItems,
+                    });
+                    showConflictDialog = true;
+                    return; // Don't proceed with sync until user resolves conflicts
+                }
+            }
+
+            // No conflicts or user chose to proceed - apply sync
+            for (const oldActivity of oldActivities) {
+                activities.removeActivity(oldActivity.id);
+            }
+
+            // Add new calendar items
+            for (const item of calendarItems) {
+                activities.addActivity(item);
+            }
+
+            // Update subscription metadata
+            subscriptions.updateSubscription({
+                ...subscription,
+                lastFetched: Date.now(),
+            });
+
+            console.log(
+                `Successfully fetched ${calendarItems.length} items from ${subscription.name}`,
+            );
+        } catch (error) {
+            console.error(
+                `Failed to refresh subscription ${subscriptionId}:`,
+                error,
+            );
+        }
+    }
+
+    function handleConflictResolution(event: CustomEvent<ConflictResolution>) {
+        const resolution = event.detail;
+
+        if (resolution === "keep-local") {
+            // Keep local changes - just update the lastFetched timestamp
+            for (const [_subscriptionId, data] of pendingSyncData.entries()) {
+                subscriptions.updateSubscription({
+                    ...data.subscription,
+                    lastFetched: Date.now(),
+                });
+            }
+            console.log(
+                "Kept local changes, skipped sync for conflicted items",
+            );
+        } else if (resolution === "use-synced") {
+            // Discard local changes - perform sync without conflict check
+            for (const [subscriptionId, _data] of pendingSyncData.entries()) {
+                refreshSubscription(subscriptionId, true);
+            }
+            console.log("Discarded local changes, applied synced data");
+        }
+
+        // Clear pending data
+        pendingConflicts = [];
+        pendingSyncData.clear();
+        showConflictDialog = false;
+    }
+
+    function handleConflictDialogClose() {
+        // User closed dialog without choosing - treat as "keep local"
+        pendingConflicts = [];
+        pendingSyncData.clear();
+        showConflictDialog = false;
+    }
+
+    async function autoRefreshSubscriptions() {
+        const now = Date.now();
+        const refreshThreshold = REFRESH_INTERVAL_HOURS * 60 * 60 * 1000;
+
+        for (const subscription of $subscriptions) {
+            if (!subscription.enabled) continue;
+
+            const needsRefresh =
+                !subscription.lastFetched ||
+                now - subscription.lastFetched > refreshThreshold;
+
+            if (needsRefresh) {
+                await refreshSubscription(subscription.id);
+            }
+        }
+    }
+
+    async function handleRefreshSubscriptions() {
+        if (isSyncing) return; // Prevent multiple simultaneous syncs
+
+        isSyncing = true;
+        console.log("Manual refresh triggered");
+
+        try {
+            // Refresh all enabled subscriptions regardless of last fetch time
+            for (const subscription of $subscriptions) {
+                if (subscription.enabled) {
+                    await refreshSubscription(subscription.id);
+                }
+            }
+        } finally {
+            isSyncing = false;
+        }
+    }
+
+    onMount(() => {
+        // Auto-refresh subscriptions on app start if they're outdated
+        autoRefreshSubscriptions();
+    });
 </script>
 
 <svelte:window on:resize={handleResize} />
@@ -82,6 +411,28 @@
                     </button>
                 </div>
                 <div class="flex gap-2">
+                    <button
+                        on:click={handleRefreshSubscriptions}
+                        disabled={isSyncing}
+                        class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Refresh calendar subscriptions"
+                        title="Sync calendars"
+                    >
+                        <svg
+                            class="w-5 h-5 {isSyncing ? 'animate-spin' : ''}"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                        </svg>
+                        {isSyncing ? "Syncing..." : "Sync"}
+                    </button>
                     <button
                         on:click={handleOpenAddActivity}
                         class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
@@ -154,14 +505,27 @@
                 <h1 class="text-2xl font-bold pointer-events-auto">
                     📅 Wochenschau
                 </h1>
-                <div
-                    class="hidden sm:block text-sm text-muted-foreground pointer-events-auto"
+                <button
+                    on:click={handleRefreshSubscriptions}
+                    disabled={isSyncing}
+                    class="pointer-events-auto p-2 rounded-lg active:bg-muted transition-colors disabled:opacity-50"
+                    aria-label="Sync calendars"
+                    title={isSyncing ? "Syncing..." : "Sync calendars"}
                 >
-                    W{$currentWeek} • {formatDateRange(
-                        $currentWeek,
-                        $currentYear,
-                    )}
-                </div>
+                    <svg
+                        class="w-6 h-6 {isSyncing ? 'animate-spin' : ''}"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                    </svg>
+                </button>
             </div>
 
             <!-- Week View -->
@@ -200,6 +564,14 @@
 {#if showExport}
     <ExportSheet on:close={() => (showExport = false)} {isDesktop} />
 {/if}
+
+<!-- Sync Conflict Dialog -->
+<SyncConflictDialog
+    bind:isOpen={showConflictDialog}
+    conflicts={pendingConflicts}
+    on:resolve={handleConflictResolution}
+    on:close={handleConflictDialogClose}
+/>
 
 <style>
     :global(body) {

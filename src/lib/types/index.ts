@@ -72,6 +72,20 @@ export interface ICalEvent {
   attendees?: string[];
 }
 
+// Conflict resolution for sync operations
+export interface SyncConflict {
+  localItem: CalendarItem;
+  incomingItem: CalendarItem | null; // null if item was deleted from source
+  subscriptionName: string;
+}
+
+export type ConflictResolution = "keep-local" | "use-synced" | "ask";
+
+export interface SyncConflictDialogOptions {
+  conflicts: SyncConflict[];
+  onResolve: (resolution: ConflictResolution) => void;
+}
+
 export const WEEKDAYS = [
   "Monday",
   "Tuesday",

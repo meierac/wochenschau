@@ -10,10 +10,11 @@
 - 📋 **Week-at-a-Glance View** - See all your activities organized by day in a beautiful grid layout
 - ➕ **Quick Activity Creation** - Add activities with customizable titles, times, and descriptions
 - 📝 **Activity Templates** - Save your most-used activities as templates for quick reuse
-- 🔗 **Calendar Integration** - Subscribe to iCal calendars and automatically sync events
+- 🔗 **Calendar Integration** - Subscribe to iCal calendars with automatic syncing and manual refresh
 - 📸 **Export as Image** - Export your week as a beautifully formatted image to share
 - 💾 **Local Storage** - All your data is stored locally on your device for privacy
-- 🔄 **Swipe Navigation** - Navigate between weeks with intuitive swipe gestures (mobile)
+- 🔄 **Auto-Sync** - iCal subscriptions automatically refresh when stale (24h default)
+- 👆 **Swipeable Sheets** - Swipe down to dismiss modals on mobile devices
 
 ### User Experience
 - 🚀 **Progressive Web App** - Install as a native app on iOS and Android
@@ -163,6 +164,28 @@ Subscribe to external calendars (Google Calendar, Outlook, Apple Calendar, etc.)
 2. Add it in Settings → Calendar Subscriptions
 3. Events automatically sync and appear in your weekly view
 4. Toggling subscriptions on/off doesn't delete the events
+
+### 🔄 Sync Conflict Resolution
+
+**Protecting Your Local Edits**
+
+If you've edited synced calendar items (changed titles, times, descriptions, etc.), the app will detect conflicts before overwriting your changes:
+
+- **Automatic Detection** - Tracks when you modify synced items
+- **User Choice** - Asks whether to keep your changes or use synced data
+- **No Data Loss** - Your edits are never silently overwritten
+
+**How It Works:**
+1. You edit a synced calendar item (e.g., change "Meeting" to "Meeting - POSTPONED")
+2. Next sync detects the local modification
+3. A dialog appears showing what you changed
+4. You choose: **Keep My Changes** or **Use Synced Data**
+
+**Your Options:**
+- **Keep My Changes** - Preserves your edits, updates sync timestamp (your changes won't sync back to source)
+- **Use Synced Data** - Discards your edits, accepts fresh data from calendar subscription
+
+See [SYNC_CONFLICT_RESOLUTION.md](./SYNC_CONFLICT_RESOLUTION.md) for detailed documentation.
 
 ## 📸 Export & Sharing
 

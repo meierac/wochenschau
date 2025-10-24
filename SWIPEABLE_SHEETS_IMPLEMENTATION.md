@@ -8,6 +8,8 @@ All sheet/modal components in the app now support swipe-to-dismiss gestures on m
 - ✅ ExportSheet - Swipeable with larger desktop layout
 - ✅ SettingsSheet - Swipeable with complex two-pane layout
 
+Additionally, iCal auto-sync with manual refresh buttons has been implemented. See [ICAL_AUTO_SYNC.md](./ICAL_AUTO_SYNC.md) for details.
+
 ## Overview
 Implemented native-feeling swipeable sheets for mobile devices with smooth animations and touch gesture support. All sheet/modal components can now be closed by swiping down from the header.
 
