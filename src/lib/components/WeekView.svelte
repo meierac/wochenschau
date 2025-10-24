@@ -6,6 +6,7 @@
 
     import DayColumn from "./DayColumn.svelte";
     import WeekPicker from "./WeekPicker.svelte";
+    import Button from "./Button.svelte";
 
     let showWeekPicker = false;
 
@@ -63,7 +64,7 @@
         {#if $bibleVerse.enabled}
             <div class="h-full flex flex-col">
                 <div
-                    class="flex flex-col h-full bg-card rounded-lg border border-border p-2 md:p-3"
+                    class="flex flex-col h-full bg-card rounded-xl border border-border p-2 md:p-3"
                 >
                     <div
                         class="flex-1 flex flex-col justify-center items-center text-center"
@@ -77,12 +78,13 @@
                             – {$bibleVerse.currentVerse.reference}
                         </p>
                     </div>
-                    <button
+                    <Button
+                        variant="secondary"
                         on:click={() => bibleVerse.refreshVerse()}
                         class="mt-4 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors text-center"
                     >
                         🔄 Refresh
-                    </button>
+                    </Button>
                 </div>
             </div>
         {/if}

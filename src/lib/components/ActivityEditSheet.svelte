@@ -51,7 +51,15 @@
 
 <div
     class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
     on:click={handleBackdropClick}
+    on:keydown={(e) => {
+        if (e.key === "Escape") {
+            dispatch("close");
+        }
+    }}
 >
     <div
         class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${

@@ -82,7 +82,8 @@
     let error = "";
 
     // Export settings state
-    let fileInput: HTMLInputElement;
+    let fileInputExport: HTMLInputElement;
+    let fileInputList: HTMLInputElement;
 
     function handleBackgroundImageUpload(e: Event) {
         const target = e.target as HTMLInputElement;
@@ -104,16 +105,22 @@
 
     function handleRemoveBackgroundImage() {
         exportSettings.setBackgroundImage(null);
-        if (fileInput) {
-            fileInput.value = "";
+        if (fileInputExport) {
+            fileInputExport.value = "";
+        }
+        if (fileInputList) {
+            fileInputList.value = "";
         }
     }
 
     function handleResetExportSettings() {
         if (confirm("Reset all export settings to default?")) {
             exportSettings.reset();
-            if (fileInput) {
-                fileInput.value = "";
+            if (fileInputExport) {
+                fileInputExport.value = "";
+            }
+            if (fileInputList) {
+                fileInputList.value = "";
             }
         }
     }
@@ -438,8 +445,16 @@
 </script>
 
 <div
-    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4 backdrop-blur-sm"
+    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
     on:click={handleBackdropClick}
+    on:keydown={(e) => {
+        if (e.key === "Escape") {
+            dispatch("close");
+        }
+    }}
 >
     <div
         class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
@@ -1018,11 +1033,13 @@
                                     <!-- Header Font Family -->
                                     <div>
                                         <label
+                                            for="header-font-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Header Font (Wochenschau)
                                         </label>
                                         <select
+                                            id="header-font-export"
                                             bind:value={
                                                 $exportSettings.headerFontFamily
                                             }
@@ -1039,11 +1056,13 @@
                                     <!-- Body Font Family -->
                                     <div>
                                         <label
+                                            for="body-font-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Body Font (Activities)
                                         </label>
                                         <select
+                                            id="body-font-export"
                                             bind:value={
                                                 $exportSettings.bodyFontFamily
                                             }
@@ -1060,12 +1079,14 @@
                                     <!-- Text Color -->
                                     <div>
                                         <label
+                                            for="text-color-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Text Color
                                         </label>
                                         <div class="flex gap-2">
                                             <input
+                                                id="text-color-export"
                                                 type="color"
                                                 bind:value={
                                                     $exportSettings.textColor
@@ -1095,14 +1116,16 @@
                                     <!-- Background Image -->
                                     <div>
                                         <label
+                                            for="bg-image-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Background Image
                                         </label>
                                         <input
+                                            id="bg-image-export"
                                             type="file"
                                             accept="image/*"
-                                            bind:this={fileInput}
+                                            bind:this={fileInputExport}
                                             on:change={handleBackgroundImageUpload}
                                             class="hidden"
                                         />
@@ -1122,23 +1145,37 @@
                                                         variant="secondary"
                                                         class="flex-1"
                                                         on:click={() =>
-                                                            fileInput.click()}
+                                                            fileInputExport.click()}
                                                     >
                                                         Change Image
                                                     </Button>
-                                                    <Button
-                                                        variant="secondary"
+                                                    <button
                                                         on:click={handleRemoveBackgroundImage}
+                                                        class="px-3 py-1.5 bg-destructive text-destructive-foreground rounded text-xs font-semibold hover:opacity-90 transition-opacity"
                                                     >
                                                         Remove
-                                                    </Button>
+                                                    </button>
+                                                    <button
+                                                        on:click={() =>
+                                                            fileInputList?.click()}
+                                                        class="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-semibold hover:opacity-90 transition-opacity"
+                                                    >
+                                                        Upload New
+                                                    </button>
+                                                    <button
+                                                        on:click={() =>
+                                                            fileInputExport?.click()}
+                                                        class="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-semibold hover:opacity-90 transition-opacity"
+                                                    >
+                                                        Upload New
+                                                    </button>
                                                 </div>
                                             </div>
                                         {:else}
                                             <Button
                                                 variant="secondary"
                                                 on:click={() =>
-                                                    fileInput.click()}
+                                                    fileInputList.click()}
                                             >
                                                 + Upload Image
                                             </Button>
@@ -1148,17 +1185,19 @@
                                     <!-- Background Color -->
                                     <div>
                                         <label
+                                            for="bg-color-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Background Color
                                         </label>
                                         <div class="flex gap-2">
                                             <input
+                                                id="bg-color-list"
                                                 type="color"
                                                 bind:value={
                                                     $exportSettings.backgroundColor
                                                 }
-                                                class="w-12 h-10 rounded border border-input cursor-pointer"
+                                                class="w-full h-10 rounded cursor-pointer border border-input"
                                             />
                                             <input
                                                 type="text"
@@ -1174,11 +1213,13 @@
                                     <!-- Background Opacity -->
                                     <div>
                                         <label
+                                            for="bg-opacity-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Background Opacity: {$exportSettings.backgroundOpacity}%
                                         </label>
                                         <input
+                                            id="bg-opacity-export"
                                             type="range"
                                             min="0"
                                             max="100"
@@ -1201,12 +1242,14 @@
                                     <!-- Accent Color -->
                                     <div>
                                         <label
+                                            for="accent-color-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Accent Color (Borders)
                                         </label>
                                         <div class="flex gap-2">
                                             <input
+                                                id="accent-color-export"
                                                 type="color"
                                                 bind:value={
                                                     $exportSettings.accentColor
@@ -1227,11 +1270,13 @@
                                     <!-- Border Radius -->
                                     <div>
                                         <label
+                                            for="border-radius-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Border Radius: {$exportSettings.borderRadius}px
                                         </label>
                                         <input
+                                            id="border-radius-export"
                                             type="range"
                                             min="0"
                                             max="20"
@@ -1272,12 +1317,14 @@
                                     <!-- Week Container Background Color -->
                                     <div>
                                         <label
+                                            for="week-bg-color-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Background Color
                                         </label>
                                         <div class="flex gap-2">
                                             <input
+                                                id="week-bg-color-export"
                                                 type="color"
                                                 bind:value={
                                                     $exportSettings.weekContainerBackgroundColor
@@ -1298,11 +1345,13 @@
                                     <!-- Week Container Background Opacity -->
                                     <div>
                                         <label
+                                            for="week-bg-opacity-export"
                                             class="block text-xs font-medium text-muted-foreground mb-2"
                                         >
                                             Background Opacity: {$exportSettings.weekContainerBackgroundOpacity}%
                                         </label>
                                         <input
+                                            id="week-bg-opacity-export"
                                             type="range"
                                             min="0"
                                             max="100"
@@ -1760,11 +1809,13 @@
                                 <!-- Header Font Family -->
                                 <div>
                                     <label
+                                        for="header-font-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Header Font (Wochenschau)
                                     </label>
                                     <select
+                                        id="header-font-list"
                                         bind:value={
                                             $exportSettings.headerFontFamily
                                         }
@@ -1781,11 +1832,13 @@
                                 <!-- Body Font Family -->
                                 <div>
                                     <label
+                                        for="body-font-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Body Font (Activities)
                                     </label>
                                     <select
+                                        id="body-font-list"
                                         bind:value={
                                             $exportSettings.bodyFontFamily
                                         }
@@ -1802,12 +1855,14 @@
                                 <!-- Text Color -->
                                 <div>
                                     <label
+                                        for="text-color-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Text Color
                                     </label>
                                     <div class="flex gap-2">
                                         <input
+                                            id="text-color-list"
                                             type="color"
                                             bind:value={
                                                 $exportSettings.textColor
@@ -1837,14 +1892,16 @@
                                 <!-- Background Image -->
                                 <div>
                                     <label
+                                        for="bg-image-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Background Image
                                     </label>
                                     <input
+                                        id="bg-image-list"
                                         type="file"
                                         accept="image/*"
-                                        bind:this={fileInput}
+                                        bind:this={fileInputList}
                                         on:change={handleBackgroundImageUpload}
                                         class="hidden"
                                     />
@@ -1862,9 +1919,8 @@
                                             <div class="flex gap-2">
                                                 <Button
                                                     variant="secondary"
-                                                    class="flex-1"
                                                     on:click={() =>
-                                                        fileInput.click()}
+                                                        fileInputList.click()}
                                                 >
                                                     Change Image
                                                 </Button>
@@ -1879,7 +1935,8 @@
                                     {:else}
                                         <Button
                                             variant="secondary"
-                                            on:click={() => fileInput.click()}
+                                            on:click={() =>
+                                                fileInputList.click()}
                                         >
                                             + Upload Image
                                         </Button>
@@ -1889,12 +1946,14 @@
                                 <!-- Background Color -->
                                 <div>
                                     <label
+                                        for="bg-color-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Background Color
                                     </label>
                                     <div class="flex gap-2">
                                         <input
+                                            id="bg-color-export"
                                             type="color"
                                             bind:value={
                                                 $exportSettings.backgroundColor
@@ -1915,11 +1974,13 @@
                                 <!-- Background Opacity -->
                                 <div>
                                     <label
+                                        for="bg-opacity-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Background Opacity: {$exportSettings.backgroundOpacity}%
                                     </label>
                                     <input
+                                        id="bg-opacity-list"
                                         type="range"
                                         min="0"
                                         max="100"
@@ -1942,12 +2003,14 @@
                                 <!-- Accent Color -->
                                 <div>
                                     <label
+                                        for="accent-color-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Accent Color (Borders)
                                     </label>
                                     <div class="flex gap-2">
                                         <input
+                                            id="accent-color-list"
                                             type="color"
                                             bind:value={
                                                 $exportSettings.accentColor
@@ -1968,11 +2031,13 @@
                                 <!-- Border Radius -->
                                 <div>
                                     <label
+                                        for="border-radius-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Border Radius: {$exportSettings.borderRadius}px
                                     </label>
                                     <input
+                                        id="border-radius-list"
                                         type="range"
                                         min="0"
                                         max="20"
@@ -2013,12 +2078,14 @@
                                 <!-- Week Container Background Color -->
                                 <div>
                                     <label
+                                        for="week-bg-color-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Background Color
                                     </label>
                                     <div class="flex gap-2">
                                         <input
+                                            id="week-bg-color-list"
                                             type="color"
                                             bind:value={
                                                 $exportSettings.weekContainerBackgroundColor
@@ -2039,6 +2106,7 @@
                                 <!-- Week Container Background Opacity -->
                                 <div>
                                     <label
+                                        for="week-bg-opacity-list"
                                         class="block text-xs font-medium text-muted-foreground mb-2"
                                     >
                                         Background Opacity: {$exportSettings.weekContainerBackgroundOpacity}%

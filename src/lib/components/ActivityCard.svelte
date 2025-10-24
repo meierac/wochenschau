@@ -79,11 +79,6 @@
         }
     }
 
-    function timeToMinutes(time: string): number {
-        const [h, m] = time.split(":").map(Number);
-        return h * 60 + m;
-    }
-
     function isAllDayEvent(): boolean {
         // Check if explicitly marked as all-day
         if (activity.isAllDay) return true;
@@ -98,9 +93,6 @@
         return false;
     }
 
-    $: duration =
-        timeToMinutes(activity.endTime) - timeToMinutes(activity.startTime);
-    $: durationStr = `${Math.floor(duration / 60)}h ${duration % 60}m`;
     $: if (typeof window !== "undefined") {
         isDesktop = window.innerWidth >= 768;
     }
@@ -109,7 +101,8 @@
 <svelte:window on:resize={handleResize} />
 
 <div
-    class="relative overflow-hidden rounded group"
+    class="relative overflow-hidden rounded-md group"
+    role="presentation"
     on:touchstart={handleTouchStart}
     on:touchmove={handleTouchMove}
     on:touchend={handleTouchEnd}
@@ -119,7 +112,7 @@
     <!-- Delete action (right swipe reveal) - mobile only -->
     {#if !isDesktop}
         <div
-            class="absolute inset-y-0 left-0 w-24 bg-destructive/90 flex items-center justify-center text-white font-semibold"
+            class="absolute inset-y-0 rounded-md left-0 w-24 bg-destructive/90 flex items-center justify-center text-white font-semibold"
         >
             Delete
         </div>
@@ -128,7 +121,7 @@
     <!-- Edit action (left swipe reveal) - mobile only -->
     {#if !isDesktop}
         <div
-            class="absolute inset-y-0 right-0 w-24 bg-primary/90 flex items-center justify-center text-white font-semibold"
+            class="absolute inset-y-0 rounded-md right-0 w-24 bg-primary/90 flex items-center justify-center text-white font-semibold"
         >
             Edit
         </div>
@@ -136,7 +129,7 @@
 
     <!-- Main card -->
     <div
-        class="bg-secondary p-3 rounded border-l-4 border-l-primary transition-transform relative"
+        class="bg-secondary p-3 rounded-md transition-transform relative"
         style="transform: translateX({swipeOffset}px); {isDragging
             ? 'transition: none;'
             : ''}"
@@ -154,31 +147,28 @@
                     <div class="text-sm text-muted-foreground">
                         {activity.startTime} - {activity.endTime}
                     </div>
-                    <div class="text-sm text-muted-foreground">
-                        {durationStr}
-                    </div>
                 {/if}
             </div>
 
             <!-- Action buttons - visible on mobile, hover overlay on desktop -->
             {#if !isDesktop}
                 <!-- Mobile: Always visible buttons -->
-                <div class="flex gap-2 shrink-0">
+                <div class="flex gap-0 shrink-0">
                     <button
                         on:click={handleEdit}
-                        class="px-3 py-2 hover:bg-primary/20 rounded text-primary transition-colors font-semibold md:text-lg active:bg-primary/30"
+                        class="px-3 py-2 hover:bg-primary/20 rounded-xl text-primary transition-colors font-semibold md:text-lg active:bg-primary/30"
                         aria-label="Edit activity"
                         title="Edit activity"
                     >
-                        ✎
+                        ✏️
                     </button>
                     <button
                         on:click={handleDelete}
-                        class="px-3 py-2 hover:bg-destructive/20 rounded text-destructive transition-colors font-semibold md:text-lg active:bg-destructive/30"
+                        class="px-3 py-2 hover:bg-destructive/20 rounded-xl text-destructive transition-colors font-semibold md:text-lg active:bg-destructive/30"
                         aria-label="Delete activity"
                         title="Delete activity"
                     >
-                        ✕
+                        🗑️
                     </button>
                 </div>
             {:else}

@@ -133,7 +133,15 @@
 
 <div
     class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
     on:click={handleBackdropClick}
+    on:keydown={(e) => {
+        if (e.key === "Escape") {
+            dispatch("close");
+        }
+    }}
 >
     <div
         class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
@@ -251,9 +259,11 @@
                     <!-- Templates Section -->
                     {#if filteredTemplates.length > 0}
                         <div class="space-y-2 p-3 bg-muted/50 rounded-2xl">
-                            <label class="text-xs font-semibold text-foreground"
-                                >Use Template</label
+                            <div
+                                class="text-xs font-semibold text-foreground block mb-2"
                             >
+                                Use Template
+                            </div>
                             <div class="space-y-1 max-h-32 overflow-y-auto">
                                 {#each filteredTemplates as template}
                                     <button
@@ -280,10 +290,12 @@
                     <!-- Activity Name -->
                     <div>
                         <label
+                            for="activity-name"
                             class="text-xs font-semibold text-foreground block mb-2"
                             >Activity Name</label
                         >
                         <input
+                            id="activity-name"
                             type="text"
                             bind:value={activityName}
                             placeholder="Enter activity name"
@@ -295,10 +307,12 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label
+                                for="start-time"
                                 class="text-xs font-semibold text-foreground block mb-2"
                                 >Start Time</label
                             >
                             <input
+                                id="start-time"
                                 type="time"
                                 bind:value={startTime}
                                 class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -306,10 +320,12 @@
                         </div>
                         <div>
                             <label
+                                for="end-time"
                                 class="text-xs font-semibold text-foreground block mb-2"
                                 >End Time</label
                             >
                             <input
+                                id="end-time"
                                 type="time"
                                 bind:value={endTime}
                                 class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring"

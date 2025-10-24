@@ -8,7 +8,8 @@
     import { formatDateRange } from "./lib/utils/date";
     import WeekPicker from "./lib/components/WeekPicker.svelte";
 
-    let isDesktop = false;
+    let isDesktop =
+        typeof window !== "undefined" ? window.innerWidth >= 768 : false;
     let showAddActivity = false;
     let showSettings = false;
     let showWeekPicker = false;
