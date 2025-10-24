@@ -1,6 +1,9 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { CalendarItem } from "../types/index";
+    import { WEEKDAYS_DE } from "../types/index";
+    import { currentWeek, currentYear } from "../stores/week";
+    import { getWeekNumber, getDaysOfWeek } from "../utils/date";
     import IconButton from "./IconButton.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
 
@@ -13,17 +16,51 @@
     $: console.log("ActivityEditSheet isDesktop:", isDesktop);
 
     let editData = { ...activity };
+    let selectedDay = activity.day;
     let hasChanges = false;
+
+    $: days = getDaysOfWeek($currentWeek, $currentYear);
 
     $: {
         hasChanges =
             editData.summary !== activity.summary ||
             editData.startTime !== activity.startTime ||
             editData.endTime !== activity.endTime ||
-            editData.description !== activity.description;
+            editData.description !== activity.description ||
+            selectedDay !== activity.day;
+    }
+
+    function formatDateToICalDate(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}${month}${day}`;
+    }
+
+    function formatDateForDisplay(date: Date): string {
+        return date.toLocaleDateString("de-DE", {
+            day: "numeric",
+            month: "short",
+        });
     }
 
     function handleSave() {
+        // If day changed, update all date-related fields
+        if (selectedDay !== activity.day) {
+            const newDate = days[selectedDay];
+            const startDate = formatDateToICalDate(newDate);
+            const dtstart = `${startDate}T${editData.startTime.replace(":", "")}00`;
+            const dtend = `${startDate}T${editData.endTime.replace(":", "")}00`;
+
+            editData.dtstart = dtstart;
+            editData.dtend = dtend;
+            editData.startDate = startDate;
+            editData.endDate = startDate;
+            editData.day = selectedDay;
+            editData.week = getWeekNumber(newDate);
+            editData.year = newDate.getFullYear();
+        }
+
         dispatch("save", editData);
     }
 
@@ -118,6 +155,34 @@
                 class="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="Activity name"
             />
+        </div>
+
+        <!-- Day Selection -->
+        <div>
+            <label
+                for="activity-day"
+                class="text-xs font-semibold text-foreground block mb-2"
+            >
+                Day
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+                {#each WEEKDAYS_DE as day, index}
+                    {@const dayDate = days[index]}
+                    <button
+                        type="button"
+                        on:click={() => (selectedDay = index)}
+                        class="p-2 rounded-lg text-xs font-semibold transition-colors {selectedDay ===
+                        index
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted hover:bg-muted/80'}"
+                    >
+                        <div>{day}</div>
+                        <div class="text-[10px] opacity-70 mt-0.5">
+                            {formatDateForDisplay(dayDate)}
+                        </div>
+                    </button>
+                {/each}
+            </div>
         </div>
 
         <!-- Time Selection -->
