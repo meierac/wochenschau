@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount, tick } from "svelte";
+    import { createEventDispatcher, onMount } from "svelte";
     import { fly, fade } from "svelte/transition";
     import { quintOut } from "svelte/easing";
 
     export let isDesktop = false;
     export let maxHeight = "90vh";
     export let desktopMaxWidth = "md:max-w-md";
-    export let padding = "p-2"; // Tailwind padding class for margin around sheet
+    export let padding = "p-2";
 
     const dispatch = createEventDispatcher();
 
@@ -19,18 +19,8 @@
     let lastY = 0;
     let sheetElement: HTMLDivElement | null = null;
 
-    const SWIPE_THRESHOLD = 100; // Distance in pixels to trigger close
-    const VELOCITY_THRESHOLD = 0.5; // Velocity threshold for quick swipe
-
-    // Debug logging for mobile
-    $: if (typeof window !== "undefined") {
-        console.log("SwipeableSheet Debug:", {
-            isDesktop,
-            isDragging,
-            translateY,
-            hasElement: !!sheetElement,
-        });
-    }
+    const SWIPE_THRESHOLD = 100;
+    const VELOCITY_THRESHOLD = 0.5;
 
     function handleBackdropClick(e: MouseEvent) {
         if (e.target === e.currentTarget) {
@@ -56,19 +46,15 @@
     function handleTouchStart(e: TouchEvent) {
         if (isDesktop) return;
 
-        console.log("Touch start detected");
-
-        const touch = e.touches[0];
         const target = e.target as HTMLElement;
         const scrollableParent = findScrollableParent(target);
 
-        // Check if we're touching a scrollable area that's not at the top
+        // Don't start drag if we're in scrollable content that's not at top
         if (scrollableParent && scrollableParent.scrollTop > 0) {
-            console.log("Scrollable content not at top, allowing scroll");
             return;
         }
 
-        console.log("Starting drag");
+        const touch = e.touches[0];
         startY = touch.clientY;
         currentY = touch.clientY;
         lastY = touch.clientY;
@@ -84,15 +70,12 @@
         currentY = touch.clientY;
         const deltaY = currentY - startY;
 
-        console.log("Touch move:", { deltaY, translateY });
-
-        // Check if there's a scrollable element being touched
         const target = e.target as HTMLElement;
         const scrollableParent = findScrollableParent(target);
 
         // Only allow downward dragging
         if (deltaY > 0) {
-            // If there's a scrollable parent at the top, allow sheet dragging
+            // Only drag if at top of scrollable content or no scrollable content
             if (!scrollableParent || scrollableParent.scrollTop === 0) {
                 translateY = deltaY;
 
@@ -105,16 +88,17 @@
                 lastY = currentY;
                 lastTime = now;
 
-                // Always prevent default to stop iOS bounce/scroll
-                e.preventDefault();
-                e.stopPropagation();
+                // Prevent default to stop scrolling
+                if (deltaY > 5) {
+                    e.preventDefault();
+                }
             }
         } else if (
             deltaY < 0 &&
             scrollableParent &&
             scrollableParent.scrollTop === 0
         ) {
-            // At top of scroll, trying to scroll up - allow it
+            // Trying to scroll up while at top - cancel drag
             isDragging = false;
             translateY = 0;
         }
@@ -123,17 +107,13 @@
     function handleTouchEnd() {
         if (!isDragging || isDesktop) return;
 
-        console.log("Touch end:", { translateY, velocity });
-
         isDragging = false;
 
-        // Close if dragged past threshold or fast swipe down
+        // Close if dragged past threshold or fast swipe
         if (translateY > SWIPE_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
-            console.log("Closing sheet");
             dispatch("close");
         } else {
-            console.log("Snapping back");
-            // Snap back to original position
+            // Snap back
             translateY = 0;
         }
     }
@@ -144,87 +124,54 @@
         }
     }
 
-    // Reactive statement to attach event listeners when element becomes available
-    $: if (sheetElement && !isDesktop) {
-        console.log("Attaching touch event listeners to sheet");
-
-        // Use tick to ensure DOM is ready
-        tick().then(() => {
-            if (sheetElement) {
-                // Remove any existing listeners first
-                sheetElement.removeEventListener(
-                    "touchstart",
-                    handleTouchStart,
-                );
-                sheetElement.removeEventListener("touchmove", handleTouchMove);
-                sheetElement.removeEventListener("touchend", handleTouchEnd);
-                sheetElement.removeEventListener("touchcancel", handleTouchEnd);
-
-                // Add new listeners with passive: false
-                sheetElement.addEventListener("touchstart", handleTouchStart, {
-                    passive: false,
-                    capture: false,
-                });
-                sheetElement.addEventListener("touchmove", handleTouchMove, {
-                    passive: false,
-                    capture: false,
-                });
-                sheetElement.addEventListener("touchend", handleTouchEnd, {
-                    passive: false,
-                    capture: false,
-                });
-                sheetElement.addEventListener("touchcancel", handleTouchEnd, {
-                    passive: false,
-                    capture: false,
-                });
-
-                console.log("Touch event listeners attached successfully");
-            }
-        });
-    }
-
-    onMount(() => {
-        console.log("SwipeableSheet mounted", { isDesktop });
-
-        // Prevent body scroll when sheet is open on mobile
+    // Setup touch event listeners with passive: false for iOS
+    function setupTouchListeners(element: HTMLDivElement) {
         if (!isDesktop) {
-            document.body.style.overflow = "hidden";
-            document.body.style.position = "fixed";
-            document.body.style.width = "100%";
-            document.body.style.height = "100%";
+            element.addEventListener("touchstart", handleTouchStart, {
+                passive: false,
+            });
+            element.addEventListener("touchmove", handleTouchMove, {
+                passive: false,
+            });
+            element.addEventListener("touchend", handleTouchEnd, {
+                passive: false,
+            });
+            element.addEventListener("touchcancel", handleTouchEnd, {
+                passive: false,
+            });
         }
 
         return () => {
-            console.log("SwipeableSheet unmounting");
-
             if (!isDesktop) {
-                document.body.style.overflow = "";
-                document.body.style.position = "";
-                document.body.style.width = "";
-                document.body.style.height = "";
-
-                // Clean up event listeners
-                if (sheetElement) {
-                    sheetElement.removeEventListener(
-                        "touchstart",
-                        handleTouchStart,
-                    );
-                    sheetElement.removeEventListener(
-                        "touchmove",
-                        handleTouchMove,
-                    );
-                    sheetElement.removeEventListener(
-                        "touchend",
-                        handleTouchEnd,
-                    );
-                    sheetElement.removeEventListener(
-                        "touchcancel",
-                        handleTouchEnd,
-                    );
-                }
+                element.removeEventListener("touchstart", handleTouchStart);
+                element.removeEventListener("touchmove", handleTouchMove);
+                element.removeEventListener("touchend", handleTouchEnd);
+                element.removeEventListener("touchcancel", handleTouchEnd);
             }
         };
+    }
+
+    onMount(() => {
+        // Prevent body scroll on mobile
+        if (!isDesktop) {
+            const originalOverflow = document.body.style.overflow;
+            const originalPosition = document.body.style.position;
+            document.body.style.overflow = "hidden";
+            document.body.style.position = "fixed";
+            document.body.style.width = "100%";
+
+            return () => {
+                document.body.style.overflow = originalOverflow;
+                document.body.style.position = originalPosition;
+                document.body.style.width = "";
+            };
+        }
     });
+
+    // Reactive binding for sheet element
+    $: if (sheetElement && !isDesktop) {
+        setupTouchListeners(sheetElement);
+    }
 </script>
 
 <div
@@ -244,28 +191,26 @@
         class={`bg-card/60 backdrop-blur-xl shadow-lg w-full flex flex-col ${
             isDesktop ? `${desktopMaxWidth} rounded-lg` : "rounded-t-3xl"
         }`}
-        style="
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
-            max-height: {isDesktop ? '80vh' : maxHeight};
-            transform: translateY({translateY}px);
-            transition: {isDragging
-            ? 'none'
-            : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'};
-            touch-action: none;
-            will-change: transform;
-            -webkit-transform: translateY({translateY}px);
-            -webkit-transition: {isDragging
-            ? 'none'
-            : '-webkit-transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'};
-        "
+        style:border-radius="36px"
+        style:box-shadow="0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,
+        255, 255, 0.1)"
+        style:max-height={isDesktop ? "80vh" : maxHeight}
+        style:transform="translate3d(0, {translateY}px, 0)"
+        style:transition={isDragging
+            ? "none"
+            : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)"}
+        style:touch-action="none"
+        style:-webkit-user-select="none"
+        style:user-select="none"
+        style:will-change={isDragging ? "transform" : "auto"}
         in:fly={{ y: isDesktop ? 0 : 500, duration: 300, easing: quintOut }}
         out:fly={{ y: isDesktop ? 0 : 500, duration: 250, easing: quintOut }}
     >
         <!-- Swipe indicator for mobile -->
         {#if !isDesktop}
             <div
-                class="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
-                style="touch-action: none; -webkit-user-select: none; user-select: none;"
+                class="w-full flex justify-center pt-1 pb-0 -mb-2"
+                style="touch-action: none;"
             >
                 <div
                     class="w-10 h-1 rounded-full bg-muted-foreground/30"
