@@ -1006,9 +1006,12 @@
                                                 $exportSettings.headerFontFamily
                                             }
                                             class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                            style="font-family: {$exportSettings.headerFontFamily};"
                                         >
                                             {#each FONT_FAMILIES as font}
-                                                <option value={font.value}
+                                                <option
+                                                    value={font.value}
+                                                    style="font-family: {font.value};"
                                                     >{font.name}</option
                                                 >
                                             {/each}
@@ -1029,9 +1032,12 @@
                                                 $exportSettings.bodyFontFamily
                                             }
                                             class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                            style="font-family: {$exportSettings.bodyFontFamily};"
                                         >
                                             {#each FONT_FAMILIES as font}
-                                                <option value={font.value}
+                                                <option
+                                                    value={font.value}
+                                                    style="font-family: {font.value};"
                                                     >{font.name}</option
                                                 >
                                             {/each}
@@ -1716,9 +1722,12 @@
                                             $exportSettings.headerFontFamily
                                         }
                                         class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        style="font-family: {$exportSettings.headerFontFamily};"
                                     >
                                         {#each FONT_FAMILIES as font}
-                                            <option value={font.value}
+                                            <option
+                                                value={font.value}
+                                                style="font-family: {font.value};"
                                                 >{font.name}</option
                                             >
                                         {/each}
@@ -1739,9 +1748,12 @@
                                             $exportSettings.bodyFontFamily
                                         }
                                         class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        style="font-family: {$exportSettings.bodyFontFamily};"
                                     >
                                         {#each FONT_FAMILIES as font}
-                                            <option value={font.value}
+                                            <option
+                                                value={font.value}
+                                                style="font-family: {font.value};"
                                                 >{font.name}</option
                                             >
                                         {/each}
