@@ -32,8 +32,8 @@ export interface ExportSettings {
 
 const defaultSettings: ExportSettings = {
   // Typography
-  headerFontFamily: "'Lora', serif",
-  bodyFontFamily: "'Manrope', sans-serif",
+  headerFontFamily: "'Lora'",
+  bodyFontFamily: "'Manrope'",
   textColor: "#000000",
 
   // Title/Headline
@@ -238,25 +238,25 @@ export const exportSettings = createExportSettingsStore();
 // Only fonts that are available in /public/fonts/
 export const FONT_FAMILIES = [
   // Handwriting & Script (Local)
-  { name: "Dancing Script (Script)", value: "'Dancing Script', cursive" },
-  { name: "Edu QLD Hand (Handwriting)", value: "'Edu QLD Hand', cursive" },
-  { name: "Edu SA Hand (Handwriting)", value: "'Edu SA Hand', cursive" },
-  { name: "Handlee (Handwriting)", value: "'Handlee', cursive" },
-  { name: "Ms Madi (Script)", value: "'Ms Madi', cursive" },
+  { name: "Dancing Script (Script)", value: "'Dancing Script'" },
+  { name: "Edu QLD Hand (Handwriting)", value: "'Edu QLD Hand'" },
+  { name: "Edu SA Hand (Handwriting)", value: "'Edu SA Hand'" },
+  { name: "Handlee (Handwriting)", value: "'Handlee'" },
+  { name: "Ms Madi (Script)", value: "'Ms Madi'" },
 
   // Serif Fonts (Local)
-  { name: "Lora (Serif)", value: "'Lora', serif" },
+  { name: "Lora (Serif)", value: "'Lora'" },
 
   // Sans-Serif Fonts (Local)
-  { name: "Archivo (Sans-Serif)", value: "'Archivo', sans-serif" },
-  { name: "Manrope (Sans-Serif)", value: "'Manrope', sans-serif" },
-  { name: "Noto Sans (Sans-Serif)", value: "'Noto Sans', sans-serif" },
+  { name: "Archivo (Sans-Serif)", value: "'Archivo'" },
+  { name: "Manrope (Sans-Serif)", value: "'Manrope'" },
+  { name: "Noto Sans (Sans-Serif)", value: "'Noto Sans'" },
 
   // Display/Decorative (Local)
-  { name: "Pirata One (Display)", value: "'Pirata One', serif" },
+  { name: "Pirata One (Display)", value: "'Pirata One'" },
 
   // Monospace Fonts (Local)
-  { name: "Space Mono (Mono)", value: "'Space Mono', monospace" },
+  { name: "Space Mono (Mono)", value: "'Space Mono'" },
 
   // System Default (Fallback)
   { name: "System Default", value: "system-ui, -apple-system, sans-serif" },

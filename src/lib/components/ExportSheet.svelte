@@ -262,6 +262,25 @@
             }
 
             // Attempt 1: normal scale, snapdom font embedding
+            // Font debug logging before first capture attempt
+            try {
+                const titleEl = element.querySelector("h2");
+                const bodyEl = element.querySelector("p, span, div");
+                if (titleEl) {
+                    console.log(
+                        "[FontDebug] Title computed font-family:",
+                        getComputedStyle(titleEl).fontFamily,
+                    );
+                }
+                if (bodyEl) {
+                    console.log(
+                        "[FontDebug] Body computed font-family:",
+                        getComputedStyle(bodyEl).fontFamily,
+                    );
+                }
+            } catch (e) {
+                console.warn("[FontDebug] Failed to read computed fonts:", e);
+            }
             console.log(
                 "[ExportSheet] Attempt 1 with scale:",
                 scale,
@@ -611,7 +630,7 @@
                             : '400px'}; position: relative; {$exportSettings.backgroundMode ===
                         'color'
                             ? `background-color: ${$exportSettings.backgroundColor};`
-                            : ''} color: {$exportSettings.textColor};"
+                            : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                     >
                         <!-- Background Image (use img element for better html-to-image support) -->
                         {#if $exportSettings.backgroundMode === "image" && $exportSettings.backgroundImage}
@@ -631,10 +650,10 @@
                             ></div>
                         {/if}
 
-                        <!-- Content wrapper with padding -->
+                        <!-- Content wrapper without outer padding (removed to eliminate white border) -->
                         <div
                             class="space-y-4"
-                            style="padding: 1.5rem; position: relative; z-index: 10;"
+                            style="position: relative; z-index: 10;"
                         >
                             <div class="mb-6 text-center">
                                 <h2
@@ -646,7 +665,7 @@
                                 {#if $exportSettings.showWeekNumber}
                                     <p
                                         class="text-lg font-semibold"
-                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.8;"
+                                        style="color: {$exportSettings.textColor}; opacity: 0.8;"
                                     >
                                         KW{$currentWeek}
                                     </p>
@@ -666,7 +685,7 @@
                                             >
                                                 <div
                                                     class="font-semibold text-xs"
-                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                    style="color: {$exportSettings.textColor};"
                                                 >
                                                     {WEEKDAYS_DE[dayIndex]} ·
                                                     <span
@@ -692,7 +711,7 @@
                                                         >
                                                             <div
                                                                 class="font-semibold truncate"
-                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                                style="color: {$exportSettings.textColor};"
                                                             >
                                                                 {activity.summary}
                                                             </div>
@@ -726,14 +745,14 @@
                                         >
                                             <p
                                                 class="text-sm italic mb-1"
-                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                style="color: {$exportSettings.textColor};"
                                             >
                                                 "{$bibleVerse.currentVerse
                                                     .text}"
                                             </p>
                                             <p
                                                 class="text-xs"
-                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                style="color: {$exportSettings.textColor}; opacity: 0.7;"
                                             >
                                                 – {$bibleVerse.currentVerse
                                                     .reference}
@@ -759,7 +778,7 @@
                                             >
                                                 <div
                                                     class="font-semibold text-sm"
-                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                    style="color: {$exportSettings.textColor};"
                                                 >
                                                     {WEEKDAYS_DE[dayIndex]} ·
                                                     {formatDate(day)}
@@ -769,7 +788,7 @@
                                                 {#if getDayActivities(dayIndex).length === 0}
                                                     <div
                                                         class="text-sm text-center"
-                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
+                                                        style="color: {$exportSettings.textColor}; opacity: 0.5;"
                                                     >
                                                         No activities
                                                     </div>
@@ -782,21 +801,21 @@
                                                         >
                                                             <div
                                                                 class="font-semibold"
-                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                                style="color: {$exportSettings.textColor};"
                                                             >
                                                                 {activity.summary}
                                                             </div>
                                                             {#if isAllDayEvent(activity)}
                                                                 <div
                                                                     class="text-xs"
-                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    style="color: {$exportSettings.textColor}; opacity: 0.7;"
                                                                 >
                                                                     All-Day
                                                                 </div>
                                                             {:else}
                                                                 <div
                                                                     class="text-xs"
-                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    style="color: {$exportSettings.textColor}; opacity: 0.7;"
                                                                 >
                                                                     {activity.startTime}
                                                                     - {activity.endTime}
@@ -816,14 +835,14 @@
                                         >
                                             <p
                                                 class="text-sm italic mb-2"
-                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                style="color: {$exportSettings.textColor};"
                                             >
                                                 "{$bibleVerse.currentVerse
                                                     .text}"
                                             </p>
                                             <p
                                                 class="text-xs"
-                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                style="color: {$exportSettings.textColor}; opacity: 0.7;"
                                             >
                                                 – {$bibleVerse.currentVerse
                                                     .reference}
