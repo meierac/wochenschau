@@ -47,11 +47,7 @@
     $: durationStr = `${Math.floor(duration / 60)}h ${duration % 60}m`;
 </script>
 
-<SwipeableSheet
-    {isDesktop}
-    desktopMaxWidth="md:max-w-md"
-    on:close={handleCancel}
->
+<SwipeableSheet {isDesktop} on:close={handleCancel}>
     <!-- Header with centered title and icon buttons -->
     <div class="px-3 py-3 flex items-center justify-between">
         <!-- Cancel button (left) -->
