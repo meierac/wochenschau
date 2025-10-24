@@ -301,16 +301,51 @@
         const resolution = event.detail;
 
         if (resolution === "keep-local") {
-            // Keep local changes - just update the lastFetched timestamp
-            for (const [_subscriptionId, data] of pendingSyncData.entries()) {
+            // Smart partial sync: keep modified items, but sync everything else
+            for (const [subscriptionId, data] of pendingSyncData.entries()) {
+                const { subscription, items: calendarItems } = data;
+
+                // Get IDs of items that have conflicts (modified locally)
+                const conflictedItemIds = new Set(
+                    pendingConflicts
+                        .filter((c) => c.localItem.sourceId === subscriptionId)
+                        .map((c) => c.localItem.id),
+                );
+
+                // Get all current items from this subscription
+                const oldActivities = $activities.filter(
+                    (a) => a.sourceId === subscriptionId && a.source === "ical",
+                );
+
+                // Remove old items that are NOT conflicted
+                for (const oldActivity of oldActivities) {
+                    if (!conflictedItemIds.has(oldActivity.id)) {
+                        activities.removeActivity(oldActivity.id);
+                    }
+                }
+
+                // Add new items from sync that don't match conflicted items
+                for (const item of calendarItems) {
+                    // Check if this incoming item matches a conflicted local item by UID
+                    const isConflicted = pendingConflicts.some(
+                        (c) =>
+                            c.localItem.sourceId === subscriptionId &&
+                            c.localItem.uid === item.uid,
+                    );
+
+                    // Only add if not conflicted
+                    if (!isConflicted) {
+                        activities.addActivity(item);
+                    }
+                }
+
+                // Update subscription metadata
                 subscriptions.updateSubscription({
-                    ...data.subscription,
+                    ...subscription,
                     lastFetched: Date.now(),
                 });
             }
-            console.log(
-                "Kept local changes, skipped sync for conflicted items",
-            );
+            console.log("Kept local changes, synced non-conflicted items");
         } else if (resolution === "use-synced") {
             // Discard local changes - perform sync without conflict check
             for (const [subscriptionId, _data] of pendingSyncData.entries()) {
@@ -566,12 +601,14 @@
 {/if}
 
 <!-- Sync Conflict Dialog -->
-<SyncConflictDialog
-    bind:isOpen={showConflictDialog}
-    conflicts={pendingConflicts}
-    on:resolve={handleConflictResolution}
-    on:close={handleConflictDialogClose}
-/>
+{#if showConflictDialog}
+    <SyncConflictDialog
+        conflicts={pendingConflicts}
+        {isDesktop}
+        on:resolve={handleConflictResolution}
+        on:close={handleConflictDialogClose}
+    />
+{/if}
 
 <style>
     :global(body) {

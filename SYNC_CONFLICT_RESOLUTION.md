@@ -33,10 +33,14 @@ The dialog displays:
 You have two choices:
 
 #### 1. Keep My Changes
-- **What happens**: Your local edits are preserved
-- **Sync behavior**: The lastFetched timestamp updates, but conflicted items remain unchanged
+- **What happens**: Smart partial sync is performed
+- **Modified items**: Your local edits are preserved exactly as-is
+- **New items**: Added from the calendar subscription (you get the latest events)
+- **Deleted items**: Removed from your local calendar (stays in sync)
+- **Unchanged items**: Updated with fresh data from the subscription
+- **Sync behavior**: The lastFetched timestamp updates
 - **Note**: Your changes won't sync back to the original calendar source (one-way sync)
-- **Best for**: When you've customized items and want to keep your version
+- **Best for**: When you've customized items and want to keep your version while staying current with other changes
 
 #### 2. Use Synced Data
 - **What happens**: Your local changes are discarded
@@ -84,6 +88,21 @@ if (wasModifiedLocally || hasLocalOverrides) {
 }
 ```
 
+### Smart Partial Sync
+
+When you choose "Keep My Changes", the app performs an intelligent partial sync:
+
+```typescript
+// For each subscription with conflicts:
+1. Identify which items have conflicts (modified locally)
+2. Remove old items that are NOT conflicted
+3. Add new items from sync (except those matching conflicted items by UID)
+4. Keep conflicted items unchanged
+5. Update subscription timestamp
+
+// Result: You keep your edits but get all other updates
+```
+
 ### Automatic Tracking
 
 When you edit a synced calendar item through the UI:
@@ -106,14 +125,28 @@ The following fields are tracked for conflicts:
 
 ### Example Scenario
 
-1. **Initial Sync**: You subscribe to a work calendar, syncing 20 events
-2. **Local Edit**: You edit one event's title from "Team Meeting" to "Team Meeting - POSTPONED"
-3. **Next Sync**: 24 hours later, auto-sync triggers
-4. **Conflict Detected**: The app notices you edited "Team Meeting"
-5. **Dialog Shown**: You're asked if you want to keep "POSTPONED" or use the original
-6. **Your Choice**: 
-   - Choose "Keep My Changes" → Your version stays, sync timestamp updates
-   - Choose "Use Synced Data" → Original "Team Meeting" is restored
+#### Before Sync:
+- **Work Calendar** has 20 events
+- You edited: "Team Meeting" → "Team Meeting - POSTPONED"
+- Source calendar added: 2 new events
+- Source calendar deleted: 1 event
+- Source calendar updated: 3 events (times changed)
+
+#### After Choosing "Keep My Changes":
+- ✅ Your "Team Meeting - POSTPONED" stays (modified item preserved)
+- ✅ 2 new events are added (you get the latest)
+- ✅ 1 deleted event is removed (stays in sync)
+- ✅ 3 updated events get new times (stays in sync)
+- ✅ Sync timestamp updates
+
+**Result**: You have 21 events total - your edit plus all the updates!
+
+#### After Choosing "Use Synced Data":
+- ❌ Your edit is lost, reverts to "Team Meeting"
+- ✅ Full sync: new events added, deleted events removed, all updates applied
+- ✅ Sync timestamp updates
+
+**Result**: You have 21 events total - completely in sync with source
 
 ### Manual vs Auto Sync
 
@@ -127,10 +160,11 @@ Both trigger conflict detection if you have local modifications.
 
 ### When to Keep Local Changes
 
-- You've customized event titles for personal clarity
-- You've added important notes in the description
-- You've adjusted times to match your schedule
+- You've customized event titles for personal clarity **AND** want to receive new events
+- You've added important notes in the description **AND** want deleted events removed
+- You've adjusted times to match your schedule **AND** want other events updated
 - You're using synced items as templates and personalizing them
+- You want the best of both worlds: your edits + latest calendar updates
 
 ### When to Use Synced Data
 
@@ -138,6 +172,20 @@ Both trigger conflict detection if you have local modifications.
 - The source calendar is the "source of truth"
 - Your local edits were experimental or temporary
 - You accidentally modified items and want to reset them
+
+### Understanding the Trade-offs
+
+**"Keep My Changes" is smart!** It doesn't abort the sync - it performs a partial sync:
+- ✅ Your edits are safe
+- ✅ New events are added
+- ✅ Deletions are processed
+- ✅ Other updates are applied
+- ❌ Your edits won't sync back to source
+
+**"Use Synced Data" is complete:**
+- ✅ Full synchronization
+- ✅ Everything matches the source
+- ❌ Your local edits are lost
 
 ### Avoiding Conflicts
 
@@ -169,17 +217,25 @@ This is used internally when you choose "Use Synced Data" to apply the resolutio
 
 ## Limitations
 
+### Smart Partial Sync
+
+- When you "Keep My Changes", you get a **partial sync**
+- Modified items are excluded from the sync
+- Everything else (new, deleted, unchanged) is fully synced
+- This gives you the best of both worlds
+
 ### One-Way Sync Only
 
 - Local changes don't sync back to the original calendar
 - This is a subscription-based model, not bi-directional sync
 - The app is designed to consume calendar data, not publish it
 
-### No Per-Item Resolution
+### Partial Sync Applied Automatically
 
-- The conflict dialog operates at the subscription level
-- You can't choose "keep" for some items and "discard" for others
-- It's an all-or-nothing choice per sync operation
+- When you "Keep My Changes", the app automatically does per-item resolution
+- Modified items are kept, everything else is synced
+- You don't need to manually choose for each item
+- The resolution is at the subscription level, but the sync is smart about individual items
 
 ### No Merge Capability
 
@@ -211,12 +267,12 @@ Potential improvements for conflict resolution:
 
 ### Changes Lost After Sync
 
-**Cause**: You chose "Use Synced Data" or closed the dialog without choosing.
+**Cause**: You chose "Use Synced Data".
 
 **Solution**:
 - There's no undo for this - changes are permanently lost
 - In the future, choose "Keep My Changes" if you want to preserve edits
-- Note: Closing the dialog without choosing treats it as "Keep My Changes"
+- Note: Closing the dialog without choosing treats it as "Keep My Changes" (safe default)
 
 ### Conflicts for Items I Didn't Edit
 

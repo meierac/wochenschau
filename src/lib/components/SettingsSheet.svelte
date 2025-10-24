@@ -407,7 +407,7 @@
     desktopMaxWidth="md:max-w-5xl"
     on:close={handleClose}
 >
-    <div class={`flex flex-col ${isDesktop ? "md:h-[80vh]" : "h-[90vh]"}`}>
+    <div class={`flex flex-col ${isDesktop ? "md:h-[80vh]" : "max-h-[90vh]"}`}>
         <!-- Header (Always on top) -->
         <div
             class={`${isDesktop ? "border-b border-border min-h-[70px]" : ""} px-3 py-3 flex items-center justify-center relative shrink-0`}
