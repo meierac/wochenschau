@@ -24,15 +24,28 @@
         if (isDesktop) return {};
 
         let rafId: number | null = null;
+        let scrollableElement: HTMLElement | null = null;
+        let initialScrollTop = 0;
+        let startX = 0;
 
         function handleStart(e: TouchEvent) {
             // Don't prevent default on start to allow clicks
             const touch = e.touches[0];
             if (!touch) return;
 
+            // Check if touch started on a scrollable element
+            const target = e.target as HTMLElement;
+            scrollableElement = target.closest(".sheet-content");
+
+            // Store initial scroll position
+            initialScrollTop = scrollableElement
+                ? scrollableElement.scrollTop
+                : 0;
+
             startY = touch.clientY;
+            startX = touch.clientX;
             startTime = Date.now();
-            isDragging = true;
+            isDragging = false;
             currentTranslate = 0;
 
             // Remove any transitions
@@ -46,16 +59,48 @@
         }
 
         function handleMove(e: TouchEvent) {
-            if (!isDragging) return;
-
             const touch = e.touches[0];
             if (!touch) return;
 
             const currentY = touch.clientY;
+            const currentX = touch.clientX;
             const deltaY = currentY - startY;
+            const deltaX = Math.abs(currentX - startX);
 
-            // Only allow downward drags
-            if (deltaY > 0) {
+            // If touching scrollable content, be very conservative
+            if (scrollableElement) {
+                const currentScrollTop = scrollableElement.scrollTop;
+                const isAtTop = currentScrollTop <= 1; // Allow 1px tolerance
+
+                // Don't allow swipe-to-close if:
+                // 1. Not at the very top
+                // 2. Swiping up
+                // 3. Didn't start at top
+                // 4. Horizontal movement detected (likely scrolling)
+                if (
+                    !isAtTop ||
+                    deltaY <= 0 ||
+                    initialScrollTop > 1 ||
+                    deltaX > 10
+                ) {
+                    return; // Let the browser handle scrolling
+                }
+
+                // Require significant downward movement (40px) before triggering
+                if (deltaY < 40) {
+                    return;
+                }
+
+                // At this point, user is clearly trying to close, not scroll
+                isDragging = true;
+            } else {
+                // No scrollable content, allow swipe with lower threshold
+                if (deltaY <= 0) return;
+                if (deltaY < 20) return;
+                isDragging = true;
+            }
+
+            if (isDragging && deltaY > 0) {
                 currentTranslate = deltaY;
 
                 // Update transform immediately using RAF
@@ -68,12 +113,9 @@
                     rafId = null;
                 });
 
-                // CRITICAL: Prevent default to stop iOS bounce/overscroll in PWA
-                // Only prevent if we've dragged significantly
-                if (deltaY > 5) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
+                // Prevent default to stop iOS bounce/overscroll in PWA
+                e.preventDefault();
+                e.stopPropagation();
             }
         }
 
@@ -183,7 +225,6 @@
     class:desktop={isDesktop}
     class:pwa={isStandalone}
     on:click={handleBackdropClick}
-    on:touchmove|preventDefault|stopPropagation
     role="presentation"
     transition:fade={{ duration: 200 }}
 >
@@ -286,8 +327,6 @@
     }
 
     .handle-wrapper {
-        position: absolute;
-        top: 0;
         width: 100%;
         display: flex;
         justify-content: center;
