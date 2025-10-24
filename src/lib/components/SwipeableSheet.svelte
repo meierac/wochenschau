@@ -20,6 +20,8 @@
     let velocity = 0;
     let lastTime = 0;
     let lastY = 0;
+    let sheetElement: HTMLDivElement | null = null;
+    let contentElement: HTMLElement | null = null;
 
     const SWIPE_THRESHOLD = 100; // Distance in pixels to trigger close
     const VELOCITY_THRESHOLD = 0.5; // Velocity threshold for quick swipe
@@ -33,6 +35,15 @@
     function handleTouchStart(e: TouchEvent) {
         if (isDesktop) return;
 
+        // Check if we're touching a scrollable area that's not at the top
+        const target = e.target as HTMLElement;
+        const scrollableParent = findScrollableParent(target);
+
+        if (scrollableParent && scrollableParent.scrollTop > 0) {
+            // Allow native scrolling if not at top
+            return;
+        }
+
         const touch = e.touches[0];
         startY = touch.clientY;
         currentY = touch.clientY;
@@ -42,6 +53,21 @@
         velocity = 0;
     }
 
+    function findScrollableParent(element: HTMLElement): HTMLElement | null {
+        let current = element;
+        while (current && current !== sheetElement) {
+            const overflowY = window.getComputedStyle(current).overflowY;
+            if (
+                (overflowY === "auto" || overflowY === "scroll") &&
+                current.scrollHeight > current.clientHeight
+            ) {
+                return current;
+            }
+            current = current.parentElement as HTMLElement;
+        }
+        return null;
+    }
+
     function handleTouchMove(e: TouchEvent) {
         if (!isDragging || isDesktop) return;
 
@@ -49,23 +75,36 @@
         currentY = touch.clientY;
         const deltaY = currentY - startY;
 
+        // Check if there's a scrollable element being touched
+        const target = e.target as HTMLElement;
+        const scrollableParent = findScrollableParent(target);
+
         // Only allow downward dragging
         if (deltaY > 0) {
-            translateY = deltaY;
+            // If there's a scrollable parent at the top, allow sheet dragging
+            if (!scrollableParent || scrollableParent.scrollTop === 0) {
+                translateY = deltaY;
 
-            // Calculate velocity
-            const now = Date.now();
-            const timeDiff = now - lastTime;
-            if (timeDiff > 0) {
-                velocity = (currentY - lastY) / timeDiff;
-            }
-            lastY = currentY;
-            lastTime = now;
+                // Calculate velocity
+                const now = Date.now();
+                const timeDiff = now - lastTime;
+                if (timeDiff > 0) {
+                    velocity = (currentY - lastY) / timeDiff;
+                }
+                lastY = currentY;
+                lastTime = now;
 
-            // Prevent default scroll on mobile when dragging
-            if (translateY > 5) {
+                // Prevent default scroll on mobile when dragging
                 e.preventDefault();
             }
+        } else if (
+            deltaY < 0 &&
+            scrollableParent &&
+            scrollableParent.scrollTop === 0
+        ) {
+            // At top of scroll, trying to scroll up - allow it
+            isDragging = false;
+            translateY = 0;
         }
     }
 
@@ -116,6 +155,7 @@
     out:fade={{ duration: 200 }}
 >
     <div
+        bind:this={sheetElement}
         class={`bg-card/60 backdrop-blur-xl shadow-lg w-full flex flex-col ${
             isDesktop ? `${desktopMaxWidth} rounded-lg` : "rounded-3xl"
         }`}
@@ -127,7 +167,7 @@
             transition: {isDragging
             ? 'none'
             : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'};
-            touch-action: pan-y;
+            touch-action: none;
         "
         on:touchstart={handleTouchStart}
         on:touchmove={handleTouchMove}
@@ -139,6 +179,7 @@
         {#if !isDesktop}
             <div
                 class="absolute w-full top-0 flex justify-center pt-1 pb-0 cursor-grab active:cursor-grabbing"
+                style="touch-action: none; -webkit-user-select: none; user-select: none;"
             >
                 <div
                     class="w-10 h-1 rounded-full bg-muted-foreground/30"
