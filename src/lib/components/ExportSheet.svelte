@@ -142,6 +142,15 @@
                 throw new Error("Export preview element not found");
             }
 
+            // Wait for fonts to load
+            console.log("[ExportSheet] Waiting for fonts to load...");
+            try {
+                await document.fonts.ready;
+                console.log("[ExportSheet] All fonts loaded successfully");
+            } catch (error) {
+                console.warn("[ExportSheet] Font loading failed:", error);
+            }
+
             // Wait for background image to load if it exists and is active
             if (
                 $exportSettings.backgroundMode === "image" &&
@@ -154,8 +163,14 @@
                         reject(new Error("Failed to load background image"));
                     img.src = $exportSettings.backgroundImage!;
                 });
-                console.log("Background image loaded successfully");
+                console.log(
+                    "[ExportSheet] Background image loaded successfully",
+                );
             }
+
+            // Add a small delay to ensure everything is rendered
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            console.log("[ExportSheet] Starting screenshot capture...");
 
             const dataUrl = await domToJpeg(element, {
                 scale: 2,
