@@ -7,7 +7,6 @@
     export let isDesktop = false;
     export let maxHeight = "90vh";
     export let desktopMaxWidth = "md:max-w-md";
-    export let padding = "p-2";
 
     const dispatch = createEventDispatcher();
 
@@ -19,21 +18,23 @@
     let velocity = 0;
     let lastY = 0;
     let lastTime = 0;
+    let sheetElement: HTMLDivElement | null = null;
 
     // Configuration
-    const DISMISS_THRESHOLD = 100; // pixels
-    const VELOCITY_THRESHOLD = 0.5; // pixels per millisecond
-    const RESISTANCE_FACTOR = 3; // Resistance when dragging up
+    const DISMISS_THRESHOLD = 100;
+    const VELOCITY_THRESHOLD = 0.5;
+    const RESISTANCE_FACTOR = 3;
 
     /**
-     * Finds the nearest scrollable parent element
+     * Find scrollable parent element
      */
     function findScrollableParent(
         element: HTMLElement,
-        container: HTMLElement,
+        container: HTMLElement | null,
     ): HTMLElement | null {
-        let current = element;
+        if (!container) return null;
 
+        let current = element;
         while (current && current !== container) {
             const style = window.getComputedStyle(current);
             const overflowY = style.overflowY;
@@ -47,142 +48,115 @@
 
             current = current.parentElement as HTMLElement;
         }
-
         return null;
     }
 
     /**
-     * Check if touch should start drag gesture
+     * Touch start handler
      */
-    function shouldStartDrag(
-        target: HTMLElement,
-        container: HTMLElement,
-    ): boolean {
-        // Always allow drag on desktop
-        if (isDesktop) return false;
+    function handleTouchStart(e: TouchEvent) {
+        if (isDesktop || !sheetElement) return;
 
-        const scrollableParent = findScrollableParent(target, container);
+        const target = e.target as HTMLElement;
+        const scrollableParent = findScrollableParent(target, sheetElement);
 
-        // If there's a scrollable element and it's not at the top, don't drag
+        // Don't start drag if scrolled down
         if (scrollableParent && scrollableParent.scrollTop > 0) {
-            return false;
+            return;
         }
 
-        return true;
+        const touch = e.touches[0];
+        if (!touch) return;
+
+        startY = touch.clientY;
+        currentY = touch.clientY;
+        lastY = touch.clientY;
+        lastTime = Date.now();
+        isDragging = true;
+        velocity = 0;
     }
 
     /**
-     * Svelte action for touch handling
+     * Touch move handler
      */
-    function swipeHandler(node: HTMLElement) {
-        if (isDesktop) return {};
+    function handleTouchMove(e: TouchEvent) {
+        if (!isDragging || isDesktop || !sheetElement) return;
 
-        function onTouchStart(e: TouchEvent) {
-            const target = e.target as HTMLElement;
+        const touch = e.touches[0];
+        if (!touch) return;
 
-            if (!shouldStartDrag(target, node)) {
-                return;
-            }
+        currentY = touch.clientY;
+        const deltaY = currentY - startY;
 
-            const touch = e.touches[0];
-            startY = touch.clientY;
-            currentY = touch.clientY;
-            lastY = touch.clientY;
-            lastTime = Date.now();
-            isDragging = true;
-            velocity = 0;
+        // Calculate velocity
+        const now = Date.now();
+        const timeDiff = now - lastTime;
+        if (timeDiff > 0) {
+            velocity = (currentY - lastY) / timeDiff;
         }
+        lastY = currentY;
+        lastTime = now;
 
-        function onTouchMove(e: TouchEvent) {
-            if (!isDragging) return;
+        const target = e.target as HTMLElement;
+        const scrollableParent = findScrollableParent(target, sheetElement);
 
-            const touch = e.touches[0];
-            currentY = touch.clientY;
-            const deltaY = currentY - startY;
-
-            // Calculate velocity for quick swipes
-            const now = Date.now();
-            const timeDiff = now - lastTime;
-            if (timeDiff > 0) {
-                velocity = (currentY - lastY) / timeDiff;
-            }
-            lastY = currentY;
-            lastTime = now;
-
-            // Handle drag direction
-            if (deltaY > 0) {
-                // Dragging down - follow finger directly
+        // Dragging down
+        if (deltaY > 0) {
+            if (!scrollableParent || scrollableParent.scrollTop === 0) {
                 translateY = deltaY;
 
-                // Prevent page scroll when dragging down
+                // Prevent default to stop page scroll
                 if (deltaY > 10) {
                     e.preventDefault();
                 }
-            } else {
-                // Dragging up - apply resistance
-                const target = e.target as HTMLElement;
-                const scrollableParent = findScrollableParent(target, node);
-
-                if (!scrollableParent || scrollableParent.scrollTop === 0) {
-                    // At top of content, apply resistance to upward drag
-                    translateY = deltaY / RESISTANCE_FACTOR;
-                    e.preventDefault();
-                } else {
-                    // Allow scrolling up
-                    isDragging = false;
-                    translateY = 0;
-                }
             }
         }
-
-        function onTouchEnd() {
-            if (!isDragging) return;
-
-            isDragging = false;
-
-            // Dismiss if:
-            // 1. Dragged past threshold, OR
-            // 2. Fast downward swipe (velocity check)
-            const shouldDismiss =
-                translateY > DISMISS_THRESHOLD || velocity > VELOCITY_THRESHOLD;
-
-            if (shouldDismiss) {
-                dispatch("close");
+        // Dragging up
+        else {
+            if (!scrollableParent || scrollableParent.scrollTop === 0) {
+                // Apply resistance
+                translateY = deltaY / RESISTANCE_FACTOR;
+                e.preventDefault();
             } else {
-                // Snap back to original position
+                // Allow scrolling
+                isDragging = false;
                 translateY = 0;
             }
-
-            // Reset velocity
-            velocity = 0;
         }
-
-        function onTouchCancel() {
-            isDragging = false;
-            translateY = 0;
-            velocity = 0;
-        }
-
-        // Add event listeners with passive: false for iOS
-        node.addEventListener("touchstart", onTouchStart, { passive: false });
-        node.addEventListener("touchmove", onTouchMove, { passive: false });
-        node.addEventListener("touchend", onTouchEnd, { passive: false });
-        node.addEventListener("touchcancel", onTouchCancel, {
-            passive: false,
-        });
-
-        return {
-            destroy() {
-                node.removeEventListener("touchstart", onTouchStart);
-                node.removeEventListener("touchmove", onTouchMove);
-                node.removeEventListener("touchend", onTouchEnd);
-                node.removeEventListener("touchcancel", onTouchCancel);
-            },
-        };
     }
 
     /**
-     * Handle backdrop click
+     * Touch end handler
+     */
+    function handleTouchEnd() {
+        if (!isDragging || isDesktop) return;
+
+        isDragging = false;
+
+        // Dismiss if dragged past threshold or fast swipe
+        const shouldDismiss =
+            translateY > DISMISS_THRESHOLD || velocity > VELOCITY_THRESHOLD;
+
+        if (shouldDismiss) {
+            dispatch("close");
+        } else {
+            translateY = 0;
+        }
+
+        velocity = 0;
+    }
+
+    /**
+     * Touch cancel handler
+     */
+    function handleTouchCancel() {
+        isDragging = false;
+        translateY = 0;
+        velocity = 0;
+    }
+
+    /**
+     * Backdrop click handler
      */
     function handleBackdropClick(e: MouseEvent) {
         if (e.target === e.currentTarget) {
@@ -191,7 +165,7 @@
     }
 
     /**
-     * Handle keyboard events
+     * Keyboard handler
      */
     function handleKeydown(e: KeyboardEvent) {
         if (e.key === "Escape") {
@@ -200,43 +174,74 @@
     }
 
     /**
-     * Prevent body scroll on mobile
+     * Setup touch event listeners
+     */
+    function setupTouchListeners() {
+        if (!sheetElement || isDesktop) return;
+
+        sheetElement.addEventListener("touchstart", handleTouchStart, {
+            passive: false,
+        });
+        sheetElement.addEventListener("touchmove", handleTouchMove, {
+            passive: false,
+        });
+        sheetElement.addEventListener("touchend", handleTouchEnd, {
+            passive: false,
+        });
+        sheetElement.addEventListener("touchcancel", handleTouchCancel, {
+            passive: false,
+        });
+    }
+
+    /**
+     * Remove touch event listeners
+     */
+    function removeTouchListeners() {
+        if (!sheetElement) return;
+
+        sheetElement.removeEventListener("touchstart", handleTouchStart);
+        sheetElement.removeEventListener("touchmove", handleTouchMove);
+        sheetElement.removeEventListener("touchend", handleTouchEnd);
+        sheetElement.removeEventListener("touchcancel", handleTouchCancel);
+    }
+
+    /**
+     * Component mount
      */
     onMount(() => {
-        if (!isDesktop) {
-            const originalStyles = {
-                overflow: document.body.style.overflow,
-                position: document.body.style.position,
-                width: document.body.style.width,
-                top: document.body.style.top,
-            };
+        // Setup touch listeners after element is bound
+        const timer = setTimeout(() => {
+            setupTouchListeners();
+        }, 0);
 
-            // Lock body scroll
-            const scrollY = window.scrollY;
+        // Prevent body scroll on mobile
+        let scrollY = 0;
+        if (!isDesktop) {
+            scrollY = window.scrollY;
             document.body.style.overflow = "hidden";
             document.body.style.position = "fixed";
             document.body.style.top = `-${scrollY}px`;
             document.body.style.width = "100%";
-
-            return () => {
-                // Restore body scroll
-                document.body.style.overflow = originalStyles.overflow;
-                document.body.style.position = originalStyles.position;
-                document.body.style.width = originalStyles.width;
-                document.body.style.top = originalStyles.top;
-
-                // Restore scroll position
-                window.scrollTo(0, scrollY);
-            };
         }
+
+        return () => {
+            clearTimeout(timer);
+            removeTouchListeners();
+
+            // Restore body scroll
+            if (!isDesktop) {
+                document.body.style.overflow = "";
+                document.body.style.position = "";
+                document.body.style.top = "";
+                document.body.style.width = "";
+                window.scrollTo(0, scrollY);
+            }
+        };
     });
 </script>
 
-<!-- Backdrop -->
 <div
-    class="fixed inset-0 bg-black/50 z-50 flex {isDesktop
-        ? 'items-center justify-center'
-        : 'items-end'} {padding}"
+    class="sheet-backdrop"
     role="dialog"
     aria-modal="true"
     tabindex="-1"
@@ -245,22 +250,15 @@
     in:fade={{ duration: 200 }}
     out:fade={{ duration: 200 }}
 >
-    <!-- Sheet Container -->
     <div
-        use:swipeHandler
-        class="bg-card/60 backdrop-blur-xl shadow-lg w-full flex flex-col overflow-hidden
-            {isDesktop ? desktopMaxWidth + ' rounded-lg' : 'rounded-t-3xl'}"
-        style="
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
-            max-height: {isDesktop ? '80vh' : maxHeight};
-            transform: translate3d(0, {translateY}px, 0);
-            transition: {isDragging
-            ? 'none'
-            : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'};
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-        "
+        bind:this={sheetElement}
+        class="sheet-container {isDesktop
+            ? 'desktop'
+            : 'mobile'} {desktopMaxWidth}"
+        class:dragging={isDragging}
+        style="--translate-y: {translateY}px; --max-height: {isDesktop
+            ? '80vh'
+            : maxHeight};"
         in:fly={{
             y: isDesktop ? 0 : 500,
             duration: 300,
@@ -272,29 +270,119 @@
             easing: quintOut,
         }}
     >
-        <!-- Mobile Swipe Indicator -->
         {#if !isDesktop}
-            <div
-                class="w-full flex justify-center pt-3 pb-2 flex-shrink-0"
-                style="touch-action: none;"
-            >
-                <div
-                    class="w-10 h-1 rounded-full transition-colors {isDragging
-                        ? 'bg-muted-foreground/50'
-                        : 'bg-muted-foreground/30'}"
-                ></div>
+            <div class="swipe-indicator-wrapper">
+                <div class="swipe-indicator" class:active={isDragging}></div>
             </div>
         {/if}
 
-        <!-- Content Slot -->
         <slot />
     </div>
 </div>
 
 <style>
-    /* Ensure smooth scrolling within sheet content */
+    /* Backdrop */
+    .sheet-backdrop {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 50;
+        display: flex;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .sheet-backdrop.desktop {
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sheet-backdrop:not(.desktop) {
+        align-items: flex-end;
+    }
+
+    /* Sheet Container */
+    .sheet-container {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        max-height: var(--max-height);
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        will-change: transform;
+        transform: translate3d(0, var(--translate-y), 0);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sheet-container.dragging {
+        transition: none;
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+        .sheet-container {
+            background: rgba(26, 26, 26, 0.6);
+        }
+    }
+
+    /* Mobile styles */
+    .sheet-container.mobile {
+        border-top-left-radius: 1.5rem;
+        border-top-right-radius: 1.5rem;
+    }
+
+    /* Desktop styles */
+    .sheet-container.desktop {
+        border-radius: 0.5rem;
+    }
+
+    /* Swipe Indicator */
+    .swipe-indicator-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding-top: 0.75rem;
+        padding-bottom: 0.5rem;
+        flex-shrink: 0;
+        touch-action: none;
+        pointer-events: none;
+    }
+
+    .swipe-indicator {
+        width: 2.5rem;
+        height: 0.25rem;
+        border-radius: 9999px;
+        background-color: rgba(128, 128, 128, 0.3);
+        transition: background-color 0.2s;
+    }
+
+    .swipe-indicator.active {
+        background-color: rgba(128, 128, 128, 0.5);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .swipe-indicator {
+            background-color: rgba(200, 200, 200, 0.3);
+        }
+
+        .swipe-indicator.active {
+            background-color: rgba(200, 200, 200, 0.5);
+        }
+    }
+
+    /* Ensure scrollable content works */
     :global(.sheet-content) {
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
+        touch-action: pan-y;
     }
 </style>
