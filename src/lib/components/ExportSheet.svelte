@@ -485,10 +485,19 @@
                             : '400px'}; max-width: {layoutMode === 'grid'
                             ? '900px'
                             : '400px'}; position: relative; {$exportSettings.backgroundMode ===
-                            'image' && $exportSettings.backgroundImage
-                            ? `background-image: url(${$exportSettings.backgroundImage}); background-size: cover; background-position: center;`
-                            : `background-color: ${$exportSettings.backgroundColor};`} color: {$exportSettings.textColor}; padding: 1.5rem;"
+                        'color'
+                            ? `background-color: ${$exportSettings.backgroundColor};`
+                            : ''} color: {$exportSettings.textColor}; padding: 1.5rem;"
                     >
+                        <!-- Background Image (use img element for better html-to-image support) -->
+                        {#if $exportSettings.backgroundMode === "image" && $exportSettings.backgroundImage}
+                            <img
+                                src={$exportSettings.backgroundImage}
+                                alt=""
+                                style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; pointer-events: none; z-index: 0;"
+                            />
+                        {/if}
+
                         <!-- Background Overlay (only for solid color mode) -->
                         {#if $exportSettings.backgroundMode === "color"}
                             <div
