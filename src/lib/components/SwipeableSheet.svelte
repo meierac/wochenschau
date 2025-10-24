@@ -17,7 +17,6 @@
     let velocity = 0;
     let lastTime = 0;
     let lastY = 0;
-    let sheetElement: HTMLDivElement | null = null;
 
     const SWIPE_THRESHOLD = 100;
     const VELOCITY_THRESHOLD = 0.5;
@@ -28,9 +27,12 @@
         }
     }
 
-    function findScrollableParent(element: HTMLElement): HTMLElement | null {
+    function findScrollableParent(
+        element: HTMLElement,
+        sheetEl: HTMLElement,
+    ): HTMLElement | null {
         let current = element;
-        while (current && current !== sheetElement) {
+        while (current && current !== sheetEl) {
             const overflowY = window.getComputedStyle(current).overflowY;
             if (
                 (overflowY === "auto" || overflowY === "scroll") &&
@@ -43,13 +45,12 @@
         return null;
     }
 
-    function handleTouchStart(e: TouchEvent) {
+    function handleTouchStart(e: TouchEvent, sheetEl: HTMLElement) {
         if (isDesktop) return;
 
         const target = e.target as HTMLElement;
-        const scrollableParent = findScrollableParent(target);
+        const scrollableParent = findScrollableParent(target, sheetEl);
 
-        // Don't start drag if we're in scrollable content that's not at top
         if (scrollableParent && scrollableParent.scrollTop > 0) {
             return;
         }
@@ -63,7 +64,7 @@
         velocity = 0;
     }
 
-    function handleTouchMove(e: TouchEvent) {
+    function handleTouchMove(e: TouchEvent, sheetEl: HTMLElement) {
         if (!isDragging || isDesktop) return;
 
         const touch = e.touches[0];
@@ -71,15 +72,12 @@
         const deltaY = currentY - startY;
 
         const target = e.target as HTMLElement;
-        const scrollableParent = findScrollableParent(target);
+        const scrollableParent = findScrollableParent(target, sheetEl);
 
-        // Only allow downward dragging
         if (deltaY > 0) {
-            // Only drag if at top of scrollable content or no scrollable content
             if (!scrollableParent || scrollableParent.scrollTop === 0) {
                 translateY = deltaY;
 
-                // Calculate velocity
                 const now = Date.now();
                 const timeDiff = now - lastTime;
                 if (timeDiff > 0) {
@@ -88,7 +86,6 @@
                 lastY = currentY;
                 lastTime = now;
 
-                // Prevent default to stop scrolling
                 if (deltaY > 5) {
                     e.preventDefault();
                 }
@@ -98,7 +95,6 @@
             scrollableParent &&
             scrollableParent.scrollTop === 0
         ) {
-            // Trying to scroll up while at top - cancel drag
             isDragging = false;
             translateY = 0;
         }
@@ -109,11 +105,9 @@
 
         isDragging = false;
 
-        // Close if dragged past threshold or fast swipe
         if (translateY > SWIPE_THRESHOLD || velocity > VELOCITY_THRESHOLD) {
             dispatch("close");
         } else {
-            // Snap back
             translateY = 0;
         }
     }
@@ -124,38 +118,34 @@
         }
     }
 
-    // Setup touch event listeners with passive: false for iOS
-    function setupTouchListeners(element: HTMLDivElement) {
-        if (!isDesktop) {
-            element.addEventListener("touchstart", handleTouchStart, {
-                passive: false,
-            });
-            element.addEventListener("touchmove", handleTouchMove, {
-                passive: false,
-            });
-            element.addEventListener("touchend", handleTouchEnd, {
-                passive: false,
-            });
-            element.addEventListener("touchcancel", handleTouchEnd, {
-                passive: false,
-            });
-        }
+    function touchHandler(node: HTMLElement) {
+        if (isDesktop) return {};
 
-        return () => {
-            if (!isDesktop) {
-                element.removeEventListener("touchstart", handleTouchStart);
-                element.removeEventListener("touchmove", handleTouchMove);
-                element.removeEventListener("touchend", handleTouchEnd);
-                element.removeEventListener("touchcancel", handleTouchEnd);
-            }
+        const onTouchStart = (e: TouchEvent) => handleTouchStart(e, node);
+        const onTouchMove = (e: TouchEvent) => handleTouchMove(e, node);
+        const onTouchEnd = () => handleTouchEnd();
+
+        node.addEventListener("touchstart", onTouchStart, { passive: false });
+        node.addEventListener("touchmove", onTouchMove, { passive: false });
+        node.addEventListener("touchend", onTouchEnd, { passive: false });
+        node.addEventListener("touchcancel", onTouchEnd, { passive: false });
+
+        return {
+            destroy() {
+                node.removeEventListener("touchstart", onTouchStart);
+                node.removeEventListener("touchmove", onTouchMove);
+                node.removeEventListener("touchend", onTouchEnd);
+                node.removeEventListener("touchcancel", onTouchEnd);
+            },
         };
     }
 
     onMount(() => {
-        // Prevent body scroll on mobile
         if (!isDesktop) {
             const originalOverflow = document.body.style.overflow;
             const originalPosition = document.body.style.position;
+            const originalWidth = document.body.style.width;
+
             document.body.style.overflow = "hidden";
             document.body.style.position = "fixed";
             document.body.style.width = "100%";
@@ -163,15 +153,10 @@
             return () => {
                 document.body.style.overflow = originalOverflow;
                 document.body.style.position = originalPosition;
-                document.body.style.width = "";
+                document.body.style.width = originalWidth;
             };
         }
     });
-
-    // Reactive binding for sheet element
-    $: if (sheetElement && !isDesktop) {
-        setupTouchListeners(sheetElement);
-    }
 </script>
 
 <div
@@ -187,29 +172,21 @@
     out:fade={{ duration: 200 }}
 >
     <div
-        bind:this={sheetElement}
-        class={`bg-card/60 backdrop-blur-xl shadow-lg w-full flex flex-col ${
-            isDesktop ? `${desktopMaxWidth} rounded-lg` : "rounded-t-3xl"
-        }`}
-        style:border-radius="36px"
-        style:box-shadow="0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,
-        255, 255, 0.1)"
-        style:max-height={isDesktop ? "80vh" : maxHeight}
-        style:transform="translate3d(0, {translateY}px, 0)"
-        style:transition={isDragging
-            ? "none"
-            : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)"}
-        style:touch-action="none"
-        style:-webkit-user-select="none"
-        style:user-select="none"
-        style:will-change={isDragging ? "transform" : "auto"}
+        use:touchHandler
+        class="bg-card/60 backdrop-blur-xl shadow-lg w-full flex flex-col {isDesktop
+            ? desktopMaxWidth + ' rounded-lg'
+            : 'rounded-t-3xl'}"
+        style="box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1); max-height: {isDesktop
+            ? '80vh'
+            : maxHeight}; transform: translate3d(0, {translateY}px, 0); transition: {isDragging
+            ? 'none'
+            : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'}; touch-action: none; -webkit-user-select: none; user-select: none;"
         in:fly={{ y: isDesktop ? 0 : 500, duration: 300, easing: quintOut }}
         out:fly={{ y: isDesktop ? 0 : 500, duration: 250, easing: quintOut }}
     >
-        <!-- Swipe indicator for mobile -->
         {#if !isDesktop}
             <div
-                class="w-full flex justify-center pt-1 pb-0 -mb-2"
+                class="w-full flex justify-center pt-3 pb-2"
                 style="touch-action: none;"
             >
                 <div
@@ -221,13 +198,11 @@
             </div>
         {/if}
 
-        <!-- Content slot -->
         <slot />
     </div>
 </div>
 
 <style>
-    /* Ensure smooth scrolling within the sheet */
     :global(.sheet-content) {
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
