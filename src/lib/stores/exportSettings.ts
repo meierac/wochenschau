@@ -6,6 +6,12 @@ export interface ExportSettings {
   bodyFontFamily: string;
   textColor: string;
 
+  // Title/Headline
+  title: string;
+  titleFontSize: number; // in pixels
+  titleFontWeight: "light" | "medium" | "bold"; // Font weight of title
+  showWeekNumber: boolean; // Show "KW XX" below title
+
   // Background
   backgroundImage: string | null; // base64 or URL
   backgroundImageUrl: string | null; // Original URL/ID for tracking selection
@@ -28,6 +34,12 @@ const defaultSettings: ExportSettings = {
   headerFontFamily: "'Playfair Display', serif",
   bodyFontFamily: "'Inter', sans-serif",
   textColor: "#000000",
+
+  // Title/Headline
+  title: "Wochenschau",
+  titleFontSize: 48,
+  titleFontWeight: "bold",
+  showWeekNumber: false,
 
   // Background
   backgroundImage: null,

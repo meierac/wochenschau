@@ -992,6 +992,87 @@
                                         Typography
                                     </h4>
 
+                                    <!-- Title -->
+                                    <div>
+                                        <label
+                                            for="title-export"
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Title/Headline
+                                        </label>
+                                        <input
+                                            id="title-export"
+                                            type="text"
+                                            bind:value={$exportSettings.title}
+                                            class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                            placeholder="Wochenschau"
+                                        />
+                                    </div>
+
+                                    <!-- Title Font Size -->
+                                    <div>
+                                        <label
+                                            for="title-font-size-export"
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Title Font Size: {$exportSettings.titleFontSize}px
+                                        </label>
+                                        <input
+                                            id="title-font-size-export"
+                                            type="range"
+                                            min="24"
+                                            max="72"
+                                            step="2"
+                                            bind:value={
+                                                $exportSettings.titleFontSize
+                                            }
+                                            class="w-full"
+                                        />
+                                    </div>
+
+                                    <!-- Title Font Weight -->
+                                    <div>
+                                        <label
+                                            for="title-font-weight-export"
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Title Font Weight
+                                        </label>
+                                        <select
+                                            id="title-font-weight-export"
+                                            bind:value={
+                                                $exportSettings.titleFontWeight
+                                            }
+                                            class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        >
+                                            <option value="light">Light</option>
+                                            <option value="medium"
+                                                >Medium</option
+                                            >
+                                            <option value="bold">Bold</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Show Week Number -->
+                                    <div
+                                        class="flex items-center justify-between"
+                                    >
+                                        <label
+                                            for="show-week-number-export"
+                                            class="text-xs font-medium text-muted-foreground"
+                                        >
+                                            Show Week Number (KW)
+                                        </label>
+                                        <input
+                                            id="show-week-number-export"
+                                            type="checkbox"
+                                            bind:checked={
+                                                $exportSettings.showWeekNumber
+                                            }
+                                            class="w-4 h-4"
+                                        />
+                                    </div>
+
                                     <!-- Header Font Family -->
                                     <div>
                                         <label
@@ -1707,6 +1788,83 @@
                                 >
                                     Typography
                                 </h4>
+
+                                <!-- Title -->
+                                <div>
+                                    <label
+                                        for="title-export-desktop"
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Title/Headline
+                                    </label>
+                                    <input
+                                        id="title-export-desktop"
+                                        type="text"
+                                        bind:value={$exportSettings.title}
+                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        placeholder="Wochenschau"
+                                    />
+                                </div>
+
+                                <!-- Title Font Size -->
+                                <div>
+                                    <label
+                                        for="title-font-size-export-desktop"
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Title Font Size: {$exportSettings.titleFontSize}px
+                                    </label>
+                                    <input
+                                        id="title-font-size-export-desktop"
+                                        type="range"
+                                        min="24"
+                                        max="72"
+                                        step="2"
+                                        bind:value={
+                                            $exportSettings.titleFontSize
+                                        }
+                                        class="w-full"
+                                    />
+                                </div>
+
+                                <!-- Title Font Weight -->
+                                <div>
+                                    <label
+                                        for="title-font-weight-export-desktop"
+                                        class="block text-xs font-medium text-muted-foreground mb-2"
+                                    >
+                                        Title Font Weight
+                                    </label>
+                                    <select
+                                        id="title-font-weight-export-desktop"
+                                        bind:value={
+                                            $exportSettings.titleFontWeight
+                                        }
+                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                    >
+                                        <option value="light">Light</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="bold">Bold</option>
+                                    </select>
+                                </div>
+
+                                <!-- Show Week Number -->
+                                <div class="flex items-center justify-between">
+                                    <label
+                                        for="show-week-number-export-desktop"
+                                        class="text-xs font-medium text-muted-foreground"
+                                    >
+                                        Show Week Number (KW)
+                                    </label>
+                                    <input
+                                        id="show-week-number-export-desktop"
+                                        type="checkbox"
+                                        bind:checked={
+                                            $exportSettings.showWeekNumber
+                                        }
+                                        class="w-4 h-4"
+                                    />
+                                </div>
 
                                 <!-- Header Font Family -->
                                 <div>

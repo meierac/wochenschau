@@ -407,17 +407,25 @@
 
                             <div class="mb-6 text-center relative z-10">
                                 <h2
-                                    class="text-3xl font-bold mb-2"
-                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor};"
+                                    class="mb-2"
+                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px; font-weight: {$exportSettings.titleFontWeight ===
+                                    'light'
+                                        ? '300'
+                                        : $exportSettings.titleFontWeight ===
+                                            'medium'
+                                          ? '500'
+                                          : '700'};"
                                 >
-                                    Wochenschau
+                                    {$exportSettings.title}
                                 </h2>
-                                <p
-                                    class="text-lg font-semibold"
-                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.8;"
-                                >
-                                    KW{$currentWeek}
-                                </p>
+                                {#if $exportSettings.showWeekNumber}
+                                    <p
+                                        class="text-lg font-semibold"
+                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.8;"
+                                    >
+                                        KW{$currentWeek}
+                                    </p>
+                                {/if}
                             </div>
 
                             {#if layoutMode === "grid"}
@@ -437,13 +445,11 @@
                                                     class="font-semibold text-xs"
                                                     style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                                                 >
-                                                    {WEEKDAYS_DE[dayIndex]}
-                                                </div>
-                                                <div
-                                                    class="text-[10px]"
-                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                >
-                                                    {formatDate(day)}
+                                                    {WEEKDAYS_DE[dayIndex]} ·
+                                                    <span
+                                                        style="opacity: 0.7; font-weight: normal;"
+                                                        >{formatDate(day)}</span
+                                                    >
                                                 </div>
                                             </div>
                                             <div class="space-y-2">
@@ -513,11 +519,16 @@
                                     {/if}
                                 </div>
                             {:else}
-                                <div class="space-y-4 relative z-10">
+                                <div class="space-y-1 relative z-10">
                                     {#each days as day, dayIndex}
                                         <div
                                             class="p-3"
-                                            style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
+                                            style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {dayIndex ===
+                                            0
+                                                ? '16px 16px 4px 4px'
+                                                : dayIndex === 6
+                                                  ? '4px 4px 16px 16px'
+                                                  : '4px'};"
                                         >
                                             <div
                                                 class="mb-2 pb-2"
@@ -578,7 +589,7 @@
                                     {#if $bibleVerse.enabled}
                                         <div
                                             class="p-3 text-center"
-                                            style="border-radius: {$exportSettings.borderRadius}px;"
+                                            style="margin-top: 0.5rem;"
                                         >
                                             <p
                                                 class="text-sm italic mb-2"
