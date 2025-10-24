@@ -8,6 +8,8 @@
     import WeekPicker from "./WeekPicker.svelte";
     import Button from "./Button.svelte";
 
+    export let isDesktop = false;
+
     let showWeekPicker = false;
 
     // Reactive
@@ -51,6 +53,7 @@
         {#each days as day, dayIndex}
             <div class="h-full flex flex-col">
                 <DayColumn
+                    {isDesktop}
                     {day}
                     {dayIndex}
                     dayActivities={weekActivities.filter(
@@ -93,6 +96,7 @@
     <!-- Week Picker Modal/Sheet -->
     {#if showWeekPicker}
         <WeekPicker
+            isDesktop={false}
             currentWeek={$currentWeek}
             currentYear={$currentYear}
             on:weekSelected={handleWeekSelected}

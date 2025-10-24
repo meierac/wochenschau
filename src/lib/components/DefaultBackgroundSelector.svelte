@@ -104,9 +104,6 @@
 
 <div class="space-y-4">
     <div class="flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-foreground">
-            Background Options
-        </h3>
         {#if $exportSettings.backgroundImage}
             <button
                 on:click={handleClearBackground}

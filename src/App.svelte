@@ -140,7 +140,7 @@
 
             <!-- Week View -->
             <div class="flex-1 overflow-hidden">
-                <WeekView />
+                <WeekView {isDesktop} />
             </div>
         </div>
     {:else}
@@ -166,7 +166,7 @@
 
             <!-- Week View -->
             <div class="flex-1 overflow-hidden">
-                <WeekView />
+                <WeekView {isDesktop} />
             </div>
             <!-- Floating Navigation Bar -->
             <FloatingNav
@@ -189,6 +189,7 @@
 
 {#if showWeekPicker}
     <WeekPicker
+        {isDesktop}
         currentWeek={$currentWeek}
         currentYear={$currentYear}
         on:weekSelected={handleWeekSelected}

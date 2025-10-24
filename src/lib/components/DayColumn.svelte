@@ -8,6 +8,10 @@
     export let day: Date;
     export let dayIndex: number;
     export let dayActivities: CalendarItem[] = [];
+    export let isDesktop = false;
+
+    // Debug logging
+    $: console.log("DayColumn isDesktop:", isDesktop);
 
     let editingActivity: CalendarItem | null = null;
 
@@ -73,6 +77,7 @@
 <!-- Edit Sheet -->
 {#if editingActivity}
     <ActivityEditSheet
+        {isDesktop}
         activity={editingActivity}
         on:save={handleSaveActivity}
         on:delete={() => {

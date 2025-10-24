@@ -69,6 +69,7 @@
 <!-- Week Picker Modal -->
 {#if showWeekPicker}
     <WeekPicker
+        isDesktop={false}
         currentWeek={$currentWeek}
         currentYear={$currentYear}
         on:weekSelected={handleWeekSelected}

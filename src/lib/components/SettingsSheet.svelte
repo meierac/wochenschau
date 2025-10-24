@@ -14,6 +14,7 @@
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
     import DefaultBackgroundSelector from "./DefaultBackgroundSelector.svelte";
+    import SwipeableSheet from "./SwipeableSheet.svelte";
 
     export let isDesktop = false;
 
@@ -393,12 +394,6 @@
         ).length;
     }
 
-    function handleBackdropClick(e: MouseEvent) {
-        if (e.target === e.currentTarget) {
-            dispatch("close");
-        }
-    }
-
     // Reactive: Update setting items descriptions
     $: settingItems[0].description = `${$templates.length} template${$templates.length !== 1 ? "s" : ""}`;
     $: settingItems[1].description = `${$subscriptions.length} subscription${$subscriptions.length !== 1 ? "s" : ""}`;
@@ -407,27 +402,15 @@
         : "Disabled";
 </script>
 
-<div
-    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4"
-    role="dialog"
-    aria-modal="true"
-    tabindex="-1"
-    on:click={handleBackdropClick}
-    on:keydown={(e) => {
-        if (e.key === "Escape") {
-            dispatch("close");
-        }
-    }}
+<SwipeableSheet
+    {isDesktop}
+    desktopMaxWidth="md:max-w-5xl"
+    on:close={handleClose}
 >
-    <div
-        class={`bg-card/80 backdrop-blur-xl rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
-            isDesktop ? "md:max-w-5xl md:h-[80vh]" : "max-h-[90vh]"
-        }`}
-        style="border-radius: 36px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);"
-    >
+    <div class={`flex flex-col ${isDesktop ? "md:h-[80vh]" : "h-[90vh]"}`}>
         <!-- Header (Always on top) -->
         <div
-            class={`${isDesktop ? "border-b border-border" : ""} px-4 py-4 flex items-center justify-center relative shrink-0`}
+            class={`${isDesktop ? "border-b border-border min-h-[70px]" : ""} px-3 py-3 flex items-center justify-center relative shrink-0`}
         >
             <!-- Mobile: Back button when viewing details (left position) -->
             {#if !isDesktop && selectedSetting}
@@ -485,7 +468,7 @@
         </div>
 
         <!-- Content Container -->
-        <div class="flex flex-1 overflow-hidden">
+        <div class="flex flex-1 overflow-hidden sheet-content">
             <!-- Mobile: Show list or details based on selection -->
             {#if !isDesktop}
                 {#if selectedSetting === null}
@@ -536,7 +519,10 @@
                     </div>
                 {:else}
                     <!-- Mobile: Setting Details -->
-                    <div class="w-full overflow-y-auto p-6">
+                    <div
+                        class="w-full overflow-y-auto p-3"
+                        style={"border-radius: 0 0 32px 32px"}
+                    >
                         {#if error}
                             <div
                                 class="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg"
@@ -1364,12 +1350,13 @@
                 <!-- Left Column: Settings Menu -->
                 <div
                     class="w-48 min-w-[300px] border-r border-border overflow-y-auto bg-muted/30 shrink-0"
+                    style={"border-radius: 0 0 0 32px"}
                 >
-                    <div class="p-4 space-y-1">
+                    <div class="p-3 space-y-1">
                         {#each settingItems as item}
                             <button
                                 on:click={() => selectSetting(item.id)}
-                                class={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                                class={`w-full text-left px-4 py-3 rounded-xl transition-colors ${
                                     selectedSetting === item.id
                                         ? "bg-primary text-primary-foreground"
                                         : "text-foreground hover:bg-muted"
@@ -2209,4 +2196,4 @@
             {/if}
         </div>
     </div>
-</div>
+</SwipeableSheet>

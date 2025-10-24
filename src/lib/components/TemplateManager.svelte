@@ -48,7 +48,7 @@
 </script>
 
 <div
-    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-3"
 >
     <div
         class={`bg-card rounded-3xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
@@ -56,13 +56,11 @@
         }`}
     >
         <!-- Header with centered title and icon buttons -->
-        <div
-            class="border-b border-border px-4 py-4 flex items-center justify-between"
-        >
+        <div class="border-b border-border flex items-center justify-between">
             <!-- Cancel button (left) -->
             <IconButton
-                variant="ghost"
-                size="md"
+                variant="secondary"
+                size="lg"
                 ariaLabel="Close"
                 on:click={handleClose}
             >
@@ -91,8 +89,8 @@
             <!-- Save button (right) - only visible when adding template -->
             {#if showNewTemplate}
                 <IconButton
-                    variant="ghost"
-                    size="md"
+                    variant="secondary"
+                    size="lg"
                     ariaLabel="Save template"
                     disabled={!newTemplate.name.trim()}
                     on:click={handleAddTemplate}
@@ -117,7 +115,7 @@
         </div>
 
         <!-- Content -->
-        <div class="p-6 max-h-[60vh] overflow-y-auto">
+        <div class="p-3 max-h-[60vh] overflow-y-auto">
             {#if $templates.length === 0 && !showNewTemplate}
                 <div class="text-center py-8">
                     <p class="text-muted-foreground text-sm">

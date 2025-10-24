@@ -266,7 +266,7 @@
 </script>
 
 <div
-    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-3"
 >
     <div
         class={`bg-card rounded-2xl md:rounded-lg shadow-lg w-full transition-all flex flex-col ${
@@ -290,7 +290,7 @@
         </div>
 
         <!-- Content -->
-        <div class="p-6 max-h-[60vh] overflow-y-auto">
+        <div class="p-3 max-h-[60vh] overflow-y-auto">
             {#if error}
                 <div
                     class="mb-4 p-3 bg-destructive/10 border border-destructive rounded-lg"
