@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@zumer/snapdom':
+        specifier: ^1.9.14
+        version: 1.9.14
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -20,6 +23,9 @@ importers:
       modern-screenshot:
         specifier: ^4.6.6
         version: 4.6.6
+      snapdom:
+        specifier: ^0.1.2
+        version: 0.1.2
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
@@ -983,6 +989,9 @@ packages:
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+
+  '@zumer/snapdom@1.9.14':
+    resolution: {integrity: sha512-kQARFS/jf+fsIFv9qxfNp8YMeun5tTyhFDk3iv47Lywk5YRldhINWicEZI15fP3FDUCeo8ok+BP0CtnDRFMFRg==}
 
   acorn@8.15.0:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
@@ -1985,6 +1994,9 @@ packages:
 
   smob@1.5.0:
     resolution: {integrity: sha512-g6T+p7QO8npa+/hNx9ohv1E5pVCmWrVCUzUXJyLdMmftX6ER0oiWY/w9knEonLpnOp6b6FenKnMfR8gqwWdwig==}
+
+  snapdom@0.1.2:
+    resolution: {integrity: sha512-N9cvtICohWdAByQoF972u5BsSUhhEWPTvK11SXAt6mMHjfltXtEBy58ucsag/LF70JXEg7WvaaKH11qq1w6+GA==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -3325,6 +3337,8 @@ snapshots:
 
   '@types/trusted-types@2.0.7': {}
 
+  '@zumer/snapdom@1.9.14': {}
+
   acorn@8.15.0: {}
 
   ajv@8.17.1:
@@ -4403,6 +4417,8 @@ snapshots:
       totalist: 3.0.1
 
   smob@1.5.0: {}
+
+  snapdom@0.1.2: {}
 
   source-map-js@1.2.1: {}
 
