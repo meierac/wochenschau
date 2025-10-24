@@ -49,7 +49,7 @@
 <main class="h-screen bg-background text-foreground overflow-hidden">
     {#if isDesktop}
         <!-- Desktop Layout -->
-        <div class="max-w-7xl mx-auto px-4 py-6 h-screen flex flex-col">
+        <div class="max-w-7xl mx-auto px-4 py-0 h-screen flex flex-col">
             <!-- Desktop Header -->
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-4">
