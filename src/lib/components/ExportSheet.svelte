@@ -140,27 +140,137 @@
             );
 
             const { snapdom } = await import("@zumer/snapdom");
-
             const element = document.getElementById("export-preview");
             if (!element) {
                 throw new Error("Export preview element not found");
             }
 
+            // Utility: detect iOS Safari (exclude Chrome/Firefox wrappers)
+            const ua = navigator.userAgent;
+            const isIOSSafari =
+                /iPad|iPhone|iPod/.test(ua) &&
+                /Safari/.test(ua) &&
+                !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+
             // Wait for all fonts declared in CSS to finish loading
             await document.fonts.ready;
 
-            // Small delay to allow layout & paint to settle
-            await new Promise((resolve) => setTimeout(resolve, 150));
+            // Short settle delay (layout + paint)
+            await new Promise((r) => setTimeout(r, 150));
 
+            // Diagnostics: element size
+            const rect = element.getBoundingClientRect();
+            const baseWidth = rect.width;
+            const baseHeight = rect.height;
+
+            // Dynamic scale: reduce for iOS Safari (memory constraints)
+            let scale = isIOSSafari ? 3 : 4;
+
+            console.log("[ExportSheet][Diagnostics] Element size:", {
+                width: baseWidth,
+                height: baseHeight,
+                initialScale: scale,
+                userAgent: ua,
+            });
+
+            // Helper: estimate memory footprint (rough)
+            const estPixels = baseWidth * scale * baseHeight * scale;
+            const estBytes = estPixels * 4;
             console.log(
-                "[ExportSheet] Starting screenshot capture with snapdom...",
+                "[ExportSheet][Diagnostics] Estimated memory bytes:",
+                estBytes,
             );
 
-            // 4. Capture with snapdom at high resolution
-            const blob = await snapdom.toBlob(element, {
+            // Minimal manual font embedding fallback (only if needed)
+            async function minimalEmbedSelectedFonts() {
+                const families = [
+                    $exportSettings.headerFontFamily,
+                    $exportSettings.bodyFontFamily,
+                ];
+                const unique = [...new Set(families)];
+                const names = unique
+                    .map((f) => (f.match(/'([^']+)'/) || [])[1])
+                    .filter(Boolean);
+
+                const FONT_FILES: Record<string, string> = {
+                    Archivo: "/fonts/Archivo-VariableFont_wdth,wght.ttf",
+                    "Dancing Script":
+                        "/fonts/DancingScript-VariableFont_wght.ttf",
+                    "Edu QLD Hand": "/fonts/EduQLDHand-VariableFont_wght.ttf",
+                    "Edu SA Hand": "/fonts/EduSAHand-VariableFont_wght.ttf",
+                    Handlee: "/fonts/Handlee-Regular.ttf",
+                    Lora: "/fonts/Lora-VariableFont_wght.ttf",
+                    Manrope: "/fonts/Manrope-VariableFont_wght.ttf",
+                    "Ms Madi": "/fonts/MsMadi-Regular.ttf",
+                    "Noto Sans": "/fonts/NotoSans-VariableFont_wdth,wght.ttf",
+                    "Pirata One": "/fonts/PirataOne-Regular.ttf",
+                    "Space Mono": "/fonts/SpaceMono-Regular.ttf",
+                };
+
+                let css = "";
+                for (const name of names) {
+                    const path = FONT_FILES[name];
+                    if (!path) {
+                        console.warn(
+                            "[FontFallback] Missing mapping for",
+                            name,
+                        );
+                        continue;
+                    }
+                    try {
+                        const res = await fetch(path);
+                        if (!res.ok) {
+                            console.warn(
+                                "[FontFallback] Fetch failed:",
+                                path,
+                                res.status,
+                            );
+                            continue;
+                        }
+                        const buf = await res.arrayBuffer();
+                        const base64 = btoa(
+                            String.fromCharCode(...new Uint8Array(buf)),
+                        );
+                        css += `@font-face {
+  font-family: '${name}';
+  src: url(data:font/truetype;base64,${base64}) format('truetype');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: block;
+}\n`;
+                    } catch (e) {
+                        console.warn(
+                            "[FontFallback] Error embedding font:",
+                            name,
+                            e,
+                        );
+                    }
+                }
+
+                if (!css) return null;
+                const style = document.createElement("style");
+                style.id = "font-fallback-embed";
+                style.textContent = css;
+                document.head.appendChild(style);
+                console.log("[FontFallback] Injected minimal embedded fonts");
+                return () => {
+                    style.parentNode?.removeChild(style);
+                    console.log(
+                        "[FontFallback] Cleaned up minimal embedded fonts",
+                    );
+                };
+            }
+
+            // Attempt 1: normal scale, snapdom font embedding
+            console.log(
+                "[ExportSheet] Attempt 1 with scale:",
+                scale,
+                "embedFonts: true",
+            );
+            let blob = await snapdom.toBlob(element, {
                 type: "png",
-                scale: 4,
-                embedFonts: true, // Let snapdom handle font embedding
+                scale,
+                embedFonts: true,
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
                         ? $exportSettings.backgroundColor
@@ -171,11 +281,59 @@
                 },
             });
 
+            // Fallback chain for iOS Safari failures
+            if (!blob && isIOSSafari) {
+                console.warn(
+                    "[ExportSheet] Attempt 1 failed on iOS Safari. Retrying with reduced scale 2.",
+                );
+                scale = 2;
+                blob = await snapdom.toBlob(element, {
+                    type: "png",
+                    scale,
+                    embedFonts: true,
+                    backgroundColor:
+                        $exportSettings.backgroundMode === "color"
+                            ? $exportSettings.backgroundColor
+                            : null,
+                    filter: (node) => {
+                        const el = node as Element;
+                        return !el.classList?.contains("no-export");
+                    },
+                });
+            }
+
+            if (!blob && isIOSSafari) {
+                console.warn(
+                    "[ExportSheet] Attempt 2 failed. Using manual font embedding fallback.",
+                );
+                const cleanup = await minimalEmbedSelectedFonts();
+                // Give fonts a moment to register
+                await new Promise((r) => setTimeout(r, 200));
+                blob = await snapdom.toBlob(element, {
+                    type: "png",
+                    scale: 2,
+                    embedFonts: false,
+                    backgroundColor:
+                        $exportSettings.backgroundMode === "color"
+                            ? $exportSettings.backgroundColor
+                            : null,
+                    filter: (node) => {
+                        const el = node as Element;
+                        return !el.classList?.contains("no-export");
+                    },
+                });
+                if (cleanup) cleanup();
+            }
+
             if (!blob) {
                 throw new Error("Failed to generate image blob");
             }
 
-            console.log("[ExportSheet] Export successful");
+            console.log(
+                "[ExportSheet] Export successful (final scale:",
+                scale,
+                ")",
+            );
             return blob;
         } catch (error) {
             exportError =
@@ -183,7 +341,7 @@
             console.error("Export error:", error);
             return null;
         } finally {
-            // No manual font cleanup needed (using snapdom embedFonts)
+            // No manual font cleanup needed (snapdom embedFonts or fallback already cleaned)
         }
     }
 
