@@ -321,10 +321,10 @@
                 "[ExportSheet] Starting screenshot capture with snapdom...",
             );
 
-            // Capture with snapdom
+            // Capture with snapdom at high quality (4x scale for crisp exports)
             const blob = await snapdom.toBlob(element, {
                 type: "png",
-                scale: 2,
+                scale: 4, // 4x scale for very high quality (3600px or 1600px output)
                 embedFonts: false, // We manually embed fonts as base64
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
@@ -613,7 +613,6 @@
                 >
                     <div
                         id="export-preview"
-                        class="space-y-4"
                         style="width: {layoutMode === 'grid'
                             ? '900px'
                             : '400px'}; min-width: {layoutMode === 'grid'
@@ -623,7 +622,7 @@
                             : '400px'}; position: relative; {$exportSettings.backgroundMode ===
                         'color'
                             ? `background-color: ${$exportSettings.backgroundColor};`
-                            : ''} color: {$exportSettings.textColor}; padding: 1.5rem;"
+                            : ''} color: {$exportSettings.textColor};"
                     >
                         <!-- Background Image (use img element for better html-to-image support) -->
                         {#if $exportSettings.backgroundMode === "image" && $exportSettings.backgroundImage}
@@ -643,206 +642,215 @@
                             ></div>
                         {/if}
 
-                        <div class="mb-6 text-center relative z-10">
-                            <h2
-                                class="mb-2"
-                                style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px; font-weight: {$exportSettings.titleFontWeight ===
-                                'light'
-                                    ? '300'
-                                    : $exportSettings.titleFontWeight ===
-                                        'medium'
-                                      ? '500'
-                                      : '700'};"
-                            >
-                                {$exportSettings.title}
-                            </h2>
-                            {#if $exportSettings.showWeekNumber}
-                                <p
-                                    class="text-lg font-semibold"
-                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.8;"
+                        <!-- Content wrapper with padding -->
+                        <div
+                            class="space-y-4"
+                            style="padding: 1.5rem; position: relative; z-index: 10;"
+                        >
+                            <div class="mb-6 text-center">
+                                <h2
+                                    class="mb-2"
+                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px; font-weight: {$exportSettings.titleFontWeight ===
+                                    'light'
+                                        ? '300'
+                                        : $exportSettings.titleFontWeight ===
+                                            'medium'
+                                          ? '500'
+                                          : '700'};"
                                 >
-                                    KW{$currentWeek}
-                                </p>
+                                    {$exportSettings.title}
+                                </h2>
+                                {#if $exportSettings.showWeekNumber}
+                                    <p
+                                        class="text-lg font-semibold"
+                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.8;"
+                                    >
+                                        KW{$currentWeek}
+                                    </p>
+                                {/if}
+                            </div>
+
+                            {#if layoutMode === "grid"}
+                                <div class="grid grid-cols-4 gap-3">
+                                    {#each days as day, dayIndex}
+                                        <div
+                                            class="p-2"
+                                            style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
+                                        >
+                                            <div
+                                                class="mb-2 pb-2"
+                                                style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
+                                            >
+                                                <div
+                                                    class="font-semibold text-xs"
+                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                >
+                                                    {WEEKDAYS_DE[dayIndex]} ·
+                                                    <span
+                                                        style="opacity: 0.7; font-weight: normal;"
+                                                        >{formatDate(day)}</span
+                                                    >
+                                                </div>
+                                            </div>
+                                            <div class="space-y-2">
+                                                {#if getDayActivities(dayIndex).length === 0}
+                                                    <div
+                                                        class="text-xs text-center"
+                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
+                                                    >
+                                                        No activities
+                                                    </div>
+                                                {:else}
+                                                    {#each getDayActivities(dayIndex) as activity}
+                                                        <div
+                                                            class="px-1.5 text-xs"
+                                                            style="border-left: 3px solid {activity.color ||
+                                                                $exportSettings.accentColor};"
+                                                        >
+                                                            <div
+                                                                class="font-semibold truncate"
+                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                            >
+                                                                {activity.summary}
+                                                            </div>
+                                                            {#if isAllDayEvent(activity)}
+                                                                <div
+                                                                    class="text-xs"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                >
+                                                                    All-Day
+                                                                </div>
+                                                            {:else}
+                                                                <div
+                                                                    class="text-xs"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                >
+                                                                    {activity.startTime}
+                                                                    - {activity.endTime}
+                                                                </div>
+                                                            {/if}
+                                                        </div>
+                                                    {/each}
+                                                {/if}
+                                            </div>
+                                        </div>
+                                    {/each}
+
+                                    {#if $bibleVerse.enabled}
+                                        <div
+                                            class="p-2 text-center flex flex-col justify-center items-center h-full"
+                                            style="border-radius: {$exportSettings.borderRadius}px;"
+                                        >
+                                            <p
+                                                class="text-sm italic mb-1"
+                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                            >
+                                                "{$bibleVerse.currentVerse
+                                                    .text}"
+                                            </p>
+                                            <p
+                                                class="text-xs"
+                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                            >
+                                                – {$bibleVerse.currentVerse
+                                                    .reference}
+                                            </p>
+                                        </div>
+                                    {/if}
+                                </div>
+                            {:else}
+                                <div class="space-y-1">
+                                    {#each days as day, dayIndex}
+                                        <div
+                                            class="p-3"
+                                            style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {dayIndex ===
+                                            0
+                                                ? '16px 16px 4px 4px'
+                                                : dayIndex === 6
+                                                  ? '4px 4px 16px 16px'
+                                                  : '4px'};"
+                                        >
+                                            <div
+                                                class="mb-2 pb-2"
+                                                style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
+                                            >
+                                                <div
+                                                    class="font-semibold text-sm"
+                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                >
+                                                    {WEEKDAYS_DE[dayIndex]} ·
+                                                    {formatDate(day)}
+                                                </div>
+                                            </div>
+                                            <div class="space-y-2">
+                                                {#if getDayActivities(dayIndex).length === 0}
+                                                    <div
+                                                        class="text-sm text-center"
+                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
+                                                    >
+                                                        No activities
+                                                    </div>
+                                                {:else}
+                                                    {#each getDayActivities(dayIndex) as activity}
+                                                        <div
+                                                            class="px-2 text-sm"
+                                                            style="border-left: 3px solid {activity.color ||
+                                                                $exportSettings.accentColor};"
+                                                        >
+                                                            <div
+                                                                class="font-semibold"
+                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                                            >
+                                                                {activity.summary}
+                                                            </div>
+                                                            {#if isAllDayEvent(activity)}
+                                                                <div
+                                                                    class="text-xs"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                >
+                                                                    All-Day
+                                                                </div>
+                                                            {:else}
+                                                                <div
+                                                                    class="text-xs"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                >
+                                                                    {activity.startTime}
+                                                                    - {activity.endTime}
+                                                                </div>
+                                                            {/if}
+                                                        </div>
+                                                    {/each}
+                                                {/if}
+                                            </div>
+                                        </div>
+                                    {/each}
+
+                                    {#if $bibleVerse.enabled}
+                                        <div
+                                            class="p-3 text-center"
+                                            style="margin-top: 0.5rem;"
+                                        >
+                                            <p
+                                                class="text-sm italic mb-2"
+                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                                            >
+                                                "{$bibleVerse.currentVerse
+                                                    .text}"
+                                            </p>
+                                            <p
+                                                class="text-xs"
+                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                            >
+                                                – {$bibleVerse.currentVerse
+                                                    .reference}
+                                            </p>
+                                        </div>
+                                    {/if}
+                                </div>
                             {/if}
                         </div>
-
-                        {#if layoutMode === "grid"}
-                            <div class="grid grid-cols-4 gap-3 relative z-10">
-                                {#each days as day, dayIndex}
-                                    <div
-                                        class="p-2"
-                                        style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
-                                    >
-                                        <div
-                                            class="mb-2 pb-2"
-                                            style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
-                                        >
-                                            <div
-                                                class="font-semibold text-xs"
-                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                            >
-                                                {WEEKDAYS_DE[dayIndex]} ·
-                                                <span
-                                                    style="opacity: 0.7; font-weight: normal;"
-                                                    >{formatDate(day)}</span
-                                                >
-                                            </div>
-                                        </div>
-                                        <div class="space-y-2">
-                                            {#if getDayActivities(dayIndex).length === 0}
-                                                <div
-                                                    class="text-xs text-center"
-                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
-                                                >
-                                                    No activities
-                                                </div>
-                                            {:else}
-                                                {#each getDayActivities(dayIndex) as activity}
-                                                    <div
-                                                        class="px-1.5 text-xs"
-                                                        style="border-left: 3px solid {activity.color ||
-                                                            $exportSettings.accentColor};"
-                                                    >
-                                                        <div
-                                                            class="font-semibold truncate"
-                                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                                        >
-                                                            {activity.summary}
-                                                        </div>
-                                                        {#if isAllDayEvent(activity)}
-                                                            <div
-                                                                class="text-xs"
-                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                            >
-                                                                All-Day
-                                                            </div>
-                                                        {:else}
-                                                            <div
-                                                                class="text-xs"
-                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                            >
-                                                                {activity.startTime}
-                                                                - {activity.endTime}
-                                                            </div>
-                                                        {/if}
-                                                    </div>
-                                                {/each}
-                                            {/if}
-                                        </div>
-                                    </div>
-                                {/each}
-
-                                {#if $bibleVerse.enabled}
-                                    <div
-                                        class="p-2 text-center flex flex-col justify-center items-center h-full"
-                                        style="border-radius: {$exportSettings.borderRadius}px;"
-                                    >
-                                        <p
-                                            class="text-sm italic mb-1"
-                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                        >
-                                            "{$bibleVerse.currentVerse.text}"
-                                        </p>
-                                        <p
-                                            class="text-xs"
-                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                        >
-                                            – {$bibleVerse.currentVerse
-                                                .reference}
-                                        </p>
-                                    </div>
-                                {/if}
-                            </div>
-                        {:else}
-                            <div class="space-y-1 relative z-10">
-                                {#each days as day, dayIndex}
-                                    <div
-                                        class="p-3"
-                                        style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {dayIndex ===
-                                        0
-                                            ? '16px 16px 4px 4px'
-                                            : dayIndex === 6
-                                              ? '4px 4px 16px 16px'
-                                              : '4px'};"
-                                    >
-                                        <div
-                                            class="mb-2 pb-2"
-                                            style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
-                                        >
-                                            <div
-                                                class="font-semibold text-sm"
-                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                            >
-                                                {WEEKDAYS_DE[dayIndex]} ·
-                                                {formatDate(day)}
-                                            </div>
-                                        </div>
-                                        <div class="space-y-2">
-                                            {#if getDayActivities(dayIndex).length === 0}
-                                                <div
-                                                    class="text-sm text-center"
-                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
-                                                >
-                                                    No activities
-                                                </div>
-                                            {:else}
-                                                {#each getDayActivities(dayIndex) as activity}
-                                                    <div
-                                                        class="px-2 text-sm"
-                                                        style="border-left: 3px solid {activity.color ||
-                                                            $exportSettings.accentColor};"
-                                                    >
-                                                        <div
-                                                            class="font-semibold"
-                                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                                        >
-                                                            {activity.summary}
-                                                        </div>
-                                                        {#if isAllDayEvent(activity)}
-                                                            <div
-                                                                class="text-xs"
-                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                            >
-                                                                All-Day
-                                                            </div>
-                                                        {:else}
-                                                            <div
-                                                                class="text-xs"
-                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                            >
-                                                                {activity.startTime}
-                                                                - {activity.endTime}
-                                                            </div>
-                                                        {/if}
-                                                    </div>
-                                                {/each}
-                                            {/if}
-                                        </div>
-                                    </div>
-                                {/each}
-
-                                {#if $bibleVerse.enabled}
-                                    <div
-                                        class="p-3 text-center"
-                                        style="margin-top: 0.5rem;"
-                                    >
-                                        <p
-                                            class="text-sm italic mb-2"
-                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
-                                        >
-                                            "{$bibleVerse.currentVerse.text}"
-                                        </p>
-                                        <p
-                                            class="text-xs"
-                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                        >
-                                            – {$bibleVerse.currentVerse
-                                                .reference}
-                                        </p>
-                                    </div>
-                                {/if}
-                            </div>
-                        {/if}
+                        <!-- End content wrapper -->
                     </div>
                 </div>
             </div>
