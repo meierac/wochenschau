@@ -16,7 +16,7 @@
 
     let isExporting = false;
     let exportError = "";
-    let layoutMode: "grid" | "list" = "grid";
+    let layoutMode: "grid" | "list" | "compact" = "grid";
     let showPreview = true;
 
     // Load preferences from localStorage on mount
@@ -25,7 +25,11 @@
             const savedLayoutMode = localStorage.getItem("exportLayoutMode");
             const savedShowPreview = localStorage.getItem("exportShowPreview");
 
-            if (savedLayoutMode === "list" || savedLayoutMode === "grid") {
+            if (
+                savedLayoutMode === "list" ||
+                savedLayoutMode === "grid" ||
+                savedLayoutMode === "compact"
+            ) {
                 layoutMode = savedLayoutMode;
             }
             if (savedShowPreview === "false") {
@@ -37,7 +41,7 @@
     }
 
     // Save preferences to localStorage
-    function saveLayoutMode(mode: "grid" | "list") {
+    function saveLayoutMode(mode: "grid" | "list" | "compact") {
         layoutMode = mode;
         if (typeof window !== "undefined") {
             localStorage.setItem("exportLayoutMode", mode);
@@ -125,9 +129,6 @@
         return `rgba(255, 255, 255, ${opacity / 100})`;
     }
 
-    // Removed custom embedFontsAsBase64 implementation.
-    // snapdom's built-in font embedding will be used instead (embedFonts: true).
-
     async function generateImageBlob(): Promise<Blob | null> {
         try {
             console.log(
@@ -152,18 +153,12 @@
                 /Safari/.test(ua) &&
                 !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
-            // Wait for all fonts declared in CSS to finish loading
             await document.fonts.ready;
-
-            // Short settle delay (layout + paint)
             await new Promise((r) => setTimeout(r, 150));
 
-            // Diagnostics: element size
             const rect = element.getBoundingClientRect();
             const baseWidth = rect.width;
             const baseHeight = rect.height;
-
-            // Dynamic scale: reduce for iOS Safari (memory constraints)
             let scale = isIOSSafari ? 3 : 4;
 
             console.log("[ExportSheet][Diagnostics] Element size:", {
@@ -173,7 +168,6 @@
                 userAgent: ua,
             });
 
-            // Helper: estimate memory footprint (rough)
             const estPixels = baseWidth * scale * baseHeight * scale;
             const estBytes = estPixels * 4;
             console.log(
@@ -181,7 +175,6 @@
                 estBytes,
             );
 
-            // Minimal manual font embedding fallback (only if needed)
             async function minimalEmbedSelectedFonts() {
                 const families = [
                     $exportSettings.headerFontFamily,
@@ -261,8 +254,6 @@
                 };
             }
 
-            // Attempt 1: normal scale, snapdom font embedding
-            // Font debug logging before first capture attempt
             try {
                 const titleEl = element.querySelector("h2");
                 const bodyEl = element.querySelector("p, span, div");
@@ -300,7 +291,6 @@
                 },
             });
 
-            // Fallback chain for iOS Safari failures
             if (!blob && isIOSSafari) {
                 console.warn(
                     "[ExportSheet] Attempt 1 failed on iOS Safari. Retrying with reduced scale 2.",
@@ -326,7 +316,6 @@
                     "[ExportSheet] Attempt 2 failed. Using manual font embedding fallback.",
                 );
                 const cleanup = await minimalEmbedSelectedFonts();
-                // Give fonts a moment to register
                 await new Promise((r) => setTimeout(r, 200));
                 blob = await snapdom.toBlob(element, {
                     type: "png",
@@ -360,7 +349,7 @@
             console.error("Export error:", error);
             return null;
         } finally {
-            // No manual font cleanup needed (snapdom embedFonts or fallback already cleaned)
+            // cleanup handled internally if needed
         }
     }
 
@@ -486,16 +475,10 @@
     }
 
     function isAllDayEvent(activity: any): boolean {
-        // Check if explicitly marked as all-day
         if (activity.isAllDay) return true;
-
-        // Check if start time equals end time
         if (activity.startTime === activity.endTime) return true;
-
-        // Check if spans entire day (00:00 to 23:59)
         if (activity.startTime === "00:00" && activity.endTime === "23:59")
             return true;
-
         return false;
     }
 </script>
@@ -529,12 +512,10 @@
             </svg>
         </IconButton>
 
-        <!-- Centered title -->
         <h3 class="text-lg font-semibold text-foreground flex-1 text-center">
             Export Week
         </h3>
 
-        <!-- Placeholder for right alignment -->
         <div class="w-6"></div>
     </div>
 
@@ -566,7 +547,7 @@
                         {showPreview ? "Preview On" : "Preview Off"}
                     </button>
 
-                    <!-- Grid/List View Buttons -->
+                    <!-- Grid/List/Compact View Buttons -->
                     <div class="flex gap-1 bg-muted p-1 rounded-md">
                         <button
                             class="px-3 py-1.5 rounded text-sm font-medium transition-colors {layoutMode ===
@@ -604,6 +585,24 @@
                                 />
                             </svg>
                         </button>
+                        <button
+                            class="px-3 py-1.5 rounded text-sm font-medium transition-colors {layoutMode ===
+                            'compact'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-transparent text-foreground hover:bg-muted-foreground/10'}"
+                            on:click={() => saveLayoutMode("compact")}
+                            title="Compact view"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    d="M3 6h18v2H3V6zm0 5h12v2H3v-2zm0 5h8v2H3v-2z"
+                                />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -615,7 +614,7 @@
                 class="bg-background rounded-lg border border-border overflow-auto max-h-[55vh]"
             >
                 <div
-                    class={layoutMode === "list"
+                    class={layoutMode === "list" || layoutMode === "compact"
                         ? "flex justify-center min-w-full"
                         : ""}
                 >
@@ -623,16 +622,21 @@
                         id="export-preview"
                         style="width: {layoutMode === 'grid'
                             ? '900px'
-                            : '400px'}; min-width: {layoutMode === 'grid'
+                            : layoutMode === 'list'
+                              ? '400px'
+                              : '360px'}; min-width: {layoutMode === 'grid'
                             ? '900px'
-                            : '400px'}; max-width: {layoutMode === 'grid'
+                            : layoutMode === 'list'
+                              ? '400px'
+                              : '360px'}; max-width: {layoutMode === 'grid'
                             ? '900px'
-                            : '400px'}; position: relative; {$exportSettings.backgroundMode ===
+                            : layoutMode === 'list'
+                              ? '400px'
+                              : '360px'}; padding: 15px; position: relative; {$exportSettings.backgroundMode ===
                         'color'
                             ? `background-color: ${$exportSettings.backgroundColor};`
                             : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                     >
-                        <!-- Background Image (use img element for better html-to-image support) -->
                         {#if $exportSettings.backgroundMode === "image" && $exportSettings.backgroundImage}
                             <img
                                 src={$exportSettings.backgroundImage}
@@ -641,7 +645,6 @@
                             />
                         {/if}
 
-                        <!-- Background Overlay (only for solid color mode) -->
                         {#if $exportSettings.backgroundMode === "color"}
                             <div
                                 style="position: absolute; inset: 0; background-color: {$exportSettings.backgroundColor}; opacity: {(100 -
@@ -650,7 +653,6 @@
                             ></div>
                         {/if}
 
-                        <!-- Content wrapper without outer padding (removed to eliminate white border) -->
                         <div
                             class="space-y-4"
                             style="position: relative; z-index: 10;"
@@ -737,7 +739,6 @@
                                             </div>
                                         </div>
                                     {/each}
-
                                     {#if $bibleVerse.enabled}
                                         <div
                                             class="p-2 text-center flex flex-col justify-center items-center h-full"
@@ -760,7 +761,7 @@
                                         </div>
                                     {/if}
                                 </div>
-                            {:else}
+                            {:else if layoutMode === "list"}
                                 <div class="space-y-1">
                                     {#each days as day, dayIndex}
                                         <div
@@ -850,9 +851,97 @@
                                         </div>
                                     {/if}
                                 </div>
+                            {:else}
+                                <!-- Compact view (revised) -->
+                                <div class="space-y-2">
+                                    {#each days as day, dayIndex}
+                                        <div
+                                            class="p-0"
+                                            style="border-radius: {$exportSettings.borderRadius}px;"
+                                        >
+                                            <div class="flex gap-0.5">
+                                                <div
+                                                    class="flex flex-col text-right justify-center gap-1 w-20 py-4 px-3"
+                                                    style="line-height:1;background-color: {getWeekContainerBackgroundStyle()};border-radius: {$exportSettings.borderRadius}px 0 0 {$exportSettings.borderRadius}px;"
+                                                >
+                                                    <div
+                                                        style="font-size:14px; font-weight:600; color: {$exportSettings.textColor};"
+                                                    >
+                                                        {formatDate(day)}
+                                                    </div>
+                                                    <div
+                                                        style="font-size:12px; font-weight:500; opacity:0.7; color: {$exportSettings.textColor}; text-align:right;"
+                                                    >
+                                                        {WEEKDAYS_DE[dayIndex]}
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    class="flex-1"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: 0 {$exportSettings.borderRadius}px {$exportSettings.borderRadius}px 0; padding: 5px;"
+                                                >
+                                                    {#if getDayActivities(dayIndex).length === 0}
+                                                        <div
+                                                            class="italic opacity-40 flex justify-center items-center h-full p-1"
+                                                            style="font-size:11px; color: {$exportSettings.textColor};"
+                                                        >
+                                                            Keine Aktivitäten
+                                                        </div>
+                                                    {:else}
+                                                        <div
+                                                            class="space-y-1 p-1"
+                                                        >
+                                                            {#each getDayActivities(dayIndex) as activity}
+                                                                <div
+                                                                    class="grid"
+                                                                    style="grid-template-columns: 70px 1fr; font-size:11px; line-height:1.2; color: {$exportSettings.textColor}; font-family: {$exportSettings.bodyFontFamily};"
+                                                                >
+                                                                    <div
+                                                                        class="pr-1 opacity-60"
+                                                                        style="text-align:right;"
+                                                                    >
+                                                                        {#if isAllDayEvent(activity)}
+                                                                            All-Day
+                                                                        {:else}
+                                                                            {activity.startTime}-{activity.endTime}
+                                                                        {/if}
+                                                                    </div>
+                                                                    <div
+                                                                        class="pl-1"
+                                                                        style="border-left:2px solid {activity.color ||
+                                                                            $exportSettings.accentColor}; font-weight:500; overflow-wrap:anywhere; word-break:break-word;"
+                                                                    >
+                                                                        {activity.summary}
+                                                                    </div>
+                                                                </div>
+                                                            {/each}
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {/each}
+
+                                    {#if $bibleVerse.enabled}
+                                        <div class="p-2">
+                                            <div
+                                                class="text-center italic"
+                                                style="font-size:10px; opacity:0.7;"
+                                            >
+                                                "{$bibleVerse.currentVerse
+                                                    .text}"
+                                            </div>
+                                            <div
+                                                class=" text-center"
+                                                style="font-size:10px; opacity:0.7;"
+                                            >
+                                                {$bibleVerse.currentVerse
+                                                    .reference}
+                                            </div>
+                                        </div>
+                                    {/if}
+                                </div>
                             {/if}
                         </div>
-                        <!-- End content wrapper -->
                     </div>
                 </div>
             </div>
@@ -939,7 +1028,6 @@
                     </Button>
                 </div>
             {:else}
-                <!-- Mobile: Native Share -->
                 <Button
                     variant="default"
                     disabled={isExporting}
