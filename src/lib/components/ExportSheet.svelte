@@ -131,6 +131,8 @@
 
     async function generateImageBlob(): Promise<Blob | null> {
         try {
+            // Prepare manual font embedding (will embed before capture)
+            let manualFontCleanup: (() => void) | null = null;
             console.log(
                 "[ExportSheet] Generating PNG. Background mode:",
                 $exportSettings.backgroundMode,
@@ -154,7 +156,11 @@
                 !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
             await document.fonts.ready;
-            await new Promise((r) => setTimeout(r, 150));
+            // Manually embed selected fonts into a temporary <style> so that html->image has direct data sources.
+            // This guarantees inclusion even if snapdom's embedFonts misses variable font ranges or cross-origin blocked fonts.
+            manualFontCleanup = await minimalEmbedSelectedFonts();
+            // Short settle delay (layout + paint + font registration)
+            await new Promise((r) => setTimeout(r, 180));
 
             const rect = element.getBoundingClientRect();
             const baseWidth = rect.width;
@@ -277,10 +283,11 @@
                 scale,
                 "embedFonts: true",
             );
+            // First attempt: rely on our manual embedding (embedFonts false to avoid duplicate @font-face extraction)
             let blob = await snapdom.toBlob(element, {
                 type: "png",
                 scale,
-                embedFonts: true,
+                embedFonts: false,
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
                         ? $exportSettings.backgroundColor
@@ -290,6 +297,26 @@
                     return !el.classList?.contains("no-export");
                 },
             });
+
+            // If manual embedding somehow failed, fall back to snapdom built-in embedding
+            if (!blob) {
+                console.warn(
+                    "[ExportSheet] Manual embedded capture failed, retrying with snapdom embedFonts:true",
+                );
+                blob = await snapdom.toBlob(element, {
+                    type: "png",
+                    scale,
+                    embedFonts: true,
+                    backgroundColor:
+                        $exportSettings.backgroundMode === "color"
+                            ? $exportSettings.backgroundColor
+                            : null,
+                    filter: (node) => {
+                        const el = node as Element;
+                        return !el.classList?.contains("no-export");
+                    },
+                });
+            }
 
             if (!blob && isIOSSafari) {
                 console.warn(
@@ -349,7 +376,17 @@
             console.error("Export error:", error);
             return null;
         } finally {
-            // cleanup handled internally if needed
+            // Remove temporary manual embedded fonts if we injected them
+            if (manualFontCleanup) {
+                try {
+                    manualFontCleanup();
+                } catch (e) {
+                    console.warn(
+                        "[ExportSheet] Failed cleaning embedded font style tag:",
+                        e,
+                    );
+                }
+            }
         }
     }
 
