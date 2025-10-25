@@ -160,6 +160,60 @@
         return `rgba(255, 255, 255, ${opacity / 100})`;
     }
 
+    /**
+     * Preload and decode background image to ensure it's ready for export
+     * This is critical for iOS Safari where data URLs need time to decode
+     */
+    async function preloadBackgroundImage(dataUrl: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+
+            img.onload = () => {
+                console.log(
+                    "[PreloadImage] Background image loaded successfully",
+                );
+                // On iOS Safari, even after onload, we need to ensure decoding is complete
+                if (img.decode) {
+                    img.decode()
+                        .then(() => {
+                            console.log(
+                                "[PreloadImage] Background image decoded successfully",
+                            );
+                            resolve();
+                        })
+                        .catch((error) => {
+                            console.warn(
+                                "[PreloadImage] Image decode() failed, but image is loaded. " +
+                                    "Proceeding with export - image should still render correctly.",
+                                error,
+                            );
+                            // Continue anyway as the image is loaded via onload event
+                            // The decode() failure is not critical - it's an optimization
+                            resolve();
+                        });
+                } else {
+                    // Fallback for browsers without decode() support (e.g., older browsers)
+                    // The image is still loaded and will render correctly
+                    console.log(
+                        "[PreloadImage] Browser doesn't support decode(), using onload only",
+                    );
+                    resolve();
+                }
+            };
+
+            img.onerror = (error) => {
+                console.error(
+                    "[PreloadImage] Failed to load background image:",
+                    error,
+                );
+                reject(new Error("Failed to load background image"));
+            };
+
+            // Start loading the image
+            img.src = dataUrl;
+        });
+    }
+
     async function generateImageBlob(): Promise<Blob | null> {
         try {
             console.log("[GenerateBlob] Starting image generation...");
@@ -198,21 +252,25 @@
             // Extra frame to ensure layout is complete
             await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-            // If using image background via CSS background-image,
-            // snapdom handles it properly unlike html-to-image
+            // If using image background, preload and decode it before export
+            // This is critical for iOS Safari where data URLs need time to decode
             if (
                 $exportSettings.backgroundMode === "image" &&
                 $exportSettings.backgroundImage
             ) {
                 console.log(
-                    "[GenerateBlob] Mode is IMAGE, using CSS background-image with snapdom",
+                    "[GenerateBlob] Mode is IMAGE, preloading background image",
                 );
                 console.log(
                     "[GenerateBlob] Background image data URL length:",
                     $exportSettings.backgroundImage.length,
                 );
 
-                // Additional frame wait for CSS background to be painted
+                // Preload the image to ensure it's fully decoded
+                await preloadBackgroundImage($exportSettings.backgroundImage);
+
+                // Wait additional frames to ensure CSS background-image is processed
+                // after the image has been decoded
                 await new Promise((r) => requestAnimationFrame(() => r(null)));
             } else {
                 console.log(
