@@ -967,87 +967,47 @@
                     </Button>
                 </div>
             {:else}
-                <div class="grid grid-cols-2 gap-3">
-                    <Button
-                        variant="default"
-                        disabled={isExporting || !isBackgroundReady}
-                        on:click={performShare}
-                        class="w-full"
-                    >
-                        {#if !isBackgroundReady}
-                            <span class="sr-only">Background loading</span>
-                        {/if}
-                        {#if isExporting}
-                            <svg
-                                class="w-4 h-4 animate-spin mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                />
-                            </svg>
-                            Sharing...
-                        {:else}
-                            <svg
-                                class="w-4 h-4 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                />
-                            </svg>
-                            Share
-                        {/if}
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        disabled={isExporting || !isBackgroundReady}
-                        on:click={exportAsImage}
-                        class="w-full"
-                    >
-                        {#if isExporting}
-                            <svg
-                                class="w-4 h-4 animate-spin mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                />
-                            </svg>
-                            Exporting...
-                        {:else}
-                            <svg
-                                class="w-4 h-4 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                />
-                            </svg>
-                            Download
-                        {/if}
-                    </Button>
-                </div>
+                <Button
+                    variant="default"
+                    disabled={isExporting || !isBackgroundReady}
+                    on:click={performShare}
+                    class="w-full"
+                >
+                    {#if !isBackgroundReady}
+                        <span class="sr-only">Background loading</span>
+                    {/if}
+                    {#if isExporting}
+                        <svg
+                            class="w-4 h-4 animate-spin mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                        </svg>
+                        Sharing...
+                    {:else}
+                        <svg
+                            class="w-4 h-4 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                            />
+                        </svg>
+                        Share
+                    {/if}
+                </Button>
             {/if}
         </fieldset>
     </div>
