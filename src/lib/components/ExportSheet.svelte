@@ -934,86 +934,170 @@
                     </Button>
                 </div>
             {:else if preparedFile}
-                <Button
-                    variant="default"
-                    disabled={isExporting || !isBackgroundReady}
-                    on:click={performShare}
-                    class="w-full"
-                >
-                    {#if isExporting}
-                        <svg
-                            class="w-4 h-4 animate-spin mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                        </svg>
-                        Sharing...
-                    {:else}
-                        <svg
-                            class="w-4 h-4 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                        </svg>
-                        Share
-                    {/if}
-                </Button>
+                <div class="grid grid-cols-2 gap-3">
+                    <Button
+                        variant="default"
+                        disabled={isExporting || !isBackgroundReady}
+                        on:click={performShare}
+                        class="w-full"
+                    >
+                        {#if isExporting}
+                            <svg
+                                class="w-4 h-4 animate-spin mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                />
+                            </svg>
+                            Sharing...
+                        {:else}
+                            <svg
+                                class="w-4 h-4 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                />
+                            </svg>
+                            Share
+                        {/if}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        disabled={isExporting ||
+                            isPreparingShare ||
+                            !isBackgroundReady}
+                        on:click={exportAsImage}
+                        class="w-full"
+                    >
+                        {#if isExporting}
+                            <svg
+                                class="w-4 h-4 animate-spin mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                />
+                            </svg>
+                            Exporting...
+                        {:else}
+                            <svg
+                                class="w-4 h-4 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 16v-4m0 0V8m0 4H8m4 0h4m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                            Download PNG
+                        {/if}
+                    </Button>
+                </div>
             {:else}
-                <Button
-                    variant="default"
-                    disabled={isPreparingShare || !isBackgroundReady}
-                    on:click={prepareShare}
-                    class="w-full"
-                >
-                    {#if !isBackgroundReady}
-                        <span class="sr-only">Background loading</span>
-                    {/if}
-                    {#if isPreparingShare}
-                        <svg
-                            class="w-4 h-4 animate-spin mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                        </svg>
-                        Preparing...
-                    {:else}
-                        <svg
-                            class="w-4 h-4 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                        </svg>
-                        Prepare Share
-                    {/if}
-                </Button>
+                <div class="grid grid-cols-2 gap-3">
+                    <Button
+                        variant="default"
+                        disabled={isPreparingShare || !isBackgroundReady}
+                        on:click={prepareShare}
+                        class="w-full"
+                    >
+                        {#if !isBackgroundReady}
+                            <span class="sr-only">Background loading</span>
+                        {/if}
+                        {#if isPreparingShare}
+                            <svg
+                                class="w-4 h-4 animate-spin mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                />
+                            </svg>
+                            Preparing...
+                        {:else}
+                            <svg
+                                class="w-4 h-4 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                />
+                            </svg>
+                            Prepare Share
+                        {/if}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        disabled={isExporting ||
+                            isPreparingShare ||
+                            !isBackgroundReady}
+                        on:click={exportAsImage}
+                        class="w-full"
+                    >
+                        {#if isExporting}
+                            <svg
+                                class="w-4 h-4 animate-spin mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                />
+                            </svg>
+                            Exporting...
+                        {:else}
+                            <svg
+                                class="w-4 h-4 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 16v-4m0 0V8m0 4H8m4 0h4m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                            Download PNG
+                        {/if}
+                    </Button>
+                </div>
             {/if}
         </fieldset>
     </div>
