@@ -110,21 +110,29 @@
     // Validate and sanitize background image data URL for CSS usage
     function getSafeBackgroundImageUrl(img: string | null): string {
         // Ensure it's a valid data URL (starts with data:image/)
-        if (!img || !img.startsWith('data:image/')) {
-            return '';
+        if (!img || !img.startsWith("data:image/")) {
+            return "";
         }
         // Additional validation: check for common image MIME types
-        const validPrefixes = ['data:image/png', 'data:image/jpeg', 'data:image/webp', 'data:image/gif'];
-        if (!validPrefixes.some(prefix => img.startsWith(prefix))) {
-            console.warn('[ExportSheet] Invalid background image data URL format');
-            return '';
+        const validPrefixes = [
+            "data:image/png",
+            "data:image/jpeg",
+            "data:image/webp",
+            "data:image/gif",
+        ];
+        if (!validPrefixes.some((prefix) => img.startsWith(prefix))) {
+            console.warn(
+                "[ExportSheet] Invalid background image data URL format",
+            );
+            return "";
         }
         return img;
     }
 
     // Reactive: get safe background image URL for CSS
-    $: safeBackgroundImageUrl = getSafeBackgroundImageUrl($exportSettings.backgroundImage);
-
+    $: safeBackgroundImageUrl = getSafeBackgroundImageUrl(
+        $exportSettings.backgroundImage,
+    );
 
     function handleClose() {
         dispatch("close");
@@ -181,9 +189,12 @@
             // Extra frame to ensure layout is complete
             await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-            // If using image background (now via CSS background-image), 
+            // If using image background (now via CSS background-image),
             // give extra time for the browser to process the data URL
-            if ($exportSettings.backgroundMode === "image" && $exportSettings.backgroundImage) {
+            if (
+                $exportSettings.backgroundMode === "image" &&
+                $exportSettings.backgroundImage
+            ) {
                 console.log(
                     "[GenerateBlob] Mode is IMAGE, using CSS background-image",
                 );
@@ -191,15 +202,13 @@
                     "[GenerateBlob] Background image data URL length:",
                     $exportSettings.backgroundImage.length,
                 );
-                
+
                 // Wait additional frames to ensure CSS background-image is processed
                 // This is similar to how fonts are handled - they're in CSS and need time to render
                 await new Promise((r) => requestAnimationFrame(() => r(null)));
                 await new Promise((r) => requestAnimationFrame(() => r(null)));
-                
-                console.log(
-                    "[GenerateBlob] Background image ready for export",
-                );
+
+                console.log("[GenerateBlob] Background image ready for export");
             } else {
                 console.log(
                     "[GenerateBlob] Mode is COLOR, no background image",
@@ -337,26 +346,21 @@
         }
     }
 
-    // Two-phase sharing: prepare image fully, then invoke native share
-    let preparedFile: File | null = null;
-    let isPreparingShare = false;
-
-    async function prepareShare() {
-        if (isPreparingShare) return;
-        isPreparingShare = true;
+    // Combined one-step sharing for mobile
+    async function performShare() {
+        isExporting = true;
         exportError = "";
-        preparedFile = null;
         try {
             // Force refresh background image from IndexedDB before export
             console.log(
-                "[PrepareShare] Refreshing background image from IndexedDB...",
+                "[Share] Refreshing background image from IndexedDB...",
             );
             await exportSettings.refreshImage();
 
             // Wait a bit for the store to update
             await new Promise((r) => setTimeout(r, 1000));
 
-            console.log("[PrepareShare] Current settings:", {
+            console.log("[Share] Current settings:", {
                 mode: $exportSettings.backgroundMode,
                 hasImage: !!$exportSettings.backgroundImage,
                 imageLength: $exportSettings.backgroundImage?.length,
@@ -366,38 +370,23 @@
 
             const blob = await generateImageBlob();
             if (!blob) throw new Error("Failed to generate image");
-            preparedFile = new File(
+
+            const file = new File(
                 [blob],
                 `Wochenschau_W${$currentWeek}_${$currentYear}.png`,
                 { type: "image/png" },
             );
-        } catch (error) {
-            exportError =
-                error instanceof Error ? error.message : "Prepare failed";
-            preparedFile = null;
-            console.error("Prepare share error:", error);
-        } finally {
-            isPreparingShare = false;
-        }
-    }
 
-    async function performShare() {
-        // Ensure we have a prepared file (in case user bypassed phase)
-        if (!preparedFile) {
-            await prepareShare();
-            if (!preparedFile) return;
-        }
-        isExporting = true;
-        exportError = "";
-        try {
             if (!navigator.share) {
                 throw new Error("Web Share API not supported on this device");
             }
+
             await navigator.share({
                 title: `Wochenschau Week ${$currentWeek}`,
                 text: `My weekly agenda for week ${$currentWeek} ${$currentYear}`,
-                files: [preparedFile],
+                files: [file],
             });
+
             setTimeout(() => {
                 dispatch("close");
             }, 500);
@@ -589,7 +578,7 @@
                             : layoutMode === 'list'
                               ? '400px'
                               : '360px'}; position: relative; {$exportSettings.backgroundMode ===
-                        'image' && safeBackgroundImageUrl
+                            'image' && safeBackgroundImageUrl
                             ? `background-image: url(${safeBackgroundImageUrl}); background-size: cover; background-position: center; background-repeat: no-repeat;`
                             : $exportSettings.backgroundMode === 'color'
                               ? `background-color: ${$exportSettings.backgroundColor};`
@@ -977,7 +966,7 @@
                         {/if}
                     </Button>
                 </div>
-            {:else if preparedFile}
+            {:else}
                 <div class="grid grid-cols-2 gap-3">
                     <Button
                         variant="default"
@@ -985,6 +974,9 @@
                         on:click={performShare}
                         class="w-full"
                     >
+                        {#if !isBackgroundReady}
+                            <span class="sr-only">Background loading</span>
+                        {/if}
                         {#if isExporting}
                             <svg
                                 class="w-4 h-4 animate-spin mr-2"
@@ -1011,7 +1003,7 @@
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     stroke-width="2"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
                                 />
                             </svg>
                             Share
@@ -1019,9 +1011,7 @@
                     </Button>
                     <Button
                         variant="secondary"
-                        disabled={isExporting ||
-                            isPreparingShare ||
-                            !isBackgroundReady}
+                        disabled={isExporting || !isBackgroundReady}
                         on:click={exportAsImage}
                         class="w-full"
                     >
@@ -1040,50 +1030,6 @@
                                 />
                             </svg>
                             Exporting...
-                        {:else}
-                            <svg
-                                class="w-4 h-4 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 16v-4m0 0V8m0 4H8m4 0h4m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                            </svg>
-                            Download PNG
-                        {/if}
-                    </Button>
-                </div>
-            {:else}
-                <div class="grid grid-cols-2 gap-3">
-                    <Button
-                        variant="default"
-                        disabled={isPreparingShare || !isBackgroundReady}
-                        on:click={prepareShare}
-                        class="w-full"
-                    >
-                        {#if !isBackgroundReady}
-                            <span class="sr-only">Background loading</span>
-                        {/if}
-                        {#if isPreparingShare}
-                            <svg
-                                class="w-4 h-4 animate-spin mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                />
-                            </svg>
-                            Preparing...
                         {:else}
                             <svg
                                 class="w-4 h-4 mr-2"
@@ -1098,47 +1044,7 @@
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                                 />
                             </svg>
-                            Prepare Share
-                        {/if}
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        disabled={isExporting ||
-                            isPreparingShare ||
-                            !isBackgroundReady}
-                        on:click={exportAsImage}
-                        class="w-full"
-                    >
-                        {#if isExporting}
-                            <svg
-                                class="w-4 h-4 animate-spin mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                />
-                            </svg>
-                            Exporting...
-                        {:else}
-                            <svg
-                                class="w-4 h-4 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 16v-4m0 0V8m0 4H8m4 0h4m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                            </svg>
-                            Download PNG
+                            Download
                         {/if}
                     </Button>
                 </div>
