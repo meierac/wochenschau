@@ -5,7 +5,7 @@
     import { exportSettings } from "../stores/exportSettings";
     import { bibleVerse } from "../stores/bibleVerse";
     import { getDaysOfWeek } from "../utils/date";
-    import { WEEKDAYS_DE } from "../types/index";
+    import { WEEKDAYS_DE } from "../types";
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
@@ -19,28 +19,22 @@
     let layoutMode: "grid" | "list" | "compact" = "grid";
     let showPreview = true;
 
-    // Load preferences from localStorage on mount
+    // Preferences -------------------------------------------------------------
     function loadPreferences() {
-        if (typeof window !== "undefined") {
-            const savedLayoutMode = localStorage.getItem("exportLayoutMode");
-            const savedShowPreview = localStorage.getItem("exportShowPreview");
-
-            if (
-                savedLayoutMode === "list" ||
-                savedLayoutMode === "grid" ||
-                savedLayoutMode === "compact"
-            ) {
-                layoutMode = savedLayoutMode;
-            }
-            if (savedShowPreview === "false") {
-                showPreview = false;
-            } else if (savedShowPreview === "true") {
-                showPreview = true;
-            }
+        if (typeof window === "undefined") return;
+        const savedLayoutMode = localStorage.getItem("exportLayoutMode");
+        const savedShowPreview = localStorage.getItem("exportShowPreview");
+        if (
+            savedLayoutMode === "grid" ||
+            savedLayoutMode === "list" ||
+            savedLayoutMode === "compact"
+        ) {
+            layoutMode = savedLayoutMode;
         }
+        if (savedShowPreview === "false") showPreview = false;
+        if (savedShowPreview === "true") showPreview = true;
     }
 
-    // Save preferences to localStorage
     function saveLayoutMode(mode: "grid" | "list" | "compact") {
         layoutMode = mode;
         if (typeof window !== "undefined") {
@@ -55,58 +49,16 @@
         }
     }
 
-    // Initialize on component mount
+    // Lifecycle ---------------------------------------------------------------
     onMount(() => {
         loadPreferences();
-        console.log(
-            "ExportSheet mounted. Background image:",
-            $exportSettings.backgroundImage
-                ? `${$exportSettings.backgroundImage.substring(0, 50)}...`
-                : "none",
-        );
-        console.log(
-            "Background image URL:",
-            $exportSettings.backgroundImageUrl,
-        );
-        console.log(
-            "Background image type:",
-            $exportSettings.backgroundImageType,
-        );
     });
-
-    // Reactive debugging - log when background image changes
-    $: {
-        console.log(
-            "[ExportSheet] Background image changed:",
-            $exportSettings.backgroundImage
-                ? `Data URL of length ${$exportSettings.backgroundImage.length}`
-                : "null",
-        );
-        console.log(
-            "[ExportSheet] Background URL ID:",
-            $exportSettings.backgroundImageUrl,
-        );
-        console.log(
-            "[ExportSheet] Background type:",
-            $exportSettings.backgroundImageType,
-        );
-        console.log(
-            "[ExportSheet] Background MODE:",
-            $exportSettings.backgroundMode,
-        );
-        console.log(
-            "[ExportSheet] Will use:",
-            $exportSettings.backgroundMode === "image" &&
-                $exportSettings.backgroundImage
-                ? "BACKGROUND IMAGE"
-                : "SOLID COLOR",
-        );
-    }
 
     function handleClose() {
         dispatch("close");
     }
 
+<<<<<<< HEAD
     function getWeekContainerBackgroundStyle(): string {
         const color = $exportSettings.weekContainerBackgroundColor;
         const opacity = $exportSettings.weekContainerBackgroundOpacity;
@@ -424,6 +376,9 @@
         }
     }
 
+=======
+    // Derived data ------------------------------------------------------------
+>>>>>>> ac006417d457e261a0b37700cf4c95498a9fb927
     $: days = getDaysOfWeek($currentWeek, $currentYear);
     $: weekActivities = $activities.filter(
         (a) => a.week === $currentWeek && a.year === $currentYear,
@@ -446,6 +401,423 @@
         if (activity.startTime === "00:00" && activity.endTime === "23:59")
             return true;
         return false;
+    }
+
+    function getWeekContainerBackgroundStyle(): string {
+        const color = $exportSettings.weekContainerBackgroundColor;
+        const opacity = $exportSettings.weekContainerBackgroundOpacity;
+        if (color.includes("rgba")) {
+            return color.replace(
+                /rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/,
+                (_m, r, g, b) => {
+                    return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
+                },
+            );
+        }
+        if (color.startsWith("#")) {
+            const hex = color.slice(1);
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
+        }
+        return `rgba(255, 255, 255, ${opacity / 100})`;
+    }
+
+    // Manual font embedding ---------------------------------------------------
+    async function minimalEmbedSelectedFonts(): Promise<(() => void) | null> {
+        try {
+            const families = [
+                $exportSettings.headerFontFamily,
+                $exportSettings.bodyFontFamily,
+            ].filter(Boolean);
+            const names = [
+                ...new Set(
+                    families.map((f) => {
+                        const quoted = f.match(/'([^']+)'/);
+                        if (quoted) return quoted[1];
+                        return f
+                            .split(",")[0]
+                            .trim()
+                            .replace(/^['"]|['"]$/g, "");
+                    }),
+                ),
+            ];
+
+            if (names.length === 0) return null;
+
+            const FONT_FILES: Record<string, string> = {
+                Archivo: "/fonts/Archivo-VariableFont_wdth,wght.ttf",
+                "Dancing Script": "/fonts/DancingScript-VariableFont_wght.ttf",
+                "Edu QLD Hand": "/fonts/EduQLDHand-VariableFont_wght.ttf",
+                "Edu SA Hand": "/fonts/EduSAHand-VariableFont_wght.ttf",
+                Handlee: "/fonts/Handlee-Regular.ttf",
+                Lora: "/fonts/Lora-VariableFont_wght.ttf",
+                Manrope: "/fonts/Manrope-VariableFont_wght.ttf",
+                "Ms Madi": "/fonts/MsMadi-Regular.ttf",
+                "Noto Sans": "/fonts/NotoSans-VariableFont_wdth,wght.ttf",
+                "Pirata One": "/fonts/PirataOne-Regular.ttf",
+                "Space Mono": "/fonts/SpaceMono-Regular.ttf",
+            };
+
+            let css = "";
+            for (const name of names) {
+                const path = FONT_FILES[name];
+                if (!path) {
+                    console.warn("[FontEmbed] Missing mapping for", name);
+                    continue;
+                }
+                try {
+                    const res = await fetch(path);
+                    if (!res.ok) {
+                        console.warn(
+                            "[FontEmbed] Fetch failed:",
+                            name,
+                            res.status,
+                        );
+                        continue;
+                    }
+                    const buf = await res.arrayBuffer();
+                    const base64 = btoa(
+                        String.fromCharCode(...new Uint8Array(buf)),
+                    );
+                    css += `@font-face {
+    font-family: '${name}';
+    src: url(data:font/truetype;base64,${base64}) format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}\n`;
+                } catch (e) {
+                    console.warn("[FontEmbed] Error embedding:", name, e);
+                }
+            }
+
+            if (!css) return null;
+            const existing = document.getElementById("embedded-export-fonts");
+            if (existing) existing.remove();
+
+            const styleEl = document.createElement("style");
+            styleEl.id = "embedded-export-fonts";
+            styleEl.textContent = css;
+            document.head.appendChild(styleEl);
+            return () => {
+                styleEl.parentNode?.removeChild(styleEl);
+            };
+        } catch (e) {
+            console.warn("[FontEmbed] Unexpected error:", e);
+            return null;
+        }
+    }
+
+    // High fidelity image export ---------------------------------------------
+    async function generateImageBlob(): Promise<Blob | null> {
+        let manualFontCleanup: (() => void) | null = null;
+        let sandbox: HTMLDivElement | null = null;
+
+        try {
+            const { snapdom } = await import("@zumer/snapdom");
+            const element = document.getElementById("export-preview");
+            if (!element) throw new Error("Export preview element not found");
+
+            // Wait for fonts then next frame
+            await document.fonts.ready;
+            await new Promise((r) => requestAnimationFrame(() => r(null)));
+
+            // Manual font embedding first
+            manualFontCleanup = await minimalEmbedSelectedFonts();
+
+            // Ensure images loaded
+            const imgPromises: Promise<void>[] = [];
+            element.querySelectorAll("img").forEach((img) => {
+                if (!img.complete || img.naturalWidth === 0) {
+                    imgPromises.push(
+                        new Promise((res, rej) => {
+                            img.addEventListener("load", () => res(), {
+                                once: true,
+                            });
+                            img.addEventListener("error", () => rej(), {
+                                once: true,
+                            });
+                        }),
+                    );
+                }
+            });
+            if (imgPromises.length) {
+                await Promise.allSettled(imgPromises);
+            }
+
+            // Clone subtree
+            const clone = element.cloneNode(true) as HTMLElement;
+
+            // Inline critical computed styles
+            const origNodes = element.querySelectorAll<HTMLElement>("*");
+            const cloneNodes = clone.querySelectorAll<HTMLElement>("*");
+            origNodes.forEach((orig, idx) => {
+                const target = cloneNodes[idx];
+                if (!target) return;
+                const cs = getComputedStyle(orig);
+                const props = [
+                    "position",
+                    "display",
+                    "flexDirection",
+                    "flexWrap",
+                    "alignItems",
+                    "justifyContent",
+                    "gap",
+                    "gridTemplateColumns",
+                    "gridTemplateRows",
+                    "top",
+                    "left",
+                    "right",
+                    "bottom",
+                    "margin",
+                    "marginTop",
+                    "marginBottom",
+                    "marginLeft",
+                    "marginRight",
+                    "padding",
+                    "paddingTop",
+                    "paddingBottom",
+                    "paddingLeft",
+                    "paddingRight",
+                    "width",
+                    "height",
+                    "minWidth",
+                    "minHeight",
+                    "maxWidth",
+                    "maxHeight",
+                    "fontFamily",
+                    "fontSize",
+                    "fontWeight",
+                    "fontStyle",
+                    "lineHeight",
+                    "color",
+                    "backgroundColor",
+                    "backgroundImage",
+                    "backgroundPosition",
+                    "backgroundSize",
+                    "backgroundRepeat",
+                    "border",
+                    "borderTop",
+                    "borderBottom",
+                    "borderLeft",
+                    "borderRight",
+                    "borderRadius",
+                    "boxShadow",
+                    "textAlign",
+                    "letterSpacing",
+                    "whiteSpace",
+                    "overflow",
+                    "overflowX",
+                    "overflowY",
+                    "textDecoration",
+                    "opacity",
+                ];
+                let styleText = "";
+                props.forEach((p) => {
+                    const v = (cs as any)[p];
+                    if (v && v !== "initial") styleText += `${p}:${v};`;
+                });
+                target.setAttribute("style", styleText);
+            });
+
+            // Inline <img> sources (small same-origin only)
+            async function inlineImg(img: HTMLImageElement) {
+                try {
+                    if (!img.src.startsWith("data:")) {
+                        const resp = await fetch(img.src, {
+                            cache: "force-cache",
+                        });
+                        if (!resp.ok) return;
+                        const blob = await resp.blob();
+                        if (blob.size > 2_500_000) return; // skip huge
+                        const dataUrl = await new Promise<string>((res) => {
+                            const reader = new FileReader();
+                            reader.onload = () => res(reader.result as string);
+                            reader.readAsDataURL(blob);
+                        });
+                        img.src = dataUrl;
+                    }
+                } catch {
+                    // ignore failures
+                }
+            }
+            await Promise.all(
+                Array.from(clone.querySelectorAll("img")).map((img) =>
+                    inlineImg(img),
+                ),
+            );
+
+            // Sandbox container off-screen
+            sandbox = document.createElement("div");
+            sandbox.style.position = "fixed";
+            sandbox.style.left = "-100000px";
+            sandbox.style.top = "0";
+            sandbox.style.pointerEvents = "none";
+            sandbox.appendChild(clone);
+            document.body.appendChild(sandbox);
+
+            // Dimensions & scale
+            const rect = clone.getBoundingClientRect();
+            const baseWidth = rect.width;
+            const baseHeight = rect.height;
+            const ua = navigator.userAgent;
+            const isIOSSafari =
+                /iPad|iPhone|iPod/.test(ua) &&
+                /Safari/.test(ua) &&
+                !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+
+            const targetScale = isIOSSafari ? 3 : 4;
+            const maxPixels = 35_000_000;
+            let scale = targetScale;
+            const pixels = baseWidth * targetScale * baseHeight * targetScale;
+            if (pixels > maxPixels) {
+                scale = Math.max(
+                    1,
+                    Math.floor(Math.sqrt(maxPixels / (baseWidth * baseHeight))),
+                );
+            }
+
+            // First attempt (manual fonts already embedded)
+            let blob = await snapdom.toBlob(clone, {
+                type: "png",
+                scale,
+                embedFonts: false,
+                backgroundColor:
+                    $exportSettings.backgroundMode === "color"
+                        ? $exportSettings.backgroundColor
+                        : null,
+                filter: (node) => {
+                    const el = node as Element;
+                    return !el.classList?.contains("no-export");
+                },
+            });
+
+            // Fallback with snapdom font embedding
+            if (!blob) {
+                blob = await snapdom.toBlob(clone, {
+                    type: "png",
+                    scale,
+                    embedFonts: true,
+                    backgroundColor:
+                        $exportSettings.backgroundMode === "color"
+                            ? $exportSettings.backgroundColor
+                            : null,
+                    filter: (node) => {
+                        const el = node as Element;
+                        return !el.classList?.contains("no-export");
+                    },
+                });
+            }
+
+            // iOS scale fallback
+            if (!blob && isIOSSafari && scale > 2) {
+                blob = await snapdom.toBlob(clone, {
+                    type: "png",
+                    scale: 2,
+                    embedFonts: true,
+                    backgroundColor:
+                        $exportSettings.backgroundMode === "color"
+                            ? $exportSettings.backgroundColor
+                            : null,
+                    filter: (node) => {
+                        const el = node as Element;
+                        return !el.classList?.contains("no-export");
+                    },
+                });
+            }
+
+            if (!blob) throw new Error("Failed to generate image");
+
+            return blob;
+        } catch (e) {
+            exportError =
+                e instanceof Error ? e.message : "Export failed unexpectedly";
+            console.error("[ExportSheet] Export error:", e);
+            return null;
+        } finally {
+            try {
+                manualFontCleanup?.();
+            } catch (e) {
+                console.warn("[ExportSheet] Font cleanup error:", e);
+            }
+            sandbox?.remove();
+        }
+    }
+
+    // Export actions ----------------------------------------------------------
+    async function exportAsImage() {
+        isExporting = true;
+        exportError = "";
+        const blob = await generateImageBlob();
+        if (blob) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `Wochenschau_W${$currentWeek}_${$currentYear}.png`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            setTimeout(() => dispatch("close"), 500);
+        }
+        isExporting = false;
+    }
+
+    async function copyToClipboard() {
+        isExporting = true;
+        exportError = "";
+        const blob = await generateImageBlob();
+        if (!blob) {
+            isExporting = false;
+            return;
+        }
+        try {
+            await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": blob }),
+            ]);
+            setTimeout(() => dispatch("close"), 500);
+        } catch (e) {
+            exportError = "Failed to copy image to clipboard";
+            console.error(e);
+        } finally {
+            isExporting = false;
+        }
+    }
+
+    async function shareAgenda() {
+        isExporting = true;
+        exportError = "";
+        const blob = await generateImageBlob();
+        if (!blob) {
+            isExporting = false;
+            return;
+        }
+        try {
+            const file = new File(
+                [blob],
+                `Wochenschau_W${$currentWeek}_${$currentYear}.png`,
+                { type: "image/png" },
+            );
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Wochenschau KW ${$currentWeek}`,
+                    text: `Meine Wochenansicht KW ${$currentWeek} ${$currentYear}`,
+                    files: [file],
+                });
+                setTimeout(() => dispatch("close"), 500);
+            } else {
+                exportError = "Web Share API wird nicht unterstützt";
+            }
+        } catch (e: any) {
+            if (e?.name !== "AbortError") {
+                exportError =
+                    e instanceof Error ? e.message : "Share fehlgeschlagen";
+            }
+        } finally {
+            isExporting = false;
+        }
     }
 </script>
 
@@ -477,11 +849,9 @@
                 />
             </svg>
         </IconButton>
-
         <h3 class="text-lg font-semibold text-foreground flex-1 text-center">
             Export Week
         </h3>
-
         <div class="w-6"></div>
     </div>
 
@@ -498,11 +868,10 @@
         <!-- Preview Controls -->
         <fieldset class="space-y-3">
             <div class="flex items-center justify-between">
-                <legend class="text-sm font-semibold text-foreground"
-                    >Preview</legend
-                >
+                <legend class="text-sm font-semibold text-foreground">
+                    Preview
+                </legend>
                 <div class="flex gap-2 items-center">
-                    <!-- Preview Visibility Toggle -->
                     <button
                         class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {showPreview
                             ? 'bg-primary text-primary-foreground'
@@ -513,7 +882,7 @@
                         {showPreview ? "Preview On" : "Preview Off"}
                     </button>
 
-                    <!-- Grid/List/Compact View Buttons -->
+                    <!-- Layout Buttons -->
                     <div class="flex gap-1 bg-muted p-1 rounded-md">
                         <button
                             class="px-3 py-1.5 rounded text-sm font-medium transition-colors {layoutMode ===
@@ -580,50 +949,58 @@
                 class="bg-background rounded-lg border border-border overflow-auto max-h-[55vh]"
             >
                 <div
-                    class={layoutMode === "list" || layoutMode === "compact"
-                        ? "flex justify-center min-w-full"
-                        : ""}
+                    class={layoutMode === "grid"
+                        ? ""
+                        : "flex justify-center min-w-full"}
                 >
                     <div
                         id="export-preview"
-                        style="width: {layoutMode === 'grid'
+                        style="
+                            width:{layoutMode === 'grid'
                             ? '900px'
                             : layoutMode === 'list'
                               ? '400px'
-                              : '360px'}; min-width: {layoutMode === 'grid'
+                              : '360px'};
+                            min-width:{layoutMode === 'grid'
                             ? '900px'
                             : layoutMode === 'list'
                               ? '400px'
-                              : '360px'}; max-width: {layoutMode === 'grid'
+                              : '360px'};
+                            max-width:{layoutMode === 'grid'
                             ? '900px'
                             : layoutMode === 'list'
                               ? '400px'
-                              : '360px'};  position: relative; {$exportSettings.backgroundMode ===
-                        'color'
+                              : '360px'};
+                            padding:10px;
+                            position:relative;
+                            font-family:{$exportSettings.bodyFontFamily};
+                            color:{$exportSettings.textColor};
+                            {$exportSettings.backgroundMode === 'color'
                             ? `background-color: ${$exportSettings.backgroundColor};`
-                            : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                            : ''}
+                        "
                     >
                         {#if $exportSettings.backgroundMode === "image" && $exportSettings.backgroundImage}
                             <img
                                 src={$exportSettings.backgroundImage}
                                 alt=""
-                                style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; pointer-events: none; z-index: 0;"
+                                style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;pointer-events:none;z-index:0;"
                             />
                         {/if}
 
                         {#if $exportSettings.backgroundMode === "color"}
                             <div
-                                style="position: absolute; inset: 0; background-color: {$exportSettings.backgroundColor}; opacity: {(100 -
+                                style="position:absolute;inset:0;background-color:{$exportSettings.backgroundColor};opacity:{(100 -
                                     $exportSettings.backgroundOpacity) /
-                                    100}; pointer-events: none; z-index: 1;"
+                                    100};pointer-events:none;z-index:1;"
                             ></div>
                         {/if}
 
                         <div
                             class="space-y-4"
-                            style="position: relative; z-index: 10;"
+                            style="position:relative;z-index:10;"
                         >
-                            <div class="mb-4 text-center">
+                            <div class="mb-6 text-center">
                                 <h2
                                     class="mb-2 font-medium"
                                     style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px;"
@@ -633,7 +1010,7 @@
                                 {#if $exportSettings.showWeekNumber}
                                     <p
                                         class="text-lg font-semibold"
-                                        style="color: {$exportSettings.textColor}; opacity: 0.8;"
+                                        style="color: {$exportSettings.textColor}; opacity:0.8;"
                                     >
                                         KW{$currentWeek}
                                     </p>
@@ -641,23 +1018,23 @@
                             </div>
 
                             {#if layoutMode === "grid"}
-                                <div class="grid grid-cols-4 gap-3 p-4 pt-0">
+                                <div class="grid grid-cols-4 gap-3">
                                     {#each days as day, dayIndex}
                                         <div
                                             class="p-2"
-                                            style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
+                                            style="background-color:{getWeekContainerBackgroundStyle()}; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:{$exportSettings.borderRadius}px;"
                                         >
                                             <div
                                                 class="mb-2 pb-2"
-                                                style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
+                                                style="border-bottom:1px solid {$exportSettings.accentColor}30;"
                                             >
                                                 <div
                                                     class="font-semibold text-xs"
-                                                    style="color: {$exportSettings.textColor};"
+                                                    style="color:{$exportSettings.textColor};"
                                                 >
                                                     {WEEKDAYS_DE[dayIndex]} ·
                                                     <span
-                                                        style="opacity: 0.7; font-weight: normal;"
+                                                        style="opacity:0.7;font-weight:normal;"
                                                         >{formatDate(day)}</span
                                                     >
                                                 </div>
@@ -666,7 +1043,7 @@
                                                 {#if getDayActivities(dayIndex).length === 0}
                                                     <div
                                                         class="text-xs text-center"
-                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
+                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity:0.5;"
                                                     >
                                                         No activities
                                                     </div>
@@ -674,26 +1051,26 @@
                                                     {#each getDayActivities(dayIndex) as activity}
                                                         <div
                                                             class="px-1.5 text-xs"
-                                                            style="border-left: 3px solid {activity.color ||
+                                                            style="border-left:3px solid {activity.color ||
                                                                 $exportSettings.accentColor};"
                                                         >
                                                             <div
                                                                 class="font-semibold truncate"
-                                                                style="color: {$exportSettings.textColor};"
+                                                                style="color:{$exportSettings.textColor};"
                                                             >
                                                                 {activity.summary}
                                                             </div>
                                                             {#if isAllDayEvent(activity)}
                                                                 <div
                                                                     class="text-xs"
-                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity:0.7;"
                                                                 >
                                                                     All-Day
                                                                 </div>
                                                             {:else}
                                                                 <div
                                                                     class="text-xs"
-                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity:0.7;"
                                                                 >
                                                                     {activity.startTime}
                                                                     - {activity.endTime}
@@ -708,18 +1085,18 @@
                                     {#if $bibleVerse.enabled}
                                         <div
                                             class="p-2 text-center flex flex-col justify-center items-center h-full"
-                                            style="border-radius: {$exportSettings.borderRadius}px;"
+                                            style="border-radius:{$exportSettings.borderRadius}px;"
                                         >
                                             <p
                                                 class="text-sm italic mb-1"
-                                                style="color: {$exportSettings.textColor};"
+                                                style="color:{$exportSettings.textColor};"
                                             >
                                                 "{$bibleVerse.currentVerse
                                                     .text}"
                                             </p>
                                             <p
                                                 class="text-xs"
-                                                style="color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                style="color:{$exportSettings.textColor};opacity:0.7;"
                                             >
                                                 – {$bibleVerse.currentVerse
                                                     .reference}
@@ -728,11 +1105,11 @@
                                     {/if}
                                 </div>
                             {:else if layoutMode === "list"}
-                                <div class="space-y-1 p-4 pt-0">
+                                <div class="space-y-1">
                                     {#each days as day, dayIndex}
                                         <div
                                             class="p-3"
-                                            style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {dayIndex ===
+                                            style="background-color:{getWeekContainerBackgroundStyle()}; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:{dayIndex ===
                                             0
                                                 ? '16px 16px 4px 4px'
                                                 : dayIndex === 6
@@ -741,21 +1118,22 @@
                                         >
                                             <div
                                                 class="mb-2 pb-2"
-                                                style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
+                                                style="border-bottom:1px solid {$exportSettings.accentColor}30;"
                                             >
                                                 <div
                                                     class="font-semibold text-sm"
-                                                    style="color: {$exportSettings.textColor};"
+                                                    style="color:{$exportSettings.textColor};"
                                                 >
-                                                    {WEEKDAYS_DE[dayIndex]} ·
-                                                    {formatDate(day)}
+                                                    {WEEKDAYS_DE[dayIndex]} · {formatDate(
+                                                        day,
+                                                    )}
                                                 </div>
                                             </div>
                                             <div class="space-y-2">
                                                 {#if getDayActivities(dayIndex).length === 0}
                                                     <div
                                                         class="text-sm text-center"
-                                                        style="color: {$exportSettings.textColor}; opacity: 0.5;"
+                                                        style="color:{$exportSettings.textColor};opacity:0.5;"
                                                     >
                                                         No activities
                                                     </div>
@@ -763,26 +1141,26 @@
                                                     {#each getDayActivities(dayIndex) as activity}
                                                         <div
                                                             class="px-2 text-sm"
-                                                            style="border-left: 3px solid {activity.color ||
+                                                            style="border-left:3px solid {activity.color ||
                                                                 $exportSettings.accentColor};"
                                                         >
                                                             <div
                                                                 class="font-semibold"
-                                                                style="color: {$exportSettings.textColor};"
+                                                                style="color:{$exportSettings.textColor};"
                                                             >
                                                                 {activity.summary}
                                                             </div>
                                                             {#if isAllDayEvent(activity)}
                                                                 <div
                                                                     class="text-xs"
-                                                                    style="color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    style="color:{$exportSettings.textColor};opacity:0.7;"
                                                                 >
                                                                     All-Day
                                                                 </div>
                                                             {:else}
                                                                 <div
                                                                     class="text-xs"
-                                                                    style="color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                    style="color:{$exportSettings.textColor};opacity:0.7;"
                                                                 >
                                                                     {activity.startTime}
                                                                     - {activity.endTime}
@@ -794,22 +1172,21 @@
                                             </div>
                                         </div>
                                     {/each}
-
                                     {#if $bibleVerse.enabled}
                                         <div
                                             class="p-3 text-center"
-                                            style="margin-top: 0.5rem;"
+                                            style="margin-top:0.5rem;"
                                         >
                                             <p
                                                 class="text-sm italic mb-2"
-                                                style="color: {$exportSettings.textColor};"
+                                                style="color:{$exportSettings.textColor};"
                                             >
                                                 "{$bibleVerse.currentVerse
                                                     .text}"
                                             </p>
                                             <p
                                                 class="text-xs"
-                                                style="color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                style="color:{$exportSettings.textColor};opacity:0.7;"
                                             >
                                                 – {$bibleVerse.currentVerse
                                                     .reference}
@@ -818,59 +1195,52 @@
                                     {/if}
                                 </div>
                             {:else}
-                                <!-- Compact view (revised) -->
-                                <div class="space-y-1.5 p-4 pt-0 pr-0">
+                                <!-- Compact view -->
+                                <div class="space-y-1">
                                     {#each days as day, dayIndex}
-                                        <div class="p-0">
-                                            <div class="flex gap-0.5">
+                                        <div
+                                            class="p-2"
+                                            style="background-color:{getWeekContainerBackgroundStyle()}; border-radius:{$exportSettings.borderRadius}px;"
+                                        >
+                                            <div class="flex gap-2">
                                                 <div
-                                                    class=" py-3 pr-0 pl-2 min-w-20"
-                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: {$exportSettings.borderRadius}px 0 0 {$exportSettings.borderRadius}px;"
+                                                    class="flex flex-col items-center w-10"
+                                                    style="line-height:1;"
                                                 >
                                                     <div
-                                                        class="flex flex-col h-full pr-2 text-right gap-1"
-                                                        style="line-height:1; "
+                                                        style="font-size:12px;font-weight:600;color:{$exportSettings.textColor};"
                                                     >
-                                                        <div
-                                                            style="font-size:14px; font-weight:600; color: {$exportSettings.textColor};"
-                                                        >
-                                                            {formatDate(day)}
-                                                        </div>
-                                                        <div
-                                                            style="font-size:11px; font-weight:500; opacity:0.7; color: {$exportSettings.textColor}; text-align:right;"
-                                                        >
-                                                            {WEEKDAYS_DE[
-                                                                dayIndex
-                                                            ]}
-                                                        </div>
+                                                        {formatDate(day)}
+                                                    </div>
+                                                    <div
+                                                        style="font-size:10px;font-weight:500;opacity:0.7;color:{$exportSettings.textColor};text-align:center;"
+                                                    >
+                                                        {WEEKDAYS_DE[dayIndex]}
                                                     </div>
                                                 </div>
-                                                <div
-                                                    class="flex-1"
-                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: 0;"
-                                                >
+                                                <div class="flex-1">
                                                     {#if getDayActivities(dayIndex).length === 0}
                                                         <div
-                                                            class="italic opacity-40 flex justify-center items-center h-full p-1"
-                                                            style="font-size:11px; color: {$exportSettings.textColor};"
+                                                            class="italic opacity-40"
+                                                            style="font-size:11px;color:{$exportSettings.textColor};"
                                                         >
-                                                            Keine Aktivitäten
+                                                            –
                                                         </div>
                                                     {:else}
                                                         <div
-                                                            class="space-y-1 p-1"
+                                                            class="space-y-0.5"
                                                         >
                                                             {#each getDayActivities(dayIndex) as activity}
                                                                 <div
                                                                     class="grid"
-                                                                    style="grid-template-columns: 80px 1fr; font-size:11px; line-height:1.2; color: {$exportSettings.textColor}; font-family: {$exportSettings.bodyFontFamily};"
+                                                                    style="grid-template-columns:56px 1fr;font-size:11px;line-height:1.2;color:{$exportSettings.textColor};font-family:{$exportSettings.bodyFontFamily};"
                                                                 >
                                                                     <div
                                                                         class="pr-1 opacity-60"
                                                                         style="text-align:right;"
                                                                     >
                                                                         {#if isAllDayEvent(activity)}
-                                                                            All-Day
+                                                                            All
                                                                         {:else}
                                                                             {activity.startTime}-{activity.endTime}
                                                                         {/if}
@@ -890,23 +1260,13 @@
                                             </div>
                                         </div>
                                     {/each}
-
                                     {#if $bibleVerse.enabled}
-                                        <div class="p-2 pt-4">
-                                            <div
-                                                class="text-center italic"
-                                                style="font-size:11px; opacity:1;"
-                                            >
-                                                "{$bibleVerse.currentVerse
-                                                    .text}"
-                                            </div>
-                                            <div
-                                                class=" text-center"
-                                                style="font-size:10px; opacity:0.7;"
-                                            >
-                                                {$bibleVerse.currentVerse
-                                                    .reference}
-                                            </div>
+                                        <div
+                                            class="p-2 text-center italic"
+                                            style="font-size:10px;opacity:0.7;"
+                                        >
+                                            "{$bibleVerse.currentVerse.text}" – {$bibleVerse
+                                                .currentVerse.reference}
                                         </div>
                                     {/if}
                                 </div>
