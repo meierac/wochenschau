@@ -135,6 +135,15 @@
 
     async function generateImageBlob(): Promise<Blob | null> {
         try {
+            console.log("[GenerateBlob] Starting image generation...");
+            console.log("[GenerateBlob] Background settings:", {
+                mode: $exportSettings.backgroundMode,
+                hasImage: !!$exportSettings.backgroundImage,
+                imageLength: $exportSettings.backgroundImage?.length,
+                imageUrl: $exportSettings.backgroundImageUrl,
+                imageType: $exportSettings.backgroundImageType,
+            });
+
             const element = document.getElementById("export-preview");
             if (!element) throw new Error("Export preview element not found");
 
@@ -155,13 +164,48 @@
 
             // If using image background, wait for any <img> to load & decode
             if ($exportSettings.backgroundMode === "image") {
+                console.log(
+                    "[GenerateBlob] Mode is IMAGE, checking for img elements...",
+                );
                 const imgs = Array.from(element.querySelectorAll("img"));
+                console.log(
+                    "[GenerateBlob] Found",
+                    imgs.length,
+                    "img elements",
+                );
+
+                if (imgs.length === 0) {
+                    console.error(
+                        "[GenerateBlob] ERROR: No img elements found but mode is IMAGE!",
+                    );
+                    console.error(
+                        "[GenerateBlob] backgroundImage exists:",
+                        !!$exportSettings.backgroundImage,
+                    );
+                    console.error(
+                        "[GenerateBlob] Preview element HTML:",
+                        element.innerHTML.substring(0, 500),
+                    );
+                }
+
                 await Promise.all(
-                    imgs.map((img) => {
+                    imgs.map((img, idx) => {
                         const image = img as HTMLImageElement;
+                        console.log(`[GenerateBlob] Image ${idx}:`, {
+                            src: image.src?.substring(0, 100),
+                            complete: image.complete,
+                            naturalWidth: image.naturalWidth,
+                            naturalHeight: image.naturalHeight,
+                        });
+
                         if (image.complete && image.naturalWidth > 0) {
                             if ("decode" in image) {
-                                return image.decode().catch(() => {});
+                                return image.decode().catch((e) => {
+                                    console.error(
+                                        `[GenerateBlob] Decode error for image ${idx}:`,
+                                        e,
+                                    );
+                                });
                             }
                             return Promise.resolve();
                         }
@@ -169,6 +213,9 @@
                             image.addEventListener(
                                 "load",
                                 () => {
+                                    console.log(
+                                        `[GenerateBlob] Image ${idx} loaded`,
+                                    );
                                     if ("decode" in image) {
                                         image
                                             .decode()
@@ -182,14 +229,27 @@
                             );
                             image.addEventListener(
                                 "error",
-                                () => reject(new Error("Image failed to load")),
+                                (e) => {
+                                    console.error(
+                                        `[GenerateBlob] Image ${idx} load error:`,
+                                        e,
+                                    );
+                                    reject(new Error("Image failed to load"));
+                                },
                                 { once: true },
                             );
                         });
                     }),
                 );
                 // One more frame after images settle
+                console.log(
+                    "[GenerateBlob] All images loaded, waiting one more frame...",
+                );
                 await new Promise((r) => requestAnimationFrame(() => r(null)));
+            } else {
+                console.log(
+                    "[GenerateBlob] Mode is COLOR, skipping image wait",
+                );
             }
 
             // Use lower scale on iOS to avoid memory issues
@@ -249,6 +309,23 @@
         exportError = "";
 
         try {
+            // Force refresh background image from IndexedDB before export
+            console.log(
+                "[ExportAsImage] Refreshing background image from IndexedDB...",
+            );
+            await exportSettings.refreshImage();
+
+            // Wait a bit for the store to update
+            await new Promise((r) => setTimeout(r, 1000));
+
+            console.log("[ExportAsImage] Current settings:", {
+                mode: $exportSettings.backgroundMode,
+                hasImage: !!$exportSettings.backgroundImage,
+                imageLength: $exportSettings.backgroundImage?.length,
+                imageUrl: $exportSettings.backgroundImageUrl,
+                imageType: $exportSettings.backgroundImageType,
+            });
+
             const blob = await generateImageBlob();
             if (blob) {
                 const url = URL.createObjectURL(blob);
@@ -314,6 +391,23 @@
         exportError = "";
         preparedFile = null;
         try {
+            // Force refresh background image from IndexedDB before export
+            console.log(
+                "[PrepareShare] Refreshing background image from IndexedDB...",
+            );
+            await exportSettings.refreshImage();
+
+            // Wait a bit for the store to update
+            await new Promise((r) => setTimeout(r, 1000));
+
+            console.log("[PrepareShare] Current settings:", {
+                mode: $exportSettings.backgroundMode,
+                hasImage: !!$exportSettings.backgroundImage,
+                imageLength: $exportSettings.backgroundImage?.length,
+                imageUrl: $exportSettings.backgroundImageUrl,
+                imageType: $exportSettings.backgroundImageType,
+            });
+
             const blob = await generateImageBlob();
             if (!blob) throw new Error("Failed to generate image");
             preparedFile = new File(
