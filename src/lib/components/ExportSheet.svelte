@@ -259,10 +259,11 @@
                 type: "png",
                 scale,
                 embedFonts: true,
+                // Force opaque background to eliminate iOS share white/transparent edge
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
                         ? $exportSettings.backgroundColor
-                        : null,
+                        : "#ffffff",
                 filter: (node) =>
                     !(node as Element).classList?.contains("no-export"),
             });
@@ -276,10 +277,11 @@
                     type: "png",
                     scale,
                     embedFonts: false,
+                    // Force opaque background fallback for image mode
                     backgroundColor:
                         $exportSettings.backgroundMode === "color"
                             ? $exportSettings.backgroundColor
-                            : null,
+                            : "#ffffff",
                     filter: (node) =>
                         !(node as Element).classList?.contains("no-export"),
                 });
@@ -293,10 +295,11 @@
                     type: "png",
                     scale,
                     embedFonts: false,
+                    // iOS fallback also forces opaque background
                     backgroundColor:
                         $exportSettings.backgroundMode === "color"
                             ? $exportSettings.backgroundColor
-                            : null,
+                            : "#ffffff",
                     filter: (node) =>
                         !(node as Element).classList?.contains("no-export"),
                 });
@@ -305,6 +308,54 @@
             if (!blob) throw new Error("Failed to generate image");
 
             console.log("[ExportSheet][Export] success", { finalScale: scale });
+
+            // Post-process: crop 1px border from all sides to eliminate any residual edge artifacts (iOS share preview)
+            async function crop1px(original: Blob): Promise<Blob> {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            const w = img.width;
+                            const h = img.height;
+                            // Safety check: ensure we have room to crop
+                            if (w <= 2 || h <= 2) {
+                                resolve(original);
+                                return;
+                            }
+                            const canvas = document.createElement("canvas");
+                            canvas.width = w - 2;
+                            canvas.height = h - 2;
+                            const ctx = canvas.getContext("2d");
+                            if (!ctx) {
+                                resolve(original);
+                                return;
+                            }
+                            // Draw cropped portion (skip outer 1px border)
+                            ctx.drawImage(
+                                img,
+                                1,
+                                1,
+                                w - 2,
+                                h - 2,
+                                0,
+                                0,
+                                w - 2,
+                                h - 2,
+                            );
+                            canvas.toBlob(
+                                (cropped) => resolve(cropped || original),
+                                "image/png",
+                            );
+                        } catch {
+                            resolve(original);
+                        }
+                    };
+                    img.onerror = () => resolve(original);
+                    img.src = URL.createObjectURL(original);
+                });
+            }
+
+            blob = await crop1px(blob);
             return blob;
         } catch (e) {
             exportError = e instanceof Error ? e.message : "Export failed";
@@ -613,8 +664,7 @@
 
                         {#if $exportSettings.backgroundMode === "color"}
                             <div
-                                style="position: absolute; inset: 0; background-color: {$exportSettings.backgroundColor}; opacity: {(100 -
-                                    $exportSettings.backgroundOpacity) /
+                                style="position: absolute; inset: 0; background-color: {$exportSettings.backgroundColor}; opacity: {$exportSettings.backgroundOpacity /
                                     100}; pointer-events: none; z-index: 1;"
                             ></div>
                         {/if}
