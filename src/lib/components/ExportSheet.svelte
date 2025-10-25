@@ -619,11 +619,8 @@
                             ></div>
                         {/if}
 
-                        <div
-                            class="space-y-4 pt-7"
-                            style="position: relative; z-index: 10;"
-                        >
-                            <div class="mb-4 text-center">
+                        <div style="position: relative; z-index: 10;">
+                            <div class="space-y-4 pt-7 text-center">
                                 <h2
                                     class="mb-2 font-medium"
                                     style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px;"
@@ -645,7 +642,7 @@
                                     {#each days as day, dayIndex}
                                         <div
                                             class="p-2"
-                                            style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {$exportSettings.borderRadius}px;"
+                                            style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: {$exportSettings.borderRadius}px;"
                                         >
                                             <div
                                                 class="mb-2 pb-2"
@@ -732,7 +729,7 @@
                                     {#each days as day, dayIndex}
                                         <div
                                             class="p-3"
-                                            style="background-color: {getWeekContainerBackgroundStyle()}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); border-radius: {dayIndex ===
+                                            style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: {dayIndex ===
                                             0
                                                 ? '16px 16px 4px 4px'
                                                 : dayIndex === 6
