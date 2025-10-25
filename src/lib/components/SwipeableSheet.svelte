@@ -284,7 +284,7 @@
         -webkit-backdrop-filter: blur(40px);
         box-shadow:
             0 -4px 24px rgba(0, 0, 0, 0.2),
-            0 0 0 1px rgb(36, 40, 53);
+            0 0 0 1px hsl(var(--border) / 0.9);
         width: 100%;
         max-width: 100%;
         display: flex;
@@ -303,11 +303,11 @@
 
     .sheet.mobile {
         margin: 5px;
-        border-radius: 36px;
+        border-radius: 38px;
     }
 
     .sheet.desktop {
-        border-radius: 36px;
+        border-radius: 38px;
         touch-action: auto;
     }
 

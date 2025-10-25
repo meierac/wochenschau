@@ -486,7 +486,7 @@
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-y-auto p-3 space-y-6 sheet-content">
+    <div class="flex-1 overflow-y-auto p-3 space-y-3 sheet-content">
         {#if exportError}
             <div
                 class="p-4 bg-destructive/10 border border-destructive/30 rounded-lg"
@@ -504,7 +504,7 @@
                 <div class="flex gap-2 items-center">
                     <!-- Preview Visibility Toggle -->
                     <button
-                        class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors {showPreview
+                        class="px-3 py-1.5 rounded-3xl text-sm font-medium transition-colors {showPreview
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80'}"
                         on:click={toggleShowPreview}
@@ -514,9 +514,9 @@
                     </button>
 
                     <!-- Grid/List/Compact View Buttons -->
-                    <div class="flex gap-1 bg-muted p-1 rounded-md">
+                    <div class="flex gap-1 bg-muted/50 p-1 rounded-3xl">
                         <button
-                            class="px-3 py-1.5 rounded text-sm font-medium transition-colors {layoutMode ===
+                            class="px-3 py-1.5 rounded-3xl text-sm font-medium transition-colors {layoutMode ===
                             'grid'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-transparent text-foreground hover:bg-muted-foreground/10'}"
@@ -534,7 +534,7 @@
                             </svg>
                         </button>
                         <button
-                            class="px-3 py-1.5 rounded text-sm font-medium transition-colors {layoutMode ===
+                            class="px-3 py-1.5 rounded-3xl text-sm font-medium transition-colors {layoutMode ===
                             'list'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-transparent text-foreground hover:bg-muted-foreground/10'}"
@@ -552,7 +552,7 @@
                             </svg>
                         </button>
                         <button
-                            class="px-3 py-1.5 rounded text-sm font-medium transition-colors {layoutMode ===
+                            class="px-3 py-1.5 rounded-3xl text-sm font-medium transition-colors {layoutMode ===
                             'compact'
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-transparent text-foreground hover:bg-muted-foreground/10'}"
@@ -577,7 +577,7 @@
         <!-- Preview -->
         {#if showPreview}
             <div
-                class="bg-background rounded-lg border border-border overflow-auto max-h-[55vh]"
+                class="bg-background/30 rounded-lg border border-border/70 overflow-auto max-h-[55vh]"
             >
                 <div
                     class={layoutMode === "list" || layoutMode === "compact"
