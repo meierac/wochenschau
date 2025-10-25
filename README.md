@@ -129,8 +129,8 @@ wochenschau/
 - **Tailwind CSS** - Utility-first CSS framework
 - **PWA Kit** - Progressive Web App support
 - **Svelte Stores** - State management
-- **html2canvas** - Image export functionality
-- **Google Fonts** - Typography
+- **modern-screenshot** - Image export functionality optimized for iOS/Safari
+- **Local Fonts** - Self-hosted typography for reliable exports
 
 ## 🎨 Customization
 
