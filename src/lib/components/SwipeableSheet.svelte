@@ -303,11 +303,11 @@
 
     .sheet.mobile {
         margin: 5px;
-        border-radius: 38px;
+        border-radius: 40px;
     }
 
     .sheet.desktop {
-        border-radius: 38px;
+        border-radius: 40px;
         touch-action: auto;
     }
 
