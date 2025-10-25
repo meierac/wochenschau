@@ -165,7 +165,9 @@
                     console.log("[Export] Waiting for background image...");
                     await new Promise<void>((resolve, reject) => {
                         const timeout = setTimeout(() => {
-                            console.warn("[Export] Background image load timeout");
+                            console.warn(
+                                "[Export] Background image load timeout",
+                            );
                             resolve(); // Continue anyway
                         }, 5000);
 
@@ -176,8 +178,12 @@
                         };
                         bgImageElement.onerror = () => {
                             clearTimeout(timeout);
-                            console.error("[Export] Background image failed to load");
-                            reject(new Error("Background image failed to load"));
+                            console.error(
+                                "[Export] Background image failed to load",
+                            );
+                            reject(
+                                new Error("Background image failed to load"),
+                            );
                         };
                     });
                 }
@@ -187,7 +193,7 @@
             await new Promise((r) => requestAnimationFrame(r));
 
             // Determine optimal scale based on device
-            const scale = isIOSSafari ? 3 : 4;
+            const scale = isIOSSafari ? 2 : 4;
 
             console.log("[Export] Generating image with modern-screenshot", {
                 width: element.offsetWidth,
@@ -224,7 +230,8 @@
 
             return blob;
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Export failed";
+            const message =
+                error instanceof Error ? error.message : "Export failed";
             console.error("[Export] Error:", error);
             exportError = message;
             return null;
@@ -244,7 +251,9 @@
                 $exportSettings.backgroundMode === "image" &&
                 !$exportSettings.backgroundImage
             ) {
-                console.log("[Export] Refreshing background image from IndexedDB...");
+                console.log(
+                    "[Export] Refreshing background image from IndexedDB...",
+                );
                 await exportSettings.refreshImage();
                 await new Promise((r) => setTimeout(r, 500));
             }
@@ -267,7 +276,8 @@
             // Close sheet after successful export
             setTimeout(() => dispatch("close"), 500);
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Export failed";
+            const message =
+                error instanceof Error ? error.message : "Export failed";
             console.error("[Export] Error:", error);
             exportError = message;
         } finally {
@@ -295,7 +305,10 @@
             // Close sheet after successful copy
             setTimeout(() => dispatch("close"), 500);
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Failed to copy to clipboard";
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to copy to clipboard";
             console.error("[Export] Clipboard error:", error);
             exportError = message;
         } finally {
@@ -316,7 +329,9 @@
                 $exportSettings.backgroundMode === "image" &&
                 !$exportSettings.backgroundImage
             ) {
-                console.log("[Share] Refreshing background image from IndexedDB...");
+                console.log(
+                    "[Share] Refreshing background image from IndexedDB...",
+                );
                 await exportSettings.refreshImage();
                 await new Promise((r) => setTimeout(r, 500));
             }
@@ -348,7 +363,8 @@
         } catch (error: any) {
             // Don't show error if user cancelled share
             if (error.name !== "AbortError") {
-                const message = error instanceof Error ? error.message : "Failed to share";
+                const message =
+                    error instanceof Error ? error.message : "Failed to share";
                 console.error("[Share] Error:", error);
                 exportError = message;
             }
