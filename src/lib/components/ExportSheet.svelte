@@ -897,7 +897,7 @@
                                                             {#each getDayActivities(dayIndex) as activity}
                                                                 <div
                                                                     class="grid"
-                                                                    style="grid-template-columns: 70px 1fr; font-size:11px; line-height:1.2; color: {$exportSettings.textColor}; font-family: {$exportSettings.bodyFontFamily};"
+                                                                    style="grid-template-columns: 80px 1fr; font-size:11px; line-height:1.2; color: {$exportSettings.textColor}; font-family: {$exportSettings.bodyFontFamily};"
                                                                 >
                                                                     <div
                                                                         class="pr-1 opacity-60"
