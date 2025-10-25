@@ -273,6 +273,7 @@
                         : "#ffffff",
                 filter: (node) =>
                     !(node as Element).classList?.contains("no-export"),
+                cacheBust: true, // Important for iOS Safari to render data URL images correctly
             });
 
             // iOS memory fallback - try lower scale if first attempt fails
@@ -286,6 +287,7 @@
                             : "#ffffff",
                     filter: (node) =>
                         !(node as Element).classList?.contains("no-export"),
+                    cacheBust: true, // Important for iOS Safari to render data URL images correctly
                 });
             }
 
