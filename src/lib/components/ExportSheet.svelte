@@ -259,46 +259,61 @@
         }
     }
 
-    async function shareAgenda() {
-        isExporting = true;
-        exportError = "";
+    // Two-phase sharing: prepare image fully, then invoke native share
+    let preparedFile: File | null = null;
+    let isPreparingShare = false;
 
+    async function prepareShare() {
+        if (isPreparingShare) return;
+        isPreparingShare = true;
+        exportError = "";
+        preparedFile = null;
         try {
             const blob = await generateImageBlob();
-            if (!blob) {
-                throw new Error("Failed to generate image");
-            }
-
-            const file = new File(
+            if (!blob) throw new Error("Failed to generate image");
+            preparedFile = new File(
                 [blob],
                 `Wochenschau_W${$currentWeek}_${$currentYear}.png`,
                 { type: "image/png" },
             );
-
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: `Wochenschau Week ${$currentWeek}`,
-                        text: `My weekly agenda for week ${$currentWeek} ${$currentYear}`,
-                        files: [file],
-                    });
-
-                    setTimeout(() => {
-                        dispatch("close");
-                    }, 500);
-                } catch (shareError: any) {
-                    if (shareError.name !== "AbortError") {
-                        exportError = "Failed to share";
-                        console.error("Share error:", shareError);
-                    }
-                }
-            } else {
-                throw new Error("Web Share API not supported on this device");
-            }
         } catch (error) {
             exportError =
-                error instanceof Error ? error.message : "Share failed";
-            console.error("Export error:", error);
+                error instanceof Error ? error.message : "Prepare failed";
+            preparedFile = null;
+            console.error("Prepare share error:", error);
+        } finally {
+            isPreparingShare = false;
+        }
+    }
+
+    async function performShare() {
+        // Ensure we have a prepared file (in case user bypassed phase)
+        if (!preparedFile) {
+            await prepareShare();
+            if (!preparedFile) return;
+        }
+        isExporting = true;
+        exportError = "";
+        try {
+            if (!navigator.share) {
+                throw new Error("Web Share API not supported on this device");
+            }
+            await navigator.share({
+                title: `Wochenschau Week ${$currentWeek}`,
+                text: `My weekly agenda for week ${$currentWeek} ${$currentYear}`,
+                files: [preparedFile],
+            });
+            setTimeout(() => {
+                dispatch("close");
+            }, 500);
+        } catch (shareError: any) {
+            if (shareError.name !== "AbortError") {
+                exportError =
+                    shareError instanceof Error
+                        ? shareError.message
+                        : "Failed to share";
+                console.error("Share error:", shareError);
+            }
         } finally {
             isExporting = false;
         }
@@ -873,14 +888,53 @@
                         {/if}
                     </Button>
                 </div>
-            {:else}
+            {:else if preparedFile}
                 <Button
                     variant="default"
                     disabled={isExporting}
-                    on:click={shareAgenda}
+                    on:click={performShare}
                     class="w-full"
                 >
                     {#if isExporting}
+                        <svg
+                            class="w-4 h-4 animate-spin mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                        </svg>
+                        Sharing...
+                    {:else}
+                        <svg
+                            class="w-4 h-4 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                        </svg>
+                        Share
+                    {/if}
+                </Button>
+            {:else}
+                <Button
+                    variant="default"
+                    disabled={isPreparingShare}
+                    on:click={prepareShare}
+                    class="w-full"
+                >
+                    {#if isPreparingShare}
                         <svg
                             class="w-4 h-4 animate-spin mr-2"
                             fill="none"
@@ -909,7 +963,7 @@
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                             />
                         </svg>
-                        Share
+                        Prepare Share
                     {/if}
                 </Button>
             {/if}
