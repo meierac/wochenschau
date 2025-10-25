@@ -130,131 +130,36 @@
     }
 
     async function generateImageBlob(): Promise<Blob | null> {
-        let cleanup: (() => void) | null = null;
         try {
             const element = document.getElementById("export-preview");
             if (!element) throw new Error("Export preview element not found");
+
             const { toBlob } = await import("html-to-image");
+
+            // Detect iOS Safari for scale adjustment
             const ua = navigator.userAgent;
             const isIOSSafari =
                 /iPad|iPhone|iPod/.test(ua) &&
                 /Safari/.test(ua) &&
                 !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
-            // Wait for all declared fonts
+            // Wait for all fonts to be ready (fonts are loaded via CSS in main.ts)
             await document.fonts.ready;
-            // Extra frame to allow layout / fallback resolution
+
+            // Extra frame to ensure layout is complete
             await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-            // Manually embed selected fonts first to guarantee availability for both passes
-            // Define embedSelectedFonts helper (manual base64 embedding of selected header/body fonts)
-            async function embedSelectedFonts(): Promise<(() => void) | null> {
-                const families = [
-                    $exportSettings.headerFontFamily,
-                    $exportSettings.bodyFontFamily,
-                ].filter(Boolean);
-                const names = [
-                    ...new Set(
-                        families.map((f) => {
-                            const m = f.match(/'([^']+)'/);
-                            return m
-                                ? m[1]
-                                : f
-                                      .split(",")[0]
-                                      .trim()
-                                      .replace(/^['"]|['"]$/g, "");
-                        }),
-                    ),
-                ].filter(Boolean);
+            // Use lower scale on iOS to avoid memory issues
+            const scale = isIOSSafari ? 3 : 4;
 
-                if (names.length === 0) return null;
-
-                const FONT_FILES: Record<string, string> = {
-                    Archivo: "/fonts/Archivo-VariableFont_wdth,wght.ttf",
-                    "Dancing Script":
-                        "/fonts/DancingScript-VariableFont_wght.ttf",
-                    "Edu QLD Hand": "/fonts/EduQLDHand-VariableFont_wght.ttf",
-                    "Edu SA Hand": "/fonts/EduSAHand-VariableFont_wght.ttf",
-                    Handlee: "/fonts/Handlee-Regular.ttf",
-                    Lora: "/fonts/Lora-VariableFont_wght.ttf",
-                    Manrope: "/fonts/Manrope-VariableFont_wght.ttf",
-                    "Ms Madi": "/fonts/MsMadi-Regular.ttf",
-                    "Noto Sans": "/fonts/NotoSans-VariableFont_wdth,wght.ttf",
-                    "Pirata One": "/fonts/PirataOne-Regular.ttf",
-                    "Space Mono": "/fonts/SpaceMono-Regular.ttf",
-                };
-
-                let css = "";
-                for (const name of names) {
-                    const path = FONT_FILES[name];
-                    if (!path) {
-                        console.warn("[FontEmbed] Missing mapping for", name);
-                        continue;
-                    }
-                    try {
-                        const res = await fetch(path);
-                        if (!res.ok) {
-                            console.warn(
-                                "[FontEmbed] Fetch failed:",
-                                name,
-                                res.status,
-                            );
-                            continue;
-                        }
-                        const buf = await res.arrayBuffer();
-                        const base64 = btoa(
-                            String.fromCharCode(...new Uint8Array(buf)),
-                        );
-                        css += `@font-face {
-  font-family: '${name}';
-  src: url(data:font/ttf;base64,${base64}) format('truetype');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}\n`;
-                    } catch (e) {
-                        console.warn(
-                            "[FontEmbed] Error embedding font:",
-                            name,
-                            e,
-                        );
-                    }
-                }
-
-                if (!css) return null;
-
-                // Avoid duplicate injection
-                const existing = document.getElementById(
-                    "embedded-export-fonts",
-                );
-                if (existing) existing.remove();
-
-                const styleEl = document.createElement("style");
-                styleEl.id = "embedded-export-fonts";
-                styleEl.textContent = css;
-                document.head.appendChild(styleEl);
-
-                return () => {
-                    styleEl.parentNode?.removeChild(styleEl);
-                };
-            }
-
-            cleanup = await embedSelectedFonts();
-
-            // Second short delay for font-face registration
-            await new Promise((r) => setTimeout(r, 120));
-
-            const rect = element.getBoundingClientRect();
-            let scale = isIOSSafari ? 3 : 4;
-            console.log("[ExportSheet][Export] start", {
-                width: rect.width,
-                height: rect.height,
+            console.log("[ExportSheet][Export] Starting export", {
+                width: element.getBoundingClientRect().width,
+                height: element.getBoundingClientRect().height,
                 scale,
-                manualEmbed: !!cleanup,
                 userAgent: ua,
             });
 
-            // Attempt 1: embedFonts true (snapdom will inline, our manual faces are already in DOM)
+            // Generate the image blob
             let blob = await toBlob(element, {
                 pixelRatio: scale,
                 backgroundColor:
@@ -265,28 +170,11 @@
                     !(node as Element).classList?.contains("no-export"),
             });
 
-            // Attempt 2: if failed, retry with embedFonts false (use our manual data-font faces only)
-            if (!blob) {
-                console.warn(
-                    "[ExportSheet][Export] Pass 1 failed, retry embedFonts:false",
-                );
-                blob = await toBlob(element, {
-                    pixelRatio: scale,
-                    backgroundColor:
-                        $exportSettings.backgroundMode === "color"
-                            ? $exportSettings.backgroundColor
-                            : "#ffffff",
-                    filter: (node) =>
-                        !(node as Element).classList?.contains("no-export"),
-                });
-            }
-
-            // iOS memory fallback
+            // iOS memory fallback - try lower scale if first attempt fails
             if (!blob && isIOSSafari) {
-                console.warn("[ExportSheet][Export] iOS fallback scale=2");
-                scale = 2;
+                console.warn("[ExportSheet][Export] iOS fallback to scale=2");
                 blob = await toBlob(element, {
-                    pixelRatio: scale,
+                    pixelRatio: 2,
                     backgroundColor:
                         $exportSettings.backgroundMode === "color"
                             ? $exportSettings.backgroundColor
@@ -298,66 +186,16 @@
 
             if (!blob) throw new Error("Failed to generate image");
 
-            console.log("[ExportSheet][Export] success", { finalScale: scale });
+            console.log("[ExportSheet][Export] Success", {
+                size: `${(blob.size / 1024).toFixed(0)}KB`,
+                scale,
+            });
 
-            // Post-process: crop 1px border from all sides to eliminate any residual edge artifacts (iOS share preview)
-            async function crop1px(original: Blob): Promise<Blob> {
-                return new Promise((resolve) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        try {
-                            const w = img.width;
-                            const h = img.height;
-                            // Safety check: ensure we have room to crop
-                            if (w <= 2 || h <= 2) {
-                                resolve(original);
-                                return;
-                            }
-                            const canvas = document.createElement("canvas");
-                            canvas.width = w - 2;
-                            canvas.height = h - 2;
-                            const ctx = canvas.getContext("2d");
-                            if (!ctx) {
-                                resolve(original);
-                                return;
-                            }
-                            // Draw cropped portion (skip outer 1px border)
-                            ctx.drawImage(
-                                img,
-                                1,
-                                1,
-                                w - 2,
-                                h - 2,
-                                0,
-                                0,
-                                w - 2,
-                                h - 2,
-                            );
-                            canvas.toBlob(
-                                (cropped) => resolve(cropped || original),
-                                "image/png",
-                            );
-                        } catch {
-                            resolve(original);
-                        }
-                    };
-                    img.onerror = () => resolve(original);
-                    img.src = URL.createObjectURL(original);
-                });
-            }
-
-            blob = await crop1px(blob);
             return blob;
         } catch (e) {
             exportError = e instanceof Error ? e.message : "Export failed";
-            console.error("[ExportSheet][Export] error:", e);
+            console.error("[ExportSheet][Export] Error:", e);
             return null;
-        } finally {
-            try {
-                cleanup?.();
-            } catch (e) {
-                console.warn("[ExportSheet][Export] font cleanup failed:", e);
-            }
         }
     }
 
