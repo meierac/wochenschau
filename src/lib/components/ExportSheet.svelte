@@ -129,165 +129,117 @@
         return `rgba(255, 255, 255, ${opacity / 100})`;
     }
 
-    async function generateImageBlob(): Promise<Blob | null> {
+    // Extracted font embedding so it can be reused and not nested (avoids scope issues).
+    async function minimalEmbedSelectedFonts(): Promise<(() => void) | null> {
         try {
-            // Prepare manual font embedding (will embed before capture)
-            let manualFontCleanup: (() => void) | null = null;
-            console.log(
-                "[ExportSheet] Generating PNG. Background mode:",
-                $exportSettings.backgroundMode,
-            );
-            console.log(
-                "[ExportSheet] Background image exists:",
-                !!$exportSettings.backgroundImage,
-            );
+            const families = [
+                $exportSettings.headerFontFamily,
+                $exportSettings.bodyFontFamily,
+            ].filter(Boolean);
+            const unique = [...new Set(families)];
+            const names = unique
+                .map((f) => {
+                    const m = f.match(/'([^']+)'/);
+                    return m
+                        ? m[1]
+                        : f
+                              .split(",")[0]
+                              .trim()
+                              .replace(/^['"]|['"]$/g, "");
+                })
+                .filter(Boolean);
 
-            const { snapdom } = await import("@zumer/snapdom");
-            const element = document.getElementById("export-preview");
-            if (!element) {
-                throw new Error("Export preview element not found");
+            if (names.length === 0) return null;
+
+            const FONT_FILES: Record<string, string> = {
+                Archivo: "/fonts/Archivo-VariableFont_wdth,wght.ttf",
+                "Dancing Script": "/fonts/DancingScript-VariableFont_wght.ttf",
+                "Edu QLD Hand": "/fonts/EduQLDHand-VariableFont_wght.ttf",
+                "Edu SA Hand": "/fonts/EduSAHand-VariableFont_wght.ttf",
+                Handlee: "/fonts/Handlee-Regular.ttf",
+                Lora: "/fonts/Lora-VariableFont_wght.ttf",
+                Manrope: "/fonts/Manrope-VariableFont_wght.ttf",
+                "Ms Madi": "/fonts/MsMadi-Regular.ttf",
+                "Noto Sans": "/fonts/NotoSans-VariableFont_wdth,wght.ttf",
+                "Pirata One": "/fonts/PirataOne-Regular.ttf",
+                "Space Mono": "/fonts/SpaceMono-Regular.ttf",
+            };
+
+            let css = "";
+            for (const name of names) {
+                const path = FONT_FILES[name];
+                if (!path) {
+                    console.warn("[FontEmbed] Missing mapping for", name);
+                    continue;
+                }
+                try {
+                    const res = await fetch(path);
+                    if (!res.ok) {
+                        console.warn(
+                            "[FontEmbed] Fetch failed:",
+                            name,
+                            res.status,
+                        );
+                        continue;
+                    }
+                    const buf = await res.arrayBuffer();
+                    const base64 = btoa(
+                        String.fromCharCode(...new Uint8Array(buf)),
+                    );
+                    css += `@font-face {
+    font-family: '${name}';
+    src: url(data:font/truetype;base64,${base64}) format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}\n`;
+                } catch (e) {
+                    console.warn("[FontEmbed] Error embedding:", name, e);
+                }
             }
 
-            // Utility: detect iOS Safari (exclude Chrome/Firefox wrappers)
+            if (!css) return null;
+            const existing = document.getElementById("embedded-export-fonts");
+            if (existing) existing.remove();
+
+            const styleEl = document.createElement("style");
+            styleEl.id = "embedded-export-fonts";
+            styleEl.textContent = css;
+            document.head.appendChild(styleEl);
+            return () => styleEl.parentNode?.removeChild(styleEl);
+        } catch (e) {
+            console.warn("[FontEmbed] Unexpected error:", e);
+            return null;
+        }
+    }
+
+    async function generateImageBlob(): Promise<Blob | null> {
+        let manualFontCleanup: (() => void) | null = null;
+        try {
+            const { snapdom } = await import("@zumer/snapdom");
+            const element = document.getElementById("export-preview");
+            if (!element) throw new Error("Export preview element not found");
+
             const ua = navigator.userAgent;
             const isIOSSafari =
                 /iPad|iPhone|iPod/.test(ua) &&
                 /Safari/.test(ua) &&
                 !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
+            // Ensure all fonts declared in stylesheets are loaded first.
             await document.fonts.ready;
-            // Manually embed selected fonts into a temporary <style> so that html->image has direct data sources.
-            // This guarantees inclusion even if snapdom's embedFonts misses variable font ranges or cross-origin blocked fonts.
-            manualFontCleanup = await minimalEmbedSelectedFonts();
-            // Short settle delay (layout + paint + font registration)
-            await new Promise((r) => setTimeout(r, 180));
+            await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-            const rect = element.getBoundingClientRect();
-            const baseWidth = rect.width;
-            const baseHeight = rect.height;
+            // First attempt: use snapdom's font embedding (fast path).
+            // removed unused rect to avoid unused variable diagnostic
             let scale = isIOSSafari ? 3 : 4;
 
-            console.log("[ExportSheet][Diagnostics] Element size:", {
-                width: baseWidth,
-                height: baseHeight,
-                initialScale: scale,
-                userAgent: ua,
-            });
+            console.log("[ExportSheet][Export] First attempt scale:", scale);
 
-            const estPixels = baseWidth * scale * baseHeight * scale;
-            const estBytes = estPixels * 4;
-            console.log(
-                "[ExportSheet][Diagnostics] Estimated memory bytes:",
-                estBytes,
-            );
-
-            async function minimalEmbedSelectedFonts() {
-                const families = [
-                    $exportSettings.headerFontFamily,
-                    $exportSettings.bodyFontFamily,
-                ];
-                const unique = [...new Set(families)];
-                const names = unique
-                    .map((f) => (f.match(/'([^']+)'/) || [])[1])
-                    .filter(Boolean);
-
-                const FONT_FILES: Record<string, string> = {
-                    Archivo: "/fonts/Archivo-VariableFont_wdth,wght.ttf",
-                    "Dancing Script":
-                        "/fonts/DancingScript-VariableFont_wght.ttf",
-                    "Edu QLD Hand": "/fonts/EduQLDHand-VariableFont_wght.ttf",
-                    "Edu SA Hand": "/fonts/EduSAHand-VariableFont_wght.ttf",
-                    Handlee: "/fonts/Handlee-Regular.ttf",
-                    Lora: "/fonts/Lora-VariableFont_wght.ttf",
-                    Manrope: "/fonts/Manrope-VariableFont_wght.ttf",
-                    "Ms Madi": "/fonts/MsMadi-Regular.ttf",
-                    "Noto Sans": "/fonts/NotoSans-VariableFont_wdth,wght.ttf",
-                    "Pirata One": "/fonts/PirataOne-Regular.ttf",
-                    "Space Mono": "/fonts/SpaceMono-Regular.ttf",
-                };
-
-                let css = "";
-                for (const name of names) {
-                    const path = FONT_FILES[name];
-                    if (!path) {
-                        console.warn(
-                            "[FontFallback] Missing mapping for",
-                            name,
-                        );
-                        continue;
-                    }
-                    try {
-                        const res = await fetch(path);
-                        if (!res.ok) {
-                            console.warn(
-                                "[FontFallback] Fetch failed:",
-                                path,
-                                res.status,
-                            );
-                            continue;
-                        }
-                        const buf = await res.arrayBuffer();
-                        const base64 = btoa(
-                            String.fromCharCode(...new Uint8Array(buf)),
-                        );
-                        css += `@font-face {
-  font-family: '${name}';
-  src: url(data:font/truetype;base64,${base64}) format('truetype');
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: block;
-}\n`;
-                    } catch (e) {
-                        console.warn(
-                            "[FontFallback] Error embedding font:",
-                            name,
-                            e,
-                        );
-                    }
-                }
-
-                if (!css) return null;
-                const style = document.createElement("style");
-                style.id = "font-fallback-embed";
-                style.textContent = css;
-                document.head.appendChild(style);
-                console.log("[FontFallback] Injected minimal embedded fonts");
-                return () => {
-                    style.parentNode?.removeChild(style);
-                    console.log(
-                        "[FontFallback] Cleaned up minimal embedded fonts",
-                    );
-                };
-            }
-
-            try {
-                const titleEl = element.querySelector("h2");
-                const bodyEl = element.querySelector("p, span, div");
-                if (titleEl) {
-                    console.log(
-                        "[FontDebug] Title computed font-family:",
-                        getComputedStyle(titleEl).fontFamily,
-                    );
-                }
-                if (bodyEl) {
-                    console.log(
-                        "[FontDebug] Body computed font-family:",
-                        getComputedStyle(bodyEl).fontFamily,
-                    );
-                }
-            } catch (e) {
-                console.warn("[FontDebug] Failed to read computed fonts:", e);
-            }
-            console.log(
-                "[ExportSheet] Attempt 1 with scale:",
-                scale,
-                "embedFonts: true",
-            );
-            // First attempt: rely on our manual embedding (embedFonts false to avoid duplicate @font-face extraction)
             let blob = await snapdom.toBlob(element, {
                 type: "png",
                 scale,
-                embedFonts: false,
+                embedFonts: true,
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
                         ? $exportSettings.backgroundColor
@@ -298,55 +250,16 @@
                 },
             });
 
-            // If manual embedding somehow failed, fall back to snapdom built-in embedding
+            // If that failed or produced null, embed manually and retry with embedFonts:false
             if (!blob) {
                 console.warn(
-                    "[ExportSheet] Manual embedded capture failed, retrying with snapdom embedFonts:true",
+                    "[ExportSheet][Export] First attempt failed - embedding fonts manually and retrying.",
                 );
+                manualFontCleanup = await minimalEmbedSelectedFonts();
+                await new Promise((r) => setTimeout(r, 120));
                 blob = await snapdom.toBlob(element, {
                     type: "png",
                     scale,
-                    embedFonts: true,
-                    backgroundColor:
-                        $exportSettings.backgroundMode === "color"
-                            ? $exportSettings.backgroundColor
-                            : null,
-                    filter: (node) => {
-                        const el = node as Element;
-                        return !el.classList?.contains("no-export");
-                    },
-                });
-            }
-
-            if (!blob && isIOSSafari) {
-                console.warn(
-                    "[ExportSheet] Attempt 1 failed on iOS Safari. Retrying with reduced scale 2.",
-                );
-                scale = 2;
-                blob = await snapdom.toBlob(element, {
-                    type: "png",
-                    scale,
-                    embedFonts: true,
-                    backgroundColor:
-                        $exportSettings.backgroundMode === "color"
-                            ? $exportSettings.backgroundColor
-                            : null,
-                    filter: (node) => {
-                        const el = node as Element;
-                        return !el.classList?.contains("no-export");
-                    },
-                });
-            }
-
-            if (!blob && isIOSSafari) {
-                console.warn(
-                    "[ExportSheet] Attempt 2 failed. Using manual font embedding fallback.",
-                );
-                const cleanup = await minimalEmbedSelectedFonts();
-                await new Promise((r) => setTimeout(r, 200));
-                blob = await snapdom.toBlob(element, {
-                    type: "png",
-                    scale: 2,
                     embedFonts: false,
                     backgroundColor:
                         $exportSettings.backgroundMode === "color"
@@ -357,35 +270,51 @@
                         return !el.classList?.contains("no-export");
                     },
                 });
-                if (cleanup) cleanup();
             }
 
-            if (!blob) {
-                throw new Error("Failed to generate image blob");
+            // iOS fallback: reduce scale if still failing
+            if (!blob && isIOSSafari) {
+                console.warn(
+                    "[ExportSheet][Export] iOS Safari fallback with reduced scale 2.",
+                );
+                if (!manualFontCleanup) {
+                    manualFontCleanup = await minimalEmbedSelectedFonts();
+                    await new Promise((r) => setTimeout(r, 100));
+                }
+                scale = 2;
+                blob = await snapdom.toBlob(element, {
+                    type: "png",
+                    scale,
+                    embedFonts: false,
+                    backgroundColor:
+                        $exportSettings.backgroundMode === "color"
+                            ? $exportSettings.backgroundColor
+                            : null,
+                    filter: (node) => {
+                        const el = node as Element;
+                        return !el.classList?.contains("no-export");
+                    },
+                });
             }
+
+            if (!blob) throw new Error("Failed to generate image");
 
             console.log(
-                "[ExportSheet] Export successful (final scale:",
+                "[ExportSheet][Export] Success (final scale:",
                 scale,
                 ")",
             );
             return blob;
-        } catch (error) {
+        } catch (e) {
             exportError =
-                error instanceof Error ? error.message : "Export failed";
-            console.error("Export error:", error);
+                e instanceof Error ? e.message : "Export failed unexpectedly";
+            console.error("[ExportSheet][Export] Error:", e);
             return null;
         } finally {
-            // Remove temporary manual embedded fonts if we injected them
-            if (manualFontCleanup) {
-                try {
-                    manualFontCleanup();
-                } catch (e) {
-                    console.warn(
-                        "[ExportSheet] Failed cleaning embedded font style tag:",
-                        e,
-                    );
-                }
+            try {
+                manualFontCleanup?.();
+            } catch (e) {
+                console.warn("[ExportSheet][Export] Font cleanup error:", e);
             }
         }
     }
