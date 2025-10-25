@@ -1131,6 +1131,54 @@
 
                                     <!-- Background Image Selector -->
                                     <DefaultBackgroundSelector />
+
+                                    {#if $exportSettings.backgroundMode === "color"}
+                                        <!-- Background Color -->
+                                        <div>
+                                            <label
+                                                for="bg-color-list-mobile"
+                                                class="block text-xs font-medium text-muted-foreground mb-2"
+                                            >
+                                                Background Color
+                                            </label>
+                                            <div class="flex gap-2">
+                                                <input
+                                                    id="bg-color-export-mobile"
+                                                    type="color"
+                                                    bind:value={
+                                                        $exportSettings.backgroundColor
+                                                    }
+                                                    class="w-12 h-10 rounded border border-input cursor-pointer"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    bind:value={
+                                                        $exportSettings.backgroundColor
+                                                    }
+                                                    class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
+                                                    placeholder="#ffffff"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <!-- Background Opacity -->
+                                        <div>
+                                            <label
+                                                for="bg-opacity-list-mobile"
+                                                class="block text-xs font-medium text-muted-foreground mb-2"
+                                            >
+                                                Background Opacity: {$exportSettings.backgroundOpacity}%
+                                            </label>
+                                            <RangeSlider
+                                                id="bg-opacity-list-mobile"
+                                                min={0}
+                                                max={100}
+                                                bind:value={
+                                                    $exportSettings.backgroundOpacity
+                                                }
+                                            />
+                                        </div>
+                                    {/if}
                                 </div>
 
                                 <!-- Styling Section -->
