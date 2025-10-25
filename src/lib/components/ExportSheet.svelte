@@ -55,81 +55,43 @@
         }
     }
 
-    // Initialize on component mount
+    /**
+     * Initialize component preferences from localStorage
+     */
     onMount(() => {
         loadPreferences();
-        console.log(
-            "ExportSheet mounted. Background image:",
-            $exportSettings.backgroundImage
-                ? `${$exportSettings.backgroundImage.substring(0, 50)}...`
-                : "none",
-        );
-        console.log(
-            "Background image URL:",
-            $exportSettings.backgroundImageUrl,
-        );
-        console.log(
-            "Background image type:",
-            $exportSettings.backgroundImageType,
-        );
     });
 
-    // Reactive debugging - log when background image changes
-    $: {
-        console.log(
-            "[ExportSheet] Background image changed:",
-            $exportSettings.backgroundImage
-                ? `Data URL of length ${$exportSettings.backgroundImage.length}`
-                : "null",
-        );
-        console.log(
-            "[ExportSheet] Background URL ID:",
-            $exportSettings.backgroundImageUrl,
-        );
-        console.log(
-            "[ExportSheet] Background type:",
-            $exportSettings.backgroundImageType,
-        );
-        console.log(
-            "[ExportSheet] Background MODE:",
-            $exportSettings.backgroundMode,
-        );
-        console.log(
-            "[ExportSheet] Will use:",
-            $exportSettings.backgroundMode === "image" &&
-                $exportSettings.backgroundImage
-                ? "BACKGROUND IMAGE"
-                : "SOLID COLOR",
-        );
-    }
+    // Reactive: Check if background is ready for export
     $: isBackgroundReady =
         $exportSettings.backgroundMode === "image"
             ? !!$exportSettings.backgroundImage
             : true;
 
-    // Validate and sanitize background image data URL for CSS usage
+    /**
+     * Validate and sanitize background image data URL for CSS usage
+     */
     function getSafeBackgroundImageUrl(img: string | null): string {
-        // Ensure it's a valid data URL (starts with data:image/)
         if (!img || !img.startsWith("data:image/")) {
             return "";
         }
-        // Additional validation: check for common image MIME types
+
         const validPrefixes = [
             "data:image/png",
             "data:image/jpeg",
             "data:image/webp",
             "data:image/gif",
         ];
+
         if (!validPrefixes.some((prefix) => img.startsWith(prefix))) {
-            console.warn(
-                "[ExportSheet] Invalid background image data URL format",
-            );
+            console.warn("[Export] Invalid background image data URL format");
             return "";
         }
+
         return img;
     }
 
-    // Reactive: get safe background image URL for CSS
+    // Reactive: Get safe background image URL for CSS
     $: safeBackgroundImageUrl = getSafeBackgroundImageUrl(
         $exportSettings.backgroundImage,
     );
@@ -138,6 +100,9 @@
         dispatch("close");
     }
 
+    /**
+     * Get week container background style with opacity
+     */
     function getWeekContainerBackgroundStyle(): string {
         const color = $exportSettings.weekContainerBackgroundColor;
         const opacity = $exportSettings.weekContainerBackgroundOpacity;
@@ -161,74 +126,20 @@
     }
 
     /**
-     * Preload and decode background image to ensure it's ready for export
-     * This is critical for iOS Safari where data URLs need time to decode
+     * Generate image blob from the export preview element
+     * Uses modern-screenshot for better iOS/Safari compatibility
      */
-    async function preloadBackgroundImage(dataUrl: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-
-            img.onload = () => {
-                console.log(
-                    "[PreloadImage] Background image loaded successfully",
-                );
-                // On iOS Safari, even after onload, we need to ensure decoding is complete
-                if (img.decode) {
-                    img.decode()
-                        .then(() => {
-                            console.log(
-                                "[PreloadImage] Background image decoded successfully",
-                            );
-                            resolve();
-                        })
-                        .catch((error) => {
-                            console.warn(
-                                "[PreloadImage] Image decode() failed, but image is loaded. " +
-                                    "Proceeding with export - image should still render correctly.",
-                                error,
-                            );
-                            // Continue anyway as the image is loaded via onload event
-                            // The decode() failure is not critical - it's an optimization
-                            resolve();
-                        });
-                } else {
-                    // Fallback for browsers without decode() support (e.g., older browsers)
-                    // The image is still loaded and will render correctly
-                    console.log(
-                        "[PreloadImage] Browser doesn't support decode(), using onload only",
-                    );
-                    resolve();
-                }
-            };
-
-            img.onerror = (error) => {
-                console.error(
-                    "[PreloadImage] Failed to load background image:",
-                    error,
-                );
-                reject(new Error("Failed to load background image"));
-            };
-
-            // Start loading the image
-            img.src = dataUrl;
-        });
-    }
-
     async function generateImageBlob(): Promise<Blob | null> {
         try {
-            console.log("[GenerateBlob] Starting image generation...");
-            console.log("[GenerateBlob] Background settings:", {
-                mode: $exportSettings.backgroundMode,
-                hasImage: !!$exportSettings.backgroundImage,
-                imageLength: $exportSettings.backgroundImage?.length,
-                imageUrl: $exportSettings.backgroundImageUrl,
-                imageType: $exportSettings.backgroundImageType,
-            });
+            console.log("[Export] Starting image generation...");
 
             const element = document.getElementById("export-preview");
-            if (!element) throw new Error("Export preview element not found");
+            if (!element) {
+                throw new Error("Export preview element not found");
+            }
 
-            const { toBlob } = await import("html-to-image");
+            // Import modern-screenshot
+            const { domToBlob } = await import("modern-screenshot");
 
             // Detect iOS Safari for scale adjustment
             const ua = navigator.userAgent;
@@ -237,187 +148,136 @@
                 /Safari/.test(ua) &&
                 !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
-            // Wait for all fonts to be ready (fonts are loaded via CSS in main.ts)
+            // Ensure all fonts are loaded (defined in CSS via @font-face)
             await document.fonts.ready;
+            console.log("[Export] All fonts ready");
 
-            // Extra frame to ensure layout is complete
-            await new Promise((r) => requestAnimationFrame(() => r(null)));
-
-            // If using image background, preload and decode it before export
-            // This is critical for iOS Safari where data URLs need time to decode
+            // Wait for background image to be ready if using image mode
             if (
                 $exportSettings.backgroundMode === "image" &&
                 $exportSettings.backgroundImage
             ) {
-                console.log(
-                    "[GenerateBlob] Mode is IMAGE, preloading background image",
-                );
-                console.log(
-                    "[GenerateBlob] Background image data URL length:",
-                    $exportSettings.backgroundImage.length,
-                );
-
-                // Preload the image to ensure it's fully decoded
-                await preloadBackgroundImage($exportSettings.backgroundImage);
-
-                // Wait for the DOM <img> element to be fully loaded and rendered
                 const bgImageElement = element.querySelector(
                     'img[alt="Background"]',
                 ) as HTMLImageElement;
 
-                if (bgImageElement) {
-                    if (!bgImageElement.complete) {
-                        console.log(
-                            "[GenerateBlob] Waiting for DOM img element to load...",
-                        );
-                        await new Promise((resolve, reject) => {
-                            bgImageElement.onload = () => {
-                                console.log(
-                                    "[GenerateBlob] DOM img element loaded successfully",
-                                );
-                                resolve(null);
-                            };
-                            bgImageElement.onerror = () => {
-                                console.error(
-                                    "[GenerateBlob] DOM img element failed to load",
-                                );
-                                reject(
-                                    new Error(
-                                        "Background img element failed to load",
-                                    ),
-                                );
-                            };
-                            // Timeout after 5 seconds
-                            setTimeout(() => {
-                                console.warn(
-                                    "[GenerateBlob] DOM img element load timeout",
-                                );
-                                resolve(null);
-                            }, 5000);
-                        });
-                    } else {
-                        console.log(
-                            "[GenerateBlob] DOM img element already loaded",
-                        );
-                    }
-                } else {
-                    console.warn(
-                        "[GenerateBlob] DOM img element not found in preview",
-                    );
-                }
+                if (bgImageElement && !bgImageElement.complete) {
+                    console.log("[Export] Waiting for background image...");
+                    await new Promise<void>((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            console.warn("[Export] Background image load timeout");
+                            resolve(); // Continue anyway
+                        }, 5000);
 
-                // Wait additional frames to ensure rendering is complete
-                await new Promise((r) => requestAnimationFrame(() => r(null)));
-                await new Promise((r) => requestAnimationFrame(() => r(null)));
-            } else {
-                console.log(
-                    "[GenerateBlob] Mode is COLOR, no background image",
-                );
+                        bgImageElement.onload = () => {
+                            clearTimeout(timeout);
+                            console.log("[Export] Background image loaded");
+                            resolve();
+                        };
+                        bgImageElement.onerror = () => {
+                            clearTimeout(timeout);
+                            console.error("[Export] Background image failed to load");
+                            reject(new Error("Background image failed to load"));
+                        };
+                    });
+                }
             }
 
-            // Use lower scale on iOS to avoid memory issues
+            // Wait for layout to stabilize
+            await new Promise((r) => requestAnimationFrame(r));
+
+            // Determine optimal scale based on device
             const scale = isIOSSafari ? 3 : 4;
 
-            console.log(
-                "[ExportSheet][Export] Starting export with html-to-image",
-                {
-                    width: element.getBoundingClientRect().width,
-                    height: element.getBoundingClientRect().height,
-                    scale,
-                    userAgent: ua,
-                    backgroundMode: $exportSettings.backgroundMode,
-                    hasImage: !!$exportSettings.backgroundImage,
-                },
-            );
+            console.log("[Export] Generating image with modern-screenshot", {
+                width: element.offsetWidth,
+                height: element.offsetHeight,
+                scale,
+                isIOSSafari,
+            });
 
-            // Generate the image blob using html-to-image
-            let blob = await toBlob(element, {
-                pixelRatio: scale,
+            // Generate blob with modern-screenshot
+            const blob = await domToBlob(element, {
+                scale,
+                type: "image/png",
+                quality: 1,
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
                         ? $exportSettings.backgroundColor
-                        : "#ffffff",
-                filter: (node) =>
-                    !(node as Element).classList?.contains("no-export"),
-                cacheBust: true,
+                        : null,
+                filter: (node) => {
+                    if (node instanceof Element) {
+                        return !node.classList.contains("no-export");
+                    }
+                    return true;
+                },
             });
 
-            // iOS memory fallback - try lower scale if first attempt fails
-            if (!blob && isIOSSafari) {
-                console.warn("[ExportSheet][Export] iOS fallback to scale=2");
-                blob = await toBlob(element, {
-                    pixelRatio: 2,
-                    backgroundColor:
-                        $exportSettings.backgroundMode === "color"
-                            ? $exportSettings.backgroundColor
-                            : "#ffffff",
-                    filter: (node) =>
-                        !(node as Element).classList?.contains("no-export"),
-                    cacheBust: true,
-                });
+            if (!blob) {
+                throw new Error("Failed to generate image");
             }
 
-            if (!blob) throw new Error("Failed to generate image");
-
-            console.log("[ExportSheet][Export] Success", {
-                size: `${(blob.size / 1024).toFixed(0)}KB`,
-                scale,
+            console.log("[Export] Success", {
+                size: `${(blob.size / 1024).toFixed(0)} KB`,
+                type: blob.type,
             });
 
             return blob;
-        } catch (e) {
-            exportError = e instanceof Error ? e.message : "Export failed";
-            console.error("[ExportSheet][Export] Error:", e);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Export failed";
+            console.error("[Export] Error:", error);
+            exportError = message;
             return null;
         }
     }
 
+    /**
+     * Export the week as a downloadable PNG image
+     */
     async function exportAsImage() {
         isExporting = true;
         exportError = "";
 
         try {
-            // Force refresh background image from IndexedDB before export
-            console.log(
-                "[ExportAsImage] Refreshing background image from IndexedDB...",
-            );
-            await exportSettings.refreshImage();
-
-            // Wait a bit for the store to update
-            await new Promise((r) => setTimeout(r, 1000));
-
-            console.log("[ExportAsImage] Current settings:", {
-                mode: $exportSettings.backgroundMode,
-                hasImage: !!$exportSettings.backgroundImage,
-                imageLength: $exportSettings.backgroundImage?.length,
-                imageUrl: $exportSettings.backgroundImageUrl,
-                imageType: $exportSettings.backgroundImageType,
-            });
+            // Refresh background image from IndexedDB if needed
+            if (
+                $exportSettings.backgroundMode === "image" &&
+                !$exportSettings.backgroundImage
+            ) {
+                console.log("[Export] Refreshing background image from IndexedDB...");
+                await exportSettings.refreshImage();
+                await new Promise((r) => setTimeout(r, 500));
+            }
 
             const blob = await generateImageBlob();
-            if (blob) {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = `Wochenschau_W${$currentWeek}_${$currentYear}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-
-                setTimeout(() => {
-                    dispatch("close");
-                }, 500);
+            if (!blob) {
+                throw new Error("Failed to generate image");
             }
+
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `Wochenschau_W${$currentWeek}_${$currentYear}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            // Close sheet after successful export
+            setTimeout(() => dispatch("close"), 500);
         } catch (error) {
-            exportError =
-                error instanceof Error ? error.message : "Export failed";
-            console.error("Export error:", error);
+            const message = error instanceof Error ? error.message : "Export failed";
+            console.error("[Export] Error:", error);
+            exportError = message;
         } finally {
             isExporting = false;
         }
     }
 
+    /**
+     * Copy the exported image to clipboard
+     */
     async function copyToClipboard() {
         isExporting = true;
         exportError = "";
@@ -428,52 +288,45 @@
                 throw new Error("Failed to generate image");
             }
 
-            try {
-                await navigator.clipboard.write([
-                    new ClipboardItem({ "image/png": blob }),
-                ]);
+            await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": blob }),
+            ]);
 
-                setTimeout(() => {
-                    dispatch("close");
-                }, 500);
-            } catch (clipboardError) {
-                exportError = "Failed to copy to clipboard";
-                console.error("Clipboard error:", clipboardError);
-            }
+            // Close sheet after successful copy
+            setTimeout(() => dispatch("close"), 500);
         } catch (error) {
-            exportError =
-                error instanceof Error ? error.message : "Export failed";
-            console.error("Export error:", error);
+            const message = error instanceof Error ? error.message : "Failed to copy to clipboard";
+            console.error("[Export] Clipboard error:", error);
+            exportError = message;
         } finally {
             isExporting = false;
         }
     }
 
-    // Combined one-step sharing for mobile
+    /**
+     * Share the exported image using native share API
+     */
     async function performShare() {
         isExporting = true;
         exportError = "";
+
         try {
-            // Force refresh background image from IndexedDB before export
-            console.log(
-                "[Share] Refreshing background image from IndexedDB...",
-            );
-            await exportSettings.refreshImage();
-
-            // Wait a bit for the store to update
-            await new Promise((r) => setTimeout(r, 1000));
-
-            console.log("[Share] Current settings:", {
-                mode: $exportSettings.backgroundMode,
-                hasImage: !!$exportSettings.backgroundImage,
-                imageLength: $exportSettings.backgroundImage?.length,
-                imageUrl: $exportSettings.backgroundImageUrl,
-                imageType: $exportSettings.backgroundImageType,
-            });
+            // Refresh background image from IndexedDB if needed
+            if (
+                $exportSettings.backgroundMode === "image" &&
+                !$exportSettings.backgroundImage
+            ) {
+                console.log("[Share] Refreshing background image from IndexedDB...");
+                await exportSettings.refreshImage();
+                await new Promise((r) => setTimeout(r, 500));
+            }
 
             const blob = await generateImageBlob();
-            if (!blob) throw new Error("Failed to generate image");
+            if (!blob) {
+                throw new Error("Failed to generate image");
+            }
 
+            // Create file for sharing
             const file = new File(
                 [blob],
                 `Wochenschau_W${$currentWeek}_${$currentYear}.png`,
@@ -490,31 +343,38 @@
                 files: [file],
             });
 
-            setTimeout(() => {
-                dispatch("close");
-            }, 500);
-        } catch (shareError: any) {
-            if (shareError.name !== "AbortError") {
-                exportError =
-                    shareError instanceof Error
-                        ? shareError.message
-                        : "Failed to share";
-                console.error("Share error:", shareError);
+            // Close sheet after successful share
+            setTimeout(() => dispatch("close"), 500);
+        } catch (error: any) {
+            // Don't show error if user cancelled share
+            if (error.name !== "AbortError") {
+                const message = error instanceof Error ? error.message : "Failed to share";
+                console.error("[Share] Error:", error);
+                exportError = message;
             }
         } finally {
             isExporting = false;
         }
     }
 
+    // Reactive: Get days of the current week
     $: days = getDaysOfWeek($currentWeek, $currentYear);
+
+    // Reactive: Get activities for the current week
     $: weekActivities = $activities.filter(
         (a) => a.week === $currentWeek && a.year === $currentYear,
     );
 
+    /**
+     * Get activities for a specific day
+     */
     function getDayActivities(dayIndex: number) {
         return weekActivities.filter((a) => a.day === dayIndex);
     }
 
+    /**
+     * Format date for display
+     */
     function formatDate(date: Date): string {
         return date.toLocaleDateString("de-DE", {
             month: "short",
@@ -522,6 +382,9 @@
         });
     }
 
+    /**
+     * Check if an activity is an all-day event
+     */
     function isAllDayEvent(activity: any): boolean {
         if (activity.isAllDay) return true;
         if (activity.startTime === activity.endTime) return true;
