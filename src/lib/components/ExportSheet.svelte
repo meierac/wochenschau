@@ -129,6 +129,35 @@
         return `rgba(255, 255, 255, ${opacity / 100})`;
     }
 
+    async function waitForExportAssets(timeoutMs = 2000): Promise<void> {
+        // Gate asset readiness (fonts + optional background image) without UI progress states.
+        const tasks: Promise<any>[] = [];
+        try {
+            if (document?.fonts) {
+                tasks.push(document.fonts.ready.catch(() => {}));
+            }
+            if (
+                $exportSettings.backgroundMode === "image" &&
+                $exportSettings.backgroundImage
+            ) {
+                tasks.push(
+                    new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => resolve(null);
+                        img.onerror = () => resolve(null);
+                        img.src = String($exportSettings.backgroundImage);
+                    }),
+                );
+            }
+            await Promise.race([
+                Promise.all(tasks).catch(() => {}),
+                new Promise((res) => setTimeout(res, timeoutMs)),
+            ]);
+        } catch {
+            // Ignore errors; proceed anyway
+        }
+    }
+
     async function generateImageBlob(): Promise<Blob | null> {
         try {
             const element = document.getElementById("export-preview");
@@ -159,7 +188,6 @@
                 userAgent: ua,
             });
 
-            // Generate the image blob
             let blob = await toBlob(element, {
                 pixelRatio: scale,
                 backgroundColor:
@@ -170,7 +198,6 @@
                     !(node as Element).classList?.contains("no-export"),
             });
 
-            // iOS memory fallback - try lower scale if first attempt fails
             if (!blob && isIOSSafari) {
                 console.warn("[ExportSheet][Export] iOS fallback to scale=2");
                 blob = await toBlob(element, {
@@ -202,8 +229,8 @@
     async function exportAsImage() {
         isExporting = true;
         exportError = "";
-
         try {
+            await waitForExportAssets(2000);
             const blob = await generateImageBlob();
             if (blob) {
                 const url = URL.createObjectURL(blob);
@@ -215,9 +242,7 @@
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
 
-                setTimeout(() => {
-                    dispatch("close");
-                }, 500);
+                setTimeout(() => dispatch("close"), 500);
             }
         } catch (error) {
             exportError =
@@ -231,21 +256,16 @@
     async function copyToClipboard() {
         isExporting = true;
         exportError = "";
-
         try {
+            await waitForExportAssets(2000);
             const blob = await generateImageBlob();
-            if (!blob) {
-                throw new Error("Failed to generate image");
-            }
+            if (!blob) throw new Error("Failed to generate image");
 
             try {
                 await navigator.clipboard.write([
                     new ClipboardItem({ "image/png": blob }),
                 ]);
-
-                setTimeout(() => {
-                    dispatch("close");
-                }, 500);
+                setTimeout(() => dispatch("close"), 500);
             } catch (clipboardError) {
                 exportError = "Failed to copy to clipboard";
                 console.error("Clipboard error:", clipboardError);
@@ -262,12 +282,10 @@
     async function shareAgenda() {
         isExporting = true;
         exportError = "";
-
         try {
+            await waitForExportAssets(2000);
             const blob = await generateImageBlob();
-            if (!blob) {
-                throw new Error("Failed to generate image");
-            }
+            if (!blob) throw new Error("Failed to generate image");
 
             const file = new File(
                 [blob],
@@ -275,30 +293,36 @@
                 { type: "image/png" },
             );
 
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: `Wochenschau Week ${$currentWeek}`,
-                        text: `My weekly agenda for week ${$currentWeek} ${$currentYear}`,
-                        files: [file],
-                    });
-
-                    setTimeout(() => {
-                        dispatch("close");
-                    }, 500);
-                } catch (shareError: any) {
-                    if (shareError.name !== "AbortError") {
-                        exportError = "Failed to share";
-                        console.error("Share error:", shareError);
-                    }
-                }
-            } else {
+            if (!navigator.share) {
                 throw new Error("Web Share API not supported on this device");
             }
-        } catch (error) {
-            exportError =
-                error instanceof Error ? error.message : "Share failed";
-            console.error("Export error:", error);
+
+            if (
+                (navigator as any).canShare &&
+                !(navigator as any).canShare({ files: [file] })
+            ) {
+                await navigator.share({
+                    title: `Wochenschau Week ${$currentWeek}`,
+                    text: `My weekly agenda for week ${$currentWeek} ${$currentYear}`,
+                    url: window.location.href,
+                });
+            } else {
+                await navigator.share({
+                    title: `Wochenschau Week ${$currentWeek}`,
+                    text: `My weekly agenda for week ${$currentWeek} ${$currentYear}`,
+                    files: [file],
+                });
+            }
+
+            setTimeout(() => dispatch("close"), 500);
+        } catch (error: any) {
+            if (error?.name !== "AbortError") {
+                exportError =
+                    error instanceof Error
+                        ? error.message || "Share failed"
+                        : "Share failed";
+                console.error("Share error:", error);
+            }
         } finally {
             isExporting = false;
         }
@@ -378,9 +402,9 @@
         <!-- Preview Controls -->
         <fieldset class="space-y-3">
             <div class="flex items-center justify-between">
-                <legend class="text-sm font-semibold text-foreground"
-                    >Preview</legend
-                >
+                <legend class="text-sm font-semibold text-foreground">
+                    Preview
+                </legend>
                 <div class="flex gap-2 items-center">
                     <!-- Preview Visibility Toggle -->
                     <button
@@ -393,7 +417,7 @@
                         {showPreview ? "Preview On" : "Preview Off"}
                     </button>
 
-                    <!-- Grid/List/Compact View Buttons -->
+                    <!-- Layout Mode Buttons -->
                     <div class="flex gap-1 bg-muted/50 p-1 rounded-3xl">
                         <button
                             class="px-3 py-1.5 rounded-3xl text-sm font-medium transition-colors {layoutMode ===
@@ -478,7 +502,7 @@
                             ? '900px'
                             : layoutMode === 'list'
                               ? '400px'
-                              : '360px'};  position: relative; {$exportSettings.backgroundMode ===
+                              : '360px'}; position: relative; {$exportSettings.backgroundMode ===
                         'color'
                             ? `background-color: ${$exportSettings.backgroundColor};`
                             : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
@@ -534,8 +558,9 @@
                                                     {WEEKDAYS_DE[dayIndex]} ·
                                                     <span
                                                         style="opacity: 0.7; font-weight: normal;"
-                                                        >{formatDate(day)}</span
                                                     >
+                                                        {formatDate(day)}
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div class="space-y-2">
@@ -623,8 +648,9 @@
                                                     class="font-semibold text-sm"
                                                     style="color: {$exportSettings.textColor};"
                                                 >
-                                                    {WEEKDAYS_DE[dayIndex]} ·
-                                                    {formatDate(day)}
+                                                    {WEEKDAYS_DE[dayIndex]} · {formatDate(
+                                                        day,
+                                                    )}
                                                 </div>
                                             </div>
                                             <div class="space-y-2">
@@ -694,18 +720,18 @@
                                     {/if}
                                 </div>
                             {:else}
-                                <!-- Compact view (revised) -->
+                                <!-- Compact view -->
                                 <div class="space-y-1.5 p-4 pt-0 pr-0">
                                     {#each days as day, dayIndex}
                                         <div class="p-0">
                                             <div class="flex gap-0.5">
                                                 <div
-                                                    class=" py-3 pr-0 pl-2 min-w-20"
-                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: {$exportSettings.borderRadius}px 0 0 {$exportSettings.borderRadius}px;"
+                                                    class="py-3 pr-0 pl-2 min-w-20"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: {$exportSettings.borderRadius}px 0 0 {$exportSettings.borderRadius}px;"
                                                 >
                                                     <div
                                                         class="flex flex-col h-full pr-2 text-right gap-1"
-                                                        style="line-height:1; "
+                                                        style="line-height:1;"
                                                     >
                                                         <div
                                                             style="font-size:14px; font-weight:600; color: {$exportSettings.textColor};"
@@ -723,7 +749,7 @@
                                                 </div>
                                                 <div
                                                     class="flex-1"
-                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: 0;"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()};"
                                                 >
                                                     {#if getDayActivities(dayIndex).length === 0}
                                                         <div
@@ -742,8 +768,7 @@
                                                                     style="grid-template-columns: 80px 1fr; font-size:11px; line-height:1.2; color: {$exportSettings.textColor}; font-family: {$exportSettings.bodyFontFamily};"
                                                                 >
                                                                     <div
-                                                                        class="pr-1 opacity-60"
-                                                                        style="text-align:right;"
+                                                                        class="pr-1 opacity-60 text-right"
                                                                     >
                                                                         {#if isAllDayEvent(activity)}
                                                                             All-Day
@@ -777,7 +802,7 @@
                                                     .text}"
                                             </div>
                                             <div
-                                                class=" text-center"
+                                                class="text-center"
                                                 style="font-size:10px; opacity:0.7;"
                                             >
                                                 {$bibleVerse.currentVerse
