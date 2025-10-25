@@ -228,16 +228,7 @@
             const element = document.getElementById("export-preview");
             if (!element) throw new Error("Export preview element not found");
 
-            // Import snapdom - try both default and named export for compatibility
-            const snapdomModule = await import("@zumer/snapdom");
-            const snapdom =
-                snapdomModule.snapdom || snapdomModule.default || snapdomModule;
-
-            console.log("[GenerateBlob] snapdom module loaded:", {
-                hasSnapdom: !!snapdom,
-                hasToBlob: !!snapdom?.toBlob,
-                moduleKeys: Object.keys(snapdomModule),
-            });
+            const { toBlob } = await import("html-to-image");
 
             // Detect iOS Safari for scale adjustment
             const ua = navigator.userAgent;
@@ -327,121 +318,49 @@
             // Use lower scale on iOS to avoid memory issues
             const scale = isIOSSafari ? 3 : 4;
 
-            console.log("[ExportSheet][Export] Starting export with snapdom", {
-                width: element.getBoundingClientRect().width,
-                height: element.getBoundingClientRect().height,
-                scale,
-                userAgent: ua,
-                backgroundMode: $exportSettings.backgroundMode,
-                hasImage: !!$exportSettings.backgroundImage,
-            });
+            console.log(
+                "[ExportSheet][Export] Starting export with html-to-image",
+                {
+                    width: element.getBoundingClientRect().width,
+                    height: element.getBoundingClientRect().height,
+                    scale,
+                    userAgent: ua,
+                    backgroundMode: $exportSettings.backgroundMode,
+                    hasImage: !!$exportSettings.backgroundImage,
+                },
+            );
 
-            // Validate snapdom loaded correctly
-            if (!snapdom || typeof snapdom.toBlob !== "function") {
-                console.error("[GenerateBlob] snapdom.toBlob not available:", {
-                    hasSnapdom: !!snapdom,
-                    snapdomType: typeof snapdom,
-                    hasToBlob: snapdom ? typeof snapdom.toBlob : "N/A",
-                });
-                throw new Error(
-                    "snapdom.toBlob is not available - library may not have loaded correctly",
-                );
-            }
-
-            // Use disabled cache for background images on iOS/Safari to prevent data URL corruption
-            const cacheStrategy =
-                $exportSettings.backgroundMode === "image"
-                    ? "disabled"
-                    : "soft";
-
-            console.log("[GenerateBlob] Using cache strategy:", cacheStrategy, {
-                reason:
-                    $exportSettings.backgroundMode === "image"
-                        ? "Background image detected - disabled cache for iOS/Safari data URL reliability"
-                        : "No background image - using soft cache for better performance",
-            });
-
-            // Generate the image blob using snapdom
-            console.log("[GenerateBlob] Calling snapdom.toBlob with options:", {
-                type: "png",
-                scale,
+            // Generate the image blob using html-to-image
+            let blob = await toBlob(element, {
+                pixelRatio: scale,
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
                         ? $exportSettings.backgroundColor
                         : "#ffffff",
-                embedFonts: true,
-                cache: cacheStrategy,
+                filter: (node) =>
+                    !(node as Element).classList?.contains("no-export"),
+                cacheBust: true,
             });
 
-            let blob: Blob | null = null;
-            try {
-                blob = await snapdom.toBlob(element, {
-                    type: "png",
-                    scale: scale,
+            // iOS memory fallback - try lower scale if first attempt fails
+            if (!blob && isIOSSafari) {
+                console.warn("[ExportSheet][Export] iOS fallback to scale=2");
+                blob = await toBlob(element, {
+                    pixelRatio: 2,
                     backgroundColor:
                         $exportSettings.backgroundMode === "color"
                             ? $exportSettings.backgroundColor
                             : "#ffffff",
                     filter: (node) =>
                         !(node as Element).classList?.contains("no-export"),
-                    embedFonts: true, // Embed all fonts for offline viewing
-                    cache: cacheStrategy, // Dynamic cache: disabled for bg images, soft otherwise
+                    cacheBust: true,
                 });
-
-                console.log("[GenerateBlob] snapdom.toBlob returned:", {
-                    hasBlob: !!blob,
-                    type: blob?.type,
-                    size: blob?.size,
-                });
-            } catch (snapdomError) {
-                console.error(
-                    "[GenerateBlob] snapdom.toBlob error:",
-                    snapdomError,
-                );
-                throw snapdomError;
             }
 
-            // iOS memory fallback - try lower scale if first attempt fails
-            if (!blob && isIOSSafari) {
-                console.warn("[ExportSheet][Export] iOS fallback to scale=2");
-                try {
-                    blob = await snapdom.toBlob(element, {
-                        type: "png",
-                        scale: 2,
-                        backgroundColor:
-                            $exportSettings.backgroundMode === "color"
-                                ? $exportSettings.backgroundColor
-                                : "#ffffff",
-                        filter: (node) =>
-                            !(node as Element).classList?.contains("no-export"),
-                        embedFonts: true,
-                        cache: cacheStrategy,
-                    });
-                    console.log("[GenerateBlob] iOS fallback result:", {
-                        hasBlob: !!blob,
-                        type: blob?.type,
-                        size: blob?.size,
-                    });
-                } catch (fallbackError) {
-                    console.error(
-                        "[GenerateBlob] iOS fallback error:",
-                        fallbackError,
-                    );
-                }
-            }
+            if (!blob) throw new Error("Failed to generate image");
 
-            if (!blob) {
-                console.error(
-                    "[GenerateBlob] No blob generated - snapdom returned null/undefined",
-                );
-                throw new Error(
-                    "Failed to generate image - snapdom returned no blob",
-                );
-            }
-
-            console.log("[ExportSheet][Export] Success with snapdom", {
+            console.log("[ExportSheet][Export] Success", {
                 size: `${(blob.size / 1024).toFixed(0)}KB`,
-                type: blob.type,
                 scale,
             });
 
