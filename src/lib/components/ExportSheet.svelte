@@ -244,6 +244,19 @@
                 );
             }
 
+            // Use disabled cache for background images on iOS/Safari to prevent data URL corruption
+            const cacheStrategy =
+                $exportSettings.backgroundMode === "image"
+                    ? "disabled"
+                    : "soft";
+
+            console.log("[GenerateBlob] Using cache strategy:", cacheStrategy, {
+                reason:
+                    $exportSettings.backgroundMode === "image"
+                        ? "Background image detected - disabled cache for iOS/Safari data URL reliability"
+                        : "No background image - using soft cache for better performance",
+            });
+
             // Generate the image blob using snapdom
             console.log("[GenerateBlob] Calling snapdom.toBlob with options:", {
                 type: "png",
@@ -253,7 +266,7 @@
                         ? $exportSettings.backgroundColor
                         : "#ffffff",
                 embedFonts: true,
-                cache: "auto",
+                cache: cacheStrategy,
             });
 
             let blob: Blob | null = null;
@@ -268,7 +281,7 @@
                     filter: (node) =>
                         !(node as Element).classList?.contains("no-export"),
                     embedFonts: true, // Embed all fonts for offline viewing
-                    cache: "auto", // Use minimal but fast cache
+                    cache: cacheStrategy, // Dynamic cache: disabled for bg images, soft otherwise
                 });
 
                 console.log("[GenerateBlob] snapdom.toBlob returned:", {
@@ -298,7 +311,7 @@
                         filter: (node) =>
                             !(node as Element).classList?.contains("no-export"),
                         embedFonts: true,
-                        cache: "auto",
+                        cache: cacheStrategy,
                     });
                     console.log("[GenerateBlob] iOS fallback result:", {
                         hasBlob: !!blob,
