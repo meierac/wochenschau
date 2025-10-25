@@ -160,6 +160,44 @@
         return `rgba(255, 255, 255, ${opacity / 100})`;
     }
 
+    /**
+     * Preload and decode background image to ensure it's ready for export
+     * This is critical for iOS Safari where data URLs need time to decode
+     */
+    async function preloadBackgroundImage(dataUrl: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            
+            img.onload = () => {
+                console.log("[PreloadImage] Background image loaded successfully");
+                // On iOS Safari, even after onload, we need to ensure decoding is complete
+                if (img.decode) {
+                    img.decode()
+                        .then(() => {
+                            console.log("[PreloadImage] Background image decoded successfully");
+                            resolve();
+                        })
+                        .catch((error) => {
+                            console.warn("[PreloadImage] Decode failed, but continuing:", error);
+                            // Continue anyway as the image is loaded
+                            resolve();
+                        });
+                } else {
+                    // Fallback for browsers without decode() support
+                    resolve();
+                }
+            };
+            
+            img.onerror = (error) => {
+                console.error("[PreloadImage] Failed to load background image:", error);
+                reject(new Error("Failed to load background image"));
+            };
+            
+            // Start loading the image
+            img.src = dataUrl;
+        });
+    }
+
     async function generateImageBlob(): Promise<Blob | null> {
         try {
             console.log("[GenerateBlob] Starting image generation...");
@@ -189,22 +227,25 @@
             // Extra frame to ensure layout is complete
             await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-            // If using image background (now via CSS background-image),
-            // give extra time for the browser to process the data URL
+            // If using image background, preload and decode it before export
+            // This is critical for iOS Safari where data URLs need time to decode
             if (
                 $exportSettings.backgroundMode === "image" &&
                 $exportSettings.backgroundImage
             ) {
                 console.log(
-                    "[GenerateBlob] Mode is IMAGE, using CSS background-image",
+                    "[GenerateBlob] Mode is IMAGE, preloading background image",
                 );
                 console.log(
                     "[GenerateBlob] Background image data URL length:",
                     $exportSettings.backgroundImage.length,
                 );
 
+                // Preload the image to ensure it's fully decoded
+                await preloadBackgroundImage($exportSettings.backgroundImage);
+
                 // Wait additional frames to ensure CSS background-image is processed
-                // This is similar to how fonts are handled - they're in CSS and need time to render
+                // after the image has been decoded
                 await new Promise((r) => requestAnimationFrame(() => r(null)));
                 await new Promise((r) => requestAnimationFrame(() => r(null)));
 
