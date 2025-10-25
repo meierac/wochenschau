@@ -102,6 +102,10 @@
                 : "SOLID COLOR",
         );
     }
+    $: isBackgroundReady =
+        $exportSettings.backgroundMode === "image"
+            ? !!$exportSettings.backgroundImage
+            : true;
 
     function handleClose() {
         dispatch("close");
@@ -149,6 +153,45 @@
             // Extra frame to ensure layout is complete
             await new Promise((r) => requestAnimationFrame(() => r(null)));
 
+            // If using image background, wait for any <img> to load & decode
+            if ($exportSettings.backgroundMode === "image") {
+                const imgs = Array.from(element.querySelectorAll("img"));
+                await Promise.all(
+                    imgs.map((img) => {
+                        const image = img as HTMLImageElement;
+                        if (image.complete && image.naturalWidth > 0) {
+                            if ("decode" in image) {
+                                return image.decode().catch(() => {});
+                            }
+                            return Promise.resolve();
+                        }
+                        return new Promise<void>((resolve, reject) => {
+                            image.addEventListener(
+                                "load",
+                                () => {
+                                    if ("decode" in image) {
+                                        image
+                                            .decode()
+                                            .then(() => resolve())
+                                            .catch(() => resolve());
+                                    } else {
+                                        resolve();
+                                    }
+                                },
+                                { once: true },
+                            );
+                            image.addEventListener(
+                                "error",
+                                () => reject(new Error("Image failed to load")),
+                                { once: true },
+                            );
+                        });
+                    }),
+                );
+                // One more frame after images settle
+                await new Promise((r) => requestAnimationFrame(() => r(null)));
+            }
+
             // Use lower scale on iOS to avoid memory issues
             const scale = isIOSSafari ? 3 : 4;
 
@@ -157,6 +200,8 @@
                 height: element.getBoundingClientRect().height,
                 scale,
                 userAgent: ua,
+                backgroundMode: $exportSettings.backgroundMode,
+                hasImage: !!$exportSettings.backgroundImage,
             });
 
             // Generate the image blob
@@ -891,7 +936,7 @@
             {:else if preparedFile}
                 <Button
                     variant="default"
-                    disabled={isExporting}
+                    disabled={isExporting || !isBackgroundReady}
                     on:click={performShare}
                     class="w-full"
                 >
@@ -930,10 +975,13 @@
             {:else}
                 <Button
                     variant="default"
-                    disabled={isPreparingShare}
+                    disabled={isPreparingShare || !isBackgroundReady}
                     on:click={prepareShare}
                     class="w-full"
                 >
+                    {#if !isBackgroundReady}
+                        <span class="sr-only">Background loading</span>
+                    {/if}
                     {#if isPreparingShare}
                         <svg
                             class="w-4 h-4 animate-spin mr-2"
