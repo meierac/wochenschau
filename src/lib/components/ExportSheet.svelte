@@ -620,7 +620,7 @@
                         {/if}
 
                         <div
-                            class="space-y-4"
+                            class="space-y-4 pt-7"
                             style="position: relative; z-index: 10;"
                         >
                             <div class="mb-4 text-center">
