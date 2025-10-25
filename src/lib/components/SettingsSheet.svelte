@@ -1878,7 +1878,7 @@
                                                 bind:value={
                                                     $exportSettings.backgroundColor
                                                 }
-                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                                 placeholder="#ffffff"
                                             />
                                         </div>

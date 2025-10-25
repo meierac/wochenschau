@@ -226,31 +226,7 @@
         </div>
     {/if}
 
-    {#if backgroundType === "color"}
-        <!-- Solid Color Selector -->
-        <div>
-            <label
-                for="backgroundColor"
-                class="block text-xs font-semibold mb-2 text-foreground"
-            >
-                Background Color
-            </label>
-            <div class="flex gap-2">
-                <input
-                    id="backgroundColor"
-                    type="color"
-                    bind:value={$exportSettings.backgroundColor}
-                    class="w-12 h-10 rounded border border-border cursor-pointer"
-                />
-                <input
-                    type="text"
-                    bind:value={$exportSettings.backgroundColor}
-                    class="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg"
-                    placeholder="#ffffff"
-                />
-            </div>
-        </div>
-    {:else}
+    {#if backgroundType !== "color"}
         <!-- Background Image Selector -->
         <div class="space-y-3">
             <!-- Clear Button -->

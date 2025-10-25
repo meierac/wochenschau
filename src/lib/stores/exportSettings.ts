@@ -32,13 +32,13 @@ export interface ExportSettings {
 
 const defaultSettings: ExportSettings = {
   // Typography
-  headerFontFamily: "'Lora'",
+  headerFontFamily: "'Ms Madi'",
   bodyFontFamily: "'Manrope'",
-  textColor: "#000000",
+  textColor: "#ffffff",
 
   // Title/Headline
   title: "Wochenschau",
-  titleFontSize: 48,
+  titleFontSize: 60,
   showWeekNumber: false,
 
   // Background
@@ -50,13 +50,13 @@ const defaultSettings: ExportSettings = {
   backgroundOpacity: 100,
 
   // Styling
-  accentColor: "#9333ea",
-  borderRadius: 8,
+  accentColor: "#eed349",
+  borderRadius: 10,
   showBorders: true,
 
   // Week container styling
-  weekContainerBackgroundColor: "rgba(255, 255, 255, 0.75)",
-  weekContainerBackgroundOpacity: 75,
+  weekContainerBackgroundColor: "#000000",
+  weekContainerBackgroundOpacity: 30,
 };
 
 function createExportSettingsStore() {
