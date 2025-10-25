@@ -108,20 +108,23 @@
             : true;
 
     // Validate and sanitize background image data URL for CSS usage
-    function getSafeBackgroundImageUrl(): string {
-        const img = $exportSettings.backgroundImage;
+    function getSafeBackgroundImageUrl(img: string | null): string {
         // Ensure it's a valid data URL (starts with data:image/)
         if (!img || !img.startsWith('data:image/')) {
             return '';
         }
         // Additional validation: check for common image MIME types
-        const validPrefixes = ['data:image/png', 'data:image/jpeg', 'data:image/jpg', 'data:image/webp', 'data:image/gif'];
+        const validPrefixes = ['data:image/png', 'data:image/jpeg', 'data:image/webp', 'data:image/gif'];
         if (!validPrefixes.some(prefix => img.startsWith(prefix))) {
             console.warn('[ExportSheet] Invalid background image data URL format');
             return '';
         }
         return img;
     }
+
+    // Reactive: get safe background image URL for CSS
+    $: safeBackgroundImageUrl = getSafeBackgroundImageUrl($exportSettings.backgroundImage);
+
 
     function handleClose() {
         dispatch("close");
@@ -586,8 +589,8 @@
                             : layoutMode === 'list'
                               ? '400px'
                               : '360px'}; position: relative; {$exportSettings.backgroundMode ===
-                        'image' && getSafeBackgroundImageUrl()
-                            ? `background-image: url(${getSafeBackgroundImageUrl()}); background-size: cover; background-position: center; background-repeat: no-repeat;`
+                        'image' && safeBackgroundImageUrl
+                            ? `background-image: url(${safeBackgroundImageUrl}); background-size: cover; background-position: center; background-repeat: no-repeat;`
                             : $exportSettings.backgroundMode === 'color'
                               ? `background-color: ${$exportSettings.backgroundColor};`
                               : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
