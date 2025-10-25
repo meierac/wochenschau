@@ -657,7 +657,7 @@
                             class="space-y-4"
                             style="position: relative; z-index: 10;"
                         >
-                            <div class="mb-6 text-center">
+                            <div class="mb-4 text-center">
                                 <h2
                                     class="mb-2 font-medium"
                                     style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px;"
@@ -853,31 +853,35 @@
                                 </div>
                             {:else}
                                 <!-- Compact view (revised) -->
-                                <div class="space-y-2">
+                                <div class="space-y-1.5">
                                     {#each days as day, dayIndex}
-                                        <div
-                                            class="p-0"
-                                            style="border-radius: {$exportSettings.borderRadius}px;"
-                                        >
+                                        <div class="p-0">
                                             <div class="flex gap-0.5">
                                                 <div
-                                                    class="flex flex-col text-right justify-center gap-1 w-20 py-4 px-3"
-                                                    style="line-height:1;background-color: {getWeekContainerBackgroundStyle()};border-radius: {$exportSettings.borderRadius}px 0 0 {$exportSettings.borderRadius}px;"
+                                                    class=" py-3 pr-0 pl-2 min-w-20"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: {$exportSettings.borderRadius}px 0 0 {$exportSettings.borderRadius}px;"
                                                 >
                                                     <div
-                                                        style="font-size:14px; font-weight:600; color: {$exportSettings.textColor};"
+                                                        class="flex flex-col h-full pr-2 text-right gap-1"
+                                                        style="line-height:1; "
                                                     >
-                                                        {formatDate(day)}
-                                                    </div>
-                                                    <div
-                                                        style="font-size:12px; font-weight:500; opacity:0.7; color: {$exportSettings.textColor}; text-align:right;"
-                                                    >
-                                                        {WEEKDAYS_DE[dayIndex]}
+                                                        <div
+                                                            style="font-size:14px; font-weight:600; color: {$exportSettings.textColor};"
+                                                        >
+                                                            {formatDate(day)}
+                                                        </div>
+                                                        <div
+                                                            style="font-size:11px; font-weight:500; opacity:0.7; color: {$exportSettings.textColor}; text-align:right;"
+                                                        >
+                                                            {WEEKDAYS_DE[
+                                                                dayIndex
+                                                            ]}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div
                                                     class="flex-1"
-                                                    style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: 0 {$exportSettings.borderRadius}px {$exportSettings.borderRadius}px 0; padding: 5px;"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: 0 {$exportSettings.borderRadius}px {$exportSettings.borderRadius}px 0;"
                                                 >
                                                     {#if getDayActivities(dayIndex).length === 0}
                                                         <div
@@ -922,10 +926,10 @@
                                     {/each}
 
                                     {#if $bibleVerse.enabled}
-                                        <div class="p-2">
+                                        <div class="p-2 pt-4">
                                             <div
                                                 class="text-center italic"
-                                                style="font-size:10px; opacity:0.7;"
+                                                style="font-size:11px; opacity:1;"
                                             >
                                                 "{$bibleVerse.currentVerse
                                                     .text}"
