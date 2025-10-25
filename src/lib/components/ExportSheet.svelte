@@ -40,9 +40,21 @@
         }
     }
 
-    // Save preferences to localStorage
+    // Detect iOS Safari for scale adjustment
+    const ua = navigator.userAgent;
+
+    const isIOSSafari =
+        /iPad|iPhone|iPod/.test(ua) &&
+        /Safari/.test(ua) &&
+        !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+
     function saveLayoutMode(mode: "grid" | "list" | "compact") {
+        if (isIOSSafari && mode !== "compact") {
+            // Enforce compact layout on iOS Safari
+            mode = "compact";
+        }
         layoutMode = mode;
+
         if (typeof window !== "undefined") {
             localStorage.setItem("exportLayoutMode", mode);
         }
@@ -56,10 +68,18 @@
     }
 
     /**
+
      * Initialize component preferences from localStorage
+
+     * Enforce compact layout on iOS Safari
      */
+
     onMount(() => {
         loadPreferences();
+
+        if (isIOSSafari) {
+            layoutMode = "compact";
+        }
     });
 
     // Reactive: Check if background is ready for export
@@ -140,13 +160,6 @@
 
             // Import modern-screenshot
             const { domToBlob } = await import("modern-screenshot");
-
-            // Detect iOS Safari for scale adjustment
-            const ua = navigator.userAgent;
-            const isIOSSafari =
-                /iPad|iPhone|iPod/.test(ua) &&
-                /Safari/.test(ua) &&
-                !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
             // Ensure all fonts are loaded (defined in CSS via @font-face)
             await document.fonts.ready;
