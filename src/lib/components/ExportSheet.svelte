@@ -178,12 +178,19 @@
                             resolve();
                         })
                         .catch((error) => {
-                            console.warn("[PreloadImage] Decode failed, but continuing:", error);
-                            // Continue anyway as the image is loaded
+                            console.warn(
+                                "[PreloadImage] Image decode() failed, but image is loaded. " +
+                                "Proceeding with export - image should still render correctly.",
+                                error
+                            );
+                            // Continue anyway as the image is loaded via onload event
+                            // The decode() failure is not critical - it's an optimization
                             resolve();
                         });
                 } else {
-                    // Fallback for browsers without decode() support
+                    // Fallback for browsers without decode() support (e.g., older browsers)
+                    // The image is still loaded and will render correctly
+                    console.log("[PreloadImage] Browser doesn't support decode(), using onload only");
                     resolve();
                 }
             };
