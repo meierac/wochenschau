@@ -148,7 +148,7 @@
                 /Safari/.test(ua) &&
                 !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
-            // Ensure all fonts are loaded (embedded in CSS as base64)
+            // Ensure all fonts are loaded (defined in CSS via @font-face)
             await document.fonts.ready;
             console.log("[Export] All fonts ready");
 
