@@ -107,6 +107,25 @@
             ? !!$exportSettings.backgroundImage
             : true;
 
+    // Validate and sanitize background image data URL for CSS usage
+    function getSafeBackgroundImageUrl(img: string | null): string {
+        // Ensure it's a valid data URL (starts with data:image/)
+        if (!img || !img.startsWith('data:image/')) {
+            return '';
+        }
+        // Additional validation: check for common image MIME types
+        const validPrefixes = ['data:image/png', 'data:image/jpeg', 'data:image/webp', 'data:image/gif'];
+        if (!validPrefixes.some(prefix => img.startsWith(prefix))) {
+            console.warn('[ExportSheet] Invalid background image data URL format');
+            return '';
+        }
+        return img;
+    }
+
+    // Reactive: get safe background image URL for CSS
+    $: safeBackgroundImageUrl = getSafeBackgroundImageUrl($exportSettings.backgroundImage);
+
+
     function handleClose() {
         dispatch("close");
     }
@@ -162,93 +181,28 @@
             // Extra frame to ensure layout is complete
             await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-            // If using image background, wait for any <img> to load & decode
-            if ($exportSettings.backgroundMode === "image") {
+            // If using image background (now via CSS background-image), 
+            // give extra time for the browser to process the data URL
+            if ($exportSettings.backgroundMode === "image" && $exportSettings.backgroundImage) {
                 console.log(
-                    "[GenerateBlob] Mode is IMAGE, checking for img elements...",
+                    "[GenerateBlob] Mode is IMAGE, using CSS background-image",
                 );
-                const imgs = Array.from(element.querySelectorAll("img"));
                 console.log(
-                    "[GenerateBlob] Found",
-                    imgs.length,
-                    "img elements",
+                    "[GenerateBlob] Background image data URL length:",
+                    $exportSettings.backgroundImage.length,
                 );
-
-                if (imgs.length === 0) {
-                    console.error(
-                        "[GenerateBlob] ERROR: No img elements found but mode is IMAGE!",
-                    );
-                    console.error(
-                        "[GenerateBlob] backgroundImage exists:",
-                        !!$exportSettings.backgroundImage,
-                    );
-                    console.error(
-                        "[GenerateBlob] Preview element HTML:",
-                        element.innerHTML.substring(0, 500),
-                    );
-                }
-
-                await Promise.all(
-                    imgs.map((img, idx) => {
-                        const image = img as HTMLImageElement;
-                        console.log(`[GenerateBlob] Image ${idx}:`, {
-                            src: image.src?.substring(0, 100),
-                            complete: image.complete,
-                            naturalWidth: image.naturalWidth,
-                            naturalHeight: image.naturalHeight,
-                        });
-
-                        if (image.complete && image.naturalWidth > 0) {
-                            if ("decode" in image) {
-                                return image.decode().catch((e) => {
-                                    console.error(
-                                        `[GenerateBlob] Decode error for image ${idx}:`,
-                                        e,
-                                    );
-                                });
-                            }
-                            return Promise.resolve();
-                        }
-                        return new Promise<void>((resolve, reject) => {
-                            image.addEventListener(
-                                "load",
-                                () => {
-                                    console.log(
-                                        `[GenerateBlob] Image ${idx} loaded`,
-                                    );
-                                    if ("decode" in image) {
-                                        image
-                                            .decode()
-                                            .then(() => resolve())
-                                            .catch(() => resolve());
-                                    } else {
-                                        resolve();
-                                    }
-                                },
-                                { once: true },
-                            );
-                            image.addEventListener(
-                                "error",
-                                (e) => {
-                                    console.error(
-                                        `[GenerateBlob] Image ${idx} load error:`,
-                                        e,
-                                    );
-                                    reject(new Error("Image failed to load"));
-                                },
-                                { once: true },
-                            );
-                        });
-                    }),
-                );
-                // One more frame after images settle
-                console.log(
-                    "[GenerateBlob] All images loaded, waiting one more frame...",
-                );
+                
+                // Wait additional frames to ensure CSS background-image is processed
+                // This is similar to how fonts are handled - they're in CSS and need time to render
                 await new Promise((r) => requestAnimationFrame(() => r(null)));
+                await new Promise((r) => requestAnimationFrame(() => r(null)));
+                
+                console.log(
+                    "[GenerateBlob] Background image ready for export",
+                );
             } else {
                 console.log(
-                    "[GenerateBlob] Mode is COLOR, skipping image wait",
+                    "[GenerateBlob] Mode is COLOR, no background image",
                 );
             }
 
@@ -634,19 +588,13 @@
                             ? '900px'
                             : layoutMode === 'list'
                               ? '400px'
-                              : '360px'};  position: relative; {$exportSettings.backgroundMode ===
-                        'color'
-                            ? `background-color: ${$exportSettings.backgroundColor};`
-                            : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                              : '360px'}; position: relative; {$exportSettings.backgroundMode ===
+                        'image' && safeBackgroundImageUrl
+                            ? `background-image: url(${safeBackgroundImageUrl}); background-size: cover; background-position: center; background-repeat: no-repeat;`
+                            : $exportSettings.backgroundMode === 'color'
+                              ? `background-color: ${$exportSettings.backgroundColor};`
+                              : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                     >
-                        {#if $exportSettings.backgroundMode === "image" && $exportSettings.backgroundImage}
-                            <img
-                                src={$exportSettings.backgroundImage}
-                                alt=""
-                                style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; pointer-events: none; z-index: 0;"
-                            />
-                        {/if}
-
                         {#if $exportSettings.backgroundMode === "color"}
                             <div
                                 style="position: absolute; inset: 0; background-color: {$exportSettings.backgroundColor}; opacity: {$exportSettings.backgroundOpacity /
