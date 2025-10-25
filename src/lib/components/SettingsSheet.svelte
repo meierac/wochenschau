@@ -575,24 +575,24 @@
                             <!-- Add Template Form -->
                             {#if showNewTemplate}
                                 <div
-                                    class="p-3 bg-muted rounded-lg border border-border space-y-3"
+                                    class="p-3 bg-muted w-full rounded-3xl border border-border space-y-3"
                                 >
                                     <input
                                         type="text"
                                         bind:value={newTemplate.name}
                                         placeholder="Template name"
-                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                     />
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <div class="grid grid-cols-2 gap-1">
                                         <input
                                             type="time"
                                             bind:value={newTemplate.startTime}
-                                            class="px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                            class="px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                         />
                                         <input
                                             type="time"
                                             bind:value={newTemplate.endTime}
-                                            class="px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                            class="px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                         />
                                     </div>
                                     <div class="flex gap-2">
@@ -729,13 +729,13 @@
                                         type="url"
                                         bind:value={newSubscription.url}
                                         placeholder="iCal URL"
-                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                     />
                                     <input
                                         type="text"
                                         bind:value={newSubscription.name}
                                         placeholder="Calendar name (optional)"
-                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                     />
                                     <div class="flex gap-2">
                                         <Button
@@ -996,7 +996,7 @@
                                             id="title-export"
                                             type="text"
                                             bind:value={$exportSettings.title}
-                                            class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                            class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                             placeholder="Wochenschau"
                                         />
                                     </div>
@@ -1114,7 +1114,7 @@
                                                 bind:value={
                                                     $exportSettings.textColor
                                                 }
-                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                                 placeholder="#000000"
                                             />
                                         </div>
@@ -1163,7 +1163,7 @@
                                                 bind:value={
                                                     $exportSettings.accentColor
                                                 }
-                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                                 placeholder="#9333ea"
                                             />
                                         </div>
@@ -1236,7 +1236,7 @@
                                                 bind:value={
                                                     $exportSettings.weekContainerBackgroundColor
                                                 }
-                                                class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                                 placeholder="rgba(255, 255, 255, 0.75)"
                                             />
                                         </div>
@@ -1387,18 +1387,18 @@
                                     type="text"
                                     bind:value={newTemplate.name}
                                     placeholder="Template name"
-                                    class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                    class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                 />
-                                <div class="grid grid-cols-2 gap-2">
+                                <div class="grid grid-cols-2 gap-1">
                                     <input
                                         type="time"
                                         bind:value={newTemplate.startTime}
-                                        class="px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        class="px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                     />
                                     <input
                                         type="time"
                                         bind:value={newTemplate.endTime}
-                                        class="px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        class="px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                     />
                                 </div>
                                 <div class="flex gap-2">
@@ -1538,13 +1538,13 @@
                                     type="url"
                                     bind:value={newSubscription.url}
                                     placeholder="iCal URL"
-                                    class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                    class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                 />
                                 <input
                                     type="text"
                                     bind:value={newSubscription.name}
                                     placeholder="Calendar name (optional)"
-                                    class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                    class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                 />
                                 <div class="flex gap-2">
                                     <Button
@@ -1721,7 +1721,7 @@
                                         id="title-export-desktop"
                                         type="text"
                                         bind:value={$exportSettings.title}
-                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                                         placeholder="Wochenschau"
                                     />
                                 </div>
@@ -1837,7 +1837,7 @@
                                             bind:value={
                                                 $exportSettings.textColor
                                             }
-                                            class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                            class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                             placeholder="#000000"
                                         />
                                     </div>
@@ -1934,7 +1934,7 @@
                                             bind:value={
                                                 $exportSettings.accentColor
                                             }
-                                            class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                            class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                             placeholder="#9333ea"
                                         />
                                     </div>
@@ -2007,7 +2007,7 @@
                                             bind:value={
                                                 $exportSettings.weekContainerBackgroundColor
                                             }
-                                            class="flex-1 px-3 py-2 bg-background border border-input rounded text-foreground text-sm font-mono"
+                                            class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                             placeholder="rgba(255, 255, 255, 0.75)"
                                         />
                                     </div>
