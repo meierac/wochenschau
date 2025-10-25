@@ -269,8 +269,54 @@
                 // Preload the image to ensure it's fully decoded
                 await preloadBackgroundImage($exportSettings.backgroundImage);
 
-                // Wait additional frames to ensure CSS background-image is processed
-                // after the image has been decoded
+                // Wait for the DOM <img> element to be fully loaded and rendered
+                const bgImageElement = element.querySelector(
+                    'img[alt="Background"]',
+                ) as HTMLImageElement;
+
+                if (bgImageElement) {
+                    if (!bgImageElement.complete) {
+                        console.log(
+                            "[GenerateBlob] Waiting for DOM img element to load...",
+                        );
+                        await new Promise((resolve, reject) => {
+                            bgImageElement.onload = () => {
+                                console.log(
+                                    "[GenerateBlob] DOM img element loaded successfully",
+                                );
+                                resolve(null);
+                            };
+                            bgImageElement.onerror = () => {
+                                console.error(
+                                    "[GenerateBlob] DOM img element failed to load",
+                                );
+                                reject(
+                                    new Error(
+                                        "Background img element failed to load",
+                                    ),
+                                );
+                            };
+                            // Timeout after 5 seconds
+                            setTimeout(() => {
+                                console.warn(
+                                    "[GenerateBlob] DOM img element load timeout",
+                                );
+                                resolve(null);
+                            }, 5000);
+                        });
+                    } else {
+                        console.log(
+                            "[GenerateBlob] DOM img element already loaded",
+                        );
+                    }
+                } else {
+                    console.warn(
+                        "[GenerateBlob] DOM img element not found in preview",
+                    );
+                }
+
+                // Wait additional frames to ensure rendering is complete
+                await new Promise((r) => requestAnimationFrame(() => r(null)));
                 await new Promise((r) => requestAnimationFrame(() => r(null)));
             } else {
                 console.log(
@@ -716,12 +762,21 @@
                             : layoutMode === 'list'
                               ? '400px'
                               : '360px'}; position: relative; {$exportSettings.backgroundMode ===
-                            'image' && safeBackgroundImageUrl
-                            ? `background-image: url(${safeBackgroundImageUrl}); background-size: cover; background-position: center; background-repeat: no-repeat;`
-                            : $exportSettings.backgroundMode === 'color'
-                              ? `background-color: ${$exportSettings.backgroundColor};`
-                              : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
+                        'color'
+                            ? `background-color: ${$exportSettings.backgroundColor};`
+                            : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                     >
+                        <!-- Background Image: Using <img> element instead of CSS background-image
+                             for better iOS/Safari compatibility with snapdom. While snapdom can handle
+                             CSS backgrounds, using an actual DOM element is more reliable across all browsers. -->
+                        {#if $exportSettings.backgroundMode === "image" && safeBackgroundImageUrl}
+                            <img
+                                src={safeBackgroundImageUrl}
+                                alt="Background"
+                                style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; pointer-events: none; z-index: 0;"
+                            />
+                        {/if}
+
                         {#if $exportSettings.backgroundMode === "color"}
                             <div
                                 style="position: absolute; inset: 0; background-color: {$exportSettings.backgroundColor}; opacity: {$exportSettings.backgroundOpacity /
