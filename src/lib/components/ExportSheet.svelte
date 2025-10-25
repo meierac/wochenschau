@@ -632,7 +632,7 @@
                             ? '900px'
                             : layoutMode === 'list'
                               ? '400px'
-                              : '360px'}; padding: 15px; position: relative; {$exportSettings.backgroundMode ===
+                              : '360px'};  position: relative; {$exportSettings.backgroundMode ===
                         'color'
                             ? `background-color: ${$exportSettings.backgroundColor};`
                             : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
@@ -675,7 +675,7 @@
                             </div>
 
                             {#if layoutMode === "grid"}
-                                <div class="grid grid-cols-4 gap-3">
+                                <div class="grid grid-cols-4 gap-3 p-4 pt-0">
                                     {#each days as day, dayIndex}
                                         <div
                                             class="p-2"
@@ -762,7 +762,7 @@
                                     {/if}
                                 </div>
                             {:else if layoutMode === "list"}
-                                <div class="space-y-1">
+                                <div class="space-y-1 p-4 pt-0">
                                     {#each days as day, dayIndex}
                                         <div
                                             class="p-3"
@@ -853,7 +853,7 @@
                                 </div>
                             {:else}
                                 <!-- Compact view (revised) -->
-                                <div class="space-y-1.5">
+                                <div class="space-y-1.5 p-4 pt-0 pr-0">
                                     {#each days as day, dayIndex}
                                         <div class="p-0">
                                             <div class="flex gap-0.5">
@@ -881,7 +881,7 @@
                                                 </div>
                                                 <div
                                                     class="flex-1"
-                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: 0 {$exportSettings.borderRadius}px {$exportSettings.borderRadius}px 0;"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: 0;"
                                                 >
                                                     {#if getDayActivities(dayIndex).length === 0}
                                                         <div
