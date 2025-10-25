@@ -134,7 +134,7 @@
         try {
             const element = document.getElementById("export-preview");
             if (!element) throw new Error("Export preview element not found");
-            const { snapdom } = await import("@zumer/snapdom");
+            const { toBlob } = await import("html-to-image");
             const ua = navigator.userAgent;
             const isIOSSafari =
                 /iPad|iPhone|iPod/.test(ua) &&
@@ -255,11 +255,8 @@
             });
 
             // Attempt 1: embedFonts true (snapdom will inline, our manual faces are already in DOM)
-            let blob = await snapdom.toBlob(element, {
-                type: "png",
-                scale,
-                embedFonts: true,
-                // Force opaque background to eliminate iOS share white/transparent edge
+            let blob = await toBlob(element, {
+                pixelRatio: scale,
                 backgroundColor:
                     $exportSettings.backgroundMode === "color"
                         ? $exportSettings.backgroundColor
@@ -273,11 +270,8 @@
                 console.warn(
                     "[ExportSheet][Export] Pass 1 failed, retry embedFonts:false",
                 );
-                blob = await snapdom.toBlob(element, {
-                    type: "png",
-                    scale,
-                    embedFonts: false,
-                    // Force opaque background fallback for image mode
+                blob = await toBlob(element, {
+                    pixelRatio: scale,
                     backgroundColor:
                         $exportSettings.backgroundMode === "color"
                             ? $exportSettings.backgroundColor
@@ -291,11 +285,8 @@
             if (!blob && isIOSSafari) {
                 console.warn("[ExportSheet][Export] iOS fallback scale=2");
                 scale = 2;
-                blob = await snapdom.toBlob(element, {
-                    type: "png",
-                    scale,
-                    embedFonts: false,
-                    // iOS fallback also forces opaque background
+                blob = await toBlob(element, {
+                    pixelRatio: scale,
                     backgroundColor:
                         $exportSettings.backgroundMode === "color"
                             ? $exportSettings.backgroundColor
