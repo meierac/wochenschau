@@ -107,6 +107,22 @@
             ? !!$exportSettings.backgroundImage
             : true;
 
+    // Validate and sanitize background image data URL for CSS usage
+    function getSafeBackgroundImageUrl(): string {
+        const img = $exportSettings.backgroundImage;
+        // Ensure it's a valid data URL (starts with data:image/)
+        if (!img || !img.startsWith('data:image/')) {
+            return '';
+        }
+        // Additional validation: check for common image MIME types
+        const validPrefixes = ['data:image/png', 'data:image/jpeg', 'data:image/jpg', 'data:image/webp', 'data:image/gif'];
+        if (!validPrefixes.some(prefix => img.startsWith(prefix))) {
+            console.warn('[ExportSheet] Invalid background image data URL format');
+            return '';
+        }
+        return img;
+    }
+
     function handleClose() {
         dispatch("close");
     }
@@ -569,9 +585,9 @@
                             ? '900px'
                             : layoutMode === 'list'
                               ? '400px'
-                              : '360px'};  position: relative; {$exportSettings.backgroundMode ===
-                        'image' && $exportSettings.backgroundImage
-                            ? `background-image: url(${$exportSettings.backgroundImage}); background-size: cover; background-position: center; background-repeat: no-repeat;`
+                              : '360px'}; position: relative; {$exportSettings.backgroundMode ===
+                        'image' && getSafeBackgroundImageUrl()
+                            ? `background-image: url(${getSafeBackgroundImageUrl()}); background-size: cover; background-position: center; background-repeat: no-repeat;`
                             : $exportSettings.backgroundMode === 'color'
                               ? `background-color: ${$exportSettings.backgroundColor};`
                               : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
