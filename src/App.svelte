@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import WeekView from "./lib/components/WeekView.svelte";
-    import { icalService } from "./lib/services/icalService";
+
     import {
         refreshStatus,
         refreshProgress,
@@ -17,12 +17,7 @@
     import { activities } from "./lib/stores/activities";
     import { formatDateRange } from "./lib/utils/date";
     import WeekPicker from "./lib/components/WeekPicker.svelte";
-    import { getWeekNumber } from "./lib/utils/date";
-    import type {
-        CalendarItem,
-        SyncConflict,
-        ConflictResolution,
-    } from "./lib/types/index";
+    import type { SyncConflict, ConflictResolution } from "./lib/types/index";
 
     let isDesktop =
         typeof window !== "undefined" ? window.innerWidth >= 768 : false;
@@ -30,7 +25,7 @@
     let showSettings = false;
     let showWeekPicker = false;
     let showExport = false;
-    let isSyncing = false; // legacy flag (kept for fallback)
+    // legacy isSyncing flag removed
     $: syncingPhase = $refreshStatus.phase;
     $: syncingActive =
         syncingPhase !== "idle" &&
@@ -39,10 +34,11 @@
         syncingPhase !== "cancelled";
     let showConflictDialog = false;
     let pendingConflicts: SyncConflict[] = [];
-    let pendingSyncData: Map<
-        string,
-        { subscription: any; items: CalendarItem[] }
-    > = new Map();
+    // removed legacy pendingSyncData map (replaced by aggregated pendingDiffs)
+    // Aggregated diffs for conflict dialog (produced by refreshService)
+    let pendingDiffs: any = null;
+    // Abort controller for cancellable refresh
+    let refreshAbortController: AbortController | null = null;
 
     const REFRESH_INTERVAL_HOURS = 72; // Auto-refresh if data is older than 24 hours
 
@@ -75,222 +71,196 @@
     }
 
     // Delegated iCal parsing (consolidated in service)
-    function parseICalToCalendarItems(
-        iCalText: string,
-        subscriptionId: string,
-    ): CalendarItem[] {
-        return icalService.parseICalToCalendarItems(iCalText, subscriptionId);
-    }
+    // parseICalToCalendarItems removed (handled entirely by refreshService/icalService where needed)
 
     // Removed local build/extract helpers (centralized in icalService)
 
-    async function refreshSubscription(
-        subscriptionId: string,
-        skipConflictCheck = false,
-    ) {
-        try {
-            const subscription = $subscriptions.find(
-                (s) => s.id === subscriptionId,
+    // Legacy refreshSubscription removed – header now uses refreshService diff + bulk apply flow.
+
+    function handleConflictResolution(event: CustomEvent<ConflictResolution>) {
+        const resolution = event.detail;
+        (async () => {
+            const { refreshService } = await import(
+                "./lib/services/refreshService"
             );
-            if (!subscription || !subscription.enabled) return;
+            if (pendingDiffs) {
+                const strategy =
+                    resolution === "use-synced" ? "use-synced" : "keep-local";
+                const applied = refreshService.applyAllDiffs(
+                    $activities,
+                    pendingDiffs,
+                    {
+                        strategy,
+                    },
+                );
 
-            console.log(`Fetching iCal subscription: ${subscription.name}`);
+                // Atomic bulk replace (single write)
+                activities.replaceAll(applied);
 
-            const response = await fetch(subscription.url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const text = await response.text();
-            const calendarItems = parseICalToCalendarItems(
-                text,
-                subscriptionId,
-            );
-
-            // Find old items from this subscription
-            const oldActivities = $activities.filter(
-                (a) => a.sourceId === subscriptionId && a.source === "ical",
-            );
-
-            // Detect conflicts: items that have been locally modified
-            if (!skipConflictCheck) {
-                const conflicts: SyncConflict[] = [];
-                const subscriptionLastFetched = subscription.lastFetched || 0;
-
-                for (const oldActivity of oldActivities) {
-                    // Check if item was modified after the last sync
-                    const wasModifiedLocally =
-                        oldActivity.lastModified > subscriptionLastFetched;
-
-                    // Check if item has local overrides
-                    const hasLocalOverrides =
-                        oldActivity.localOverrides &&
-                        Object.keys(oldActivity.localOverrides).length > 0;
-
-                    if (wasModifiedLocally || hasLocalOverrides) {
-                        // Find corresponding incoming item
-                        const incomingItem = calendarItems.find(
-                            (item) => item.uid === oldActivity.uid,
-                        );
-
-                        conflicts.push({
-                            localItem: oldActivity,
-                            incomingItem: incomingItem || null,
-                            subscriptionName: subscription.name,
+                // Update lastFetched on affected subscriptions
+                const affectedIds = new Set(
+                    pendingDiffs.map((d: any) => d.subscriptionId),
+                );
+                for (const sub of $subscriptions) {
+                    if (affectedIds.has(sub.id)) {
+                        subscriptions.updateSubscription({
+                            ...sub,
+                            lastFetched: Date.now(),
                         });
                     }
                 }
 
-                // If there are conflicts, store the sync data and show dialog
-                if (conflicts.length > 0) {
-                    pendingConflicts = [...pendingConflicts, ...conflicts];
-                    pendingSyncData.set(subscriptionId, {
-                        subscription,
-                        items: calendarItems,
-                    });
-                    showConflictDialog = true;
-                    return; // Don't proceed with sync until user resolves conflicts
-                }
+                refreshStatus.finish();
             }
-
-            // No conflicts or user chose to proceed - apply sync
-            for (const oldActivity of oldActivities) {
-                activities.removeActivity(oldActivity.id);
-            }
-
-            // Add new calendar items
-            for (const item of calendarItems) {
-                activities.addActivity(item);
-            }
-
-            // Update subscription metadata
-            subscriptions.updateSubscription({
-                ...subscription,
-                lastFetched: Date.now(),
-            });
-
-            console.log(
-                `Successfully fetched ${calendarItems.length} items from ${subscription.name}`,
-            );
-        } catch (error) {
-            console.error(
-                `Failed to refresh subscription ${subscriptionId}:`,
-                error,
-            );
-        }
-    }
-
-    function handleConflictResolution(event: CustomEvent<ConflictResolution>) {
-        const resolution = event.detail;
-
-        if (resolution === "keep-local") {
-            // Smart partial sync: keep modified items, but sync everything else
-            for (const [subscriptionId, data] of pendingSyncData.entries()) {
-                const { subscription, items: calendarItems } = data;
-
-                // Get IDs of items that have conflicts (modified locally)
-                const conflictedItemIds = new Set(
-                    pendingConflicts
-                        .filter((c) => c.localItem.sourceId === subscriptionId)
-                        .map((c) => c.localItem.id),
-                );
-
-                // Get all current items from this subscription
-                const oldActivities = $activities.filter(
-                    (a) => a.sourceId === subscriptionId && a.source === "ical",
-                );
-
-                // Remove old items that are NOT conflicted
-                for (const oldActivity of oldActivities) {
-                    if (!conflictedItemIds.has(oldActivity.id)) {
-                        activities.removeActivity(oldActivity.id);
-                    }
-                }
-
-                // Add new items from sync that don't match conflicted items
-                for (const item of calendarItems) {
-                    // Check if this incoming item matches a conflicted local item by UID
-                    const isConflicted = pendingConflicts.some(
-                        (c) =>
-                            c.localItem.sourceId === subscriptionId &&
-                            c.localItem.uid === item.uid,
-                    );
-
-                    // Only add if not conflicted
-                    if (!isConflicted) {
-                        activities.addActivity(item);
-                    }
-                }
-
-                // Update subscription metadata
-                subscriptions.updateSubscription({
-                    ...subscription,
-                    lastFetched: Date.now(),
-                });
-            }
-            console.log("Kept local changes, synced non-conflicted items");
-        } else if (resolution === "use-synced") {
-            // Discard local changes - perform sync without conflict check
-            for (const [subscriptionId, _data] of pendingSyncData.entries()) {
-                refreshSubscription(subscriptionId, true);
-            }
-            console.log("Discarded local changes, applied synced data");
-        }
-
-        // Clear pending data
-        pendingConflicts = [];
-        pendingSyncData.clear();
-        showConflictDialog = false;
+            // Clear pending data
+            pendingConflicts = [];
+            pendingDiffs = null;
+            showConflictDialog = false;
+        })();
     }
 
     function handleConflictDialogClose() {
         // User closed dialog without choosing - treat as "keep local"
         pendingConflicts = [];
-        pendingSyncData.clear();
         showConflictDialog = false;
     }
 
     async function autoRefreshSubscriptions() {
         const now = Date.now();
         const refreshThreshold = REFRESH_INTERVAL_HOURS * 60 * 60 * 1000;
+        const subsToRefresh = $subscriptions.filter(
+            (s) =>
+                s.enabled &&
+                (!s.lastFetched || now - s.lastFetched > refreshThreshold),
+        );
+        if (subsToRefresh.length === 0) return;
 
-        for (const subscription of $subscriptions) {
-            if (!subscription.enabled) continue;
+        const existingMap = new Map(
+            subsToRefresh.map((sub) => [
+                sub.id,
+                $activities.filter(
+                    (a) => a.source === "ical" && a.sourceId === sub.id,
+                ),
+            ]),
+        );
 
-            const needsRefresh =
-                !subscription.lastFetched ||
-                now - subscription.lastFetched > refreshThreshold;
+        const { refreshService } = await import(
+            "./lib/services/refreshService"
+        );
+        const { diffs, aggregatedConflicts } =
+            await refreshService.fetchAndDiffAll(subsToRefresh, existingMap, {
+                parallel: true,
+            });
 
-            if (needsRefresh) {
-                await refreshSubscription(subscription.id);
+        if (aggregatedConflicts.length > 0) {
+            pendingConflicts = aggregatedConflicts;
+            pendingDiffs = diffs;
+            showConflictDialog = true;
+            refreshStatus.setPhase("conflict-check");
+            return;
+        }
+
+        const applied = refreshService.applyAllDiffs($activities, diffs, {
+            strategy: "use-synced",
+        });
+
+        activities.replaceAll(applied);
+
+        const affectedIds = new Set(diffs.map((d) => d.subscriptionId));
+        for (const sub of $subscriptions) {
+            if (affectedIds.has(sub.id)) {
+                subscriptions.updateSubscription({
+                    ...sub,
+                    lastFetched: Date.now(),
+                });
             }
         }
     }
 
     async function handleRefreshSubscriptions() {
-        if (syncingActive) return; // Prevent overlap with active refreshStatus flow
+        if (syncingActive) return;
 
         const enabledSubs = $subscriptions.filter((s) => s.enabled);
         refreshStatus.start(enabledSubs.length);
-        isSyncing = true;
+
+        const existingMap = new Map(
+            enabledSubs.map((sub) => [
+                sub.id,
+                $activities.filter(
+                    (a) => a.source === "ical" && a.sourceId === sub.id,
+                ),
+            ]),
+        );
+
+        refreshAbortController = new AbortController();
 
         try {
-            for (const sub of enabledSubs) {
-                await refreshSubscription(sub.id, false);
-                // After each subscription, advance phase if still in flow
-                if (
-                    $refreshStatus.phase !== "error" &&
-                    $refreshStatus.phase !== "cancelled"
-                ) {
-                    refreshStatus.setPhase("fetching");
+            const { refreshService } = await import(
+                "./lib/services/refreshService"
+            );
+            const { diffs, aggregatedConflicts } =
+                await refreshService.fetchAndDiffAll(enabledSubs, existingMap, {
+                    parallel: true,
+                    signal: refreshAbortController.signal,
+                    onPhase: (phase) => {
+                        if (phase === "fetching")
+                            refreshStatus.setPhase("fetching");
+                        else if (phase === "parsing")
+                            refreshStatus.setPhase("parsing");
+                        else if (phase === "diffing")
+                            refreshStatus.setPhase("diffing");
+                        else if (phase === "aggregating")
+                            refreshStatus.setPhase("conflict-check");
+                        else if (phase === "completed")
+                            refreshStatus.setPhase("updating");
+                        else if (phase === "cancelled") refreshStatus.cancel();
+                        else if (phase === "error")
+                            refreshStatus.fail(new Error("Refresh error"));
+                    },
+                });
+
+            if ($refreshStatus.phase === "cancelled") return;
+
+            if (aggregatedConflicts.length > 0) {
+                pendingConflicts = aggregatedConflicts;
+                pendingDiffs = diffs;
+                showConflictDialog = true;
+                refreshStatus.setPhase("conflict-check");
+                return;
+            }
+
+            const applied = refreshService.applyAllDiffs($activities, diffs, {
+                strategy: "use-synced",
+            });
+
+            activities.replaceAll(applied);
+
+            const affectedIds = new Set(diffs.map((d) => d.subscriptionId));
+            for (const sub of $subscriptions) {
+                if (affectedIds.has(sub.id)) {
+                    subscriptions.updateSubscription({
+                        ...sub,
+                        lastFetched: Date.now(),
+                    });
                 }
             }
+
             refreshStatus.finish();
         } catch (err) {
-            refreshStatus.fail(err);
-            console.error("Global header refresh failed:", err);
+            if ((err as any)?.name === "AbortError") {
+                refreshStatus.cancel();
+            } else {
+                refreshStatus.fail(err);
+                console.error("Global header refresh failed:", err);
+            }
         } finally {
-            isSyncing = false;
+            refreshAbortController = null;
+        }
+    }
+
+    function handleCancelRefresh() {
+        if (refreshAbortController) {
+            refreshAbortController.abort();
         }
     }
 
@@ -345,6 +315,16 @@
                             )}
                         </span>
                     </button>
+                    {#if syncingActive}
+                        <button
+                            on:click={handleCancelRefresh}
+                            class="px-3 py-2 rounded-lg bg-destructive/80 text-destructive-foreground text-xs font-semibold hover:bg-destructive transition-colors"
+                            aria-label="Cancel refresh"
+                            title="Cancel refresh"
+                        >
+                            Cancel
+                        </button>
+                    {/if}
                 </div>
 
                 <div class="flex gap-2 items-center">
@@ -554,10 +534,11 @@
                         • Removed {$refreshStatus.removedCount} • Conflicts {$refreshStatus.conflictCount}
                     </p>
                     <button
-                        class="px-5 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold opacity-70 cursor-not-allowed"
-                        aria-label="Sync in progress"
+                        on:click={handleCancelRefresh}
+                        class="px-5 py-2 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold hover:opacity-90 transition-colors"
+                        aria-label="Cancel sync"
                     >
-                        Sync in progress...
+                        Cancel sync
                     </button>
                 </div>
             {/if}

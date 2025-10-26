@@ -477,10 +477,10 @@
                 "../services/refreshService"
             );
 
-            const { diffs, aggregatedConflicts, summary } =
+            const { diffs, aggregatedConflicts } =
                 await refreshService.fetchAndDiffAll(enabledSubs, existingMap, {
                     parallel: true,
-                    onPhase: (phase, ctx) => {
+                    onPhase: (phase) => {
                         // Map generic phases to refreshStatus phases
                         if (phase === "fetching")
                             refreshStatus.setPhase("fetching");

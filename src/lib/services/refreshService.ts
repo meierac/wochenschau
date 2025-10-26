@@ -38,8 +38,8 @@
  *   } = await refreshService.fetchAndDiffAll(enabled, existingMap, {
  *     parallel: true,
  *     signal: controller.signal,
- *     onPhase: (phase, ctx) => { /* update progress UI */ },
- *     onSubscription: (index, total, sub) => { /* progress detail */ }
+ *     onPhase: (phase, ctx) => { // update progress UI },
+ *     onSubscription: (index, total, sub) => { // progress detail }
  *   });
  *
  *   if (aggregatedConflicts.length > 0) {
@@ -156,7 +156,11 @@ function diffSingleSubscription(
     rawText,
     subscription.id,
   );
-  return icalService.diffSubscriptionItems(subscription, existingItems, incoming);
+  return icalService.diffSubscriptionItems(
+    subscription,
+    existingItems,
+    incoming,
+  );
 }
 
 /* -------------------------- Core Orchestration Logic ----------------------- */
@@ -171,14 +175,10 @@ async function fetchAndDiffAll(
   existingBySubscription: Map<string, CalendarItem[]>,
   options: FetchAndDiffOptions = {},
 ): Promise<FetchAndDiffResult> {
-  const {
-    parallel = true,
-    signal,
-    onPhase,
-    onSubscription,
-  } = options;
+  const { parallel = true, signal, onPhase, onSubscription } = options;
 
   if (signal?.aborted) {
+    onPhase?.("cancelled", { total: subscriptions.length });
     return {
       diffs: [],
       aggregatedConflicts: [],
@@ -196,6 +196,7 @@ async function fetchAndDiffAll(
 
   const rawMap = new Map<string, string>();
   const diffs: SubscriptionDiff[] = [];
+  let wasCancelled = false;
 
   if (parallel) {
     // Parallel fetch
@@ -207,8 +208,7 @@ async function fetchAndDiffAll(
           onSubscription?.(idx, subscriptions.length, sub);
           const raw = await fetchSubscriptionRaw(sub, signal);
           rawMap.set(sub.id, raw);
-        } catch (e) {
-          // On error, still record an empty diff (error handled upstream)
+        } catch {
           onPhase?.("error", {
             subscriptionId: sub.id,
             subscriptionName: sub.name,
@@ -223,6 +223,7 @@ async function fetchAndDiffAll(
     // Parse & diff sequentially for controlled memory usage / conflict ordering
     for (let i = 0; i < subscriptions.length; i++) {
       if (signal?.aborted) {
+        wasCancelled = true;
         onPhase?.("cancelled", {});
         break;
       }
@@ -241,8 +242,22 @@ async function fetchAndDiffAll(
         index: i,
         total: subscriptions.length,
       });
-      const diff = diffSingleSubscription(sub, existing, raw);
+
+      const diff =
+        raw.trim().length > 0
+          ? diffSingleSubscription(sub, existing, raw)
+          : {
+              subscriptionId: sub.id,
+              subscriptionName: sub.name,
+              added: [],
+              updated: [],
+              removed: [],
+              conflicts: [],
+              fetchedCount: 0,
+              timestamp: Date.now(),
+            };
       diffs.push(diff);
+
       onPhase?.("aggregating", {
         subscriptionId: sub.id,
         subscriptionName: sub.name,
@@ -259,10 +274,12 @@ async function fetchAndDiffAll(
     // Sequential fetch + parse + diff
     for (let i = 0; i < subscriptions.length; i++) {
       if (signal?.aborted) {
+        wasCancelled = true;
         onPhase?.("cancelled", {});
         break;
       }
       const sub = subscriptions[i];
+      onSubscription?.(i, subscriptions.length, sub);
       onPhase?.("fetching", {
         subscriptionId: sub.id,
         subscriptionName: sub.name,
@@ -279,6 +296,7 @@ async function fetchAndDiffAll(
           index: i,
           total: subscriptions.length,
         });
+        raw = "";
       }
       onPhase?.("parsing", {
         subscriptionId: sub.id,
@@ -293,8 +311,22 @@ async function fetchAndDiffAll(
         index: i,
         total: subscriptions.length,
       });
-      const diff = diffSingleSubscription(sub, existing, raw);
+
+      const diff =
+        raw.trim().length > 0
+          ? diffSingleSubscription(sub, existing, raw)
+          : {
+              subscriptionId: sub.id,
+              subscriptionName: sub.name,
+              added: [],
+              updated: [],
+              removed: [],
+              conflicts: [],
+              fetchedCount: 0,
+              timestamp: Date.now(),
+            };
       diffs.push(diff);
+
       onPhase?.("aggregating", {
         subscriptionId: sub.id,
         subscriptionName: sub.name,
@@ -307,6 +339,21 @@ async function fetchAndDiffAll(
         conflicts: diff.conflicts.length,
       });
     }
+  }
+
+  if (wasCancelled || signal?.aborted) {
+    // Do not emit completed phase; return partial results with cancellation status.
+    return {
+      diffs,
+      aggregatedConflicts: [],
+      summary: {
+        totalFetched: diffs.reduce((a, d) => a + d.fetchedCount, 0),
+        totalAdded: diffs.reduce((a, d) => a + d.added.length, 0),
+        totalUpdated: diffs.reduce((a, d) => a + d.updated.length, 0),
+        totalRemoved: diffs.reduce((a, d) => a + d.removed.length, 0),
+        totalConflicts: diffs.reduce((a, d) => a + d.conflicts.length, 0),
+      },
+    };
   }
 
   // Aggregate all conflicts

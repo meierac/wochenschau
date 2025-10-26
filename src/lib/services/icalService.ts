@@ -324,30 +324,45 @@ export function diffSubscriptionItems(
  *  - keep-local: do not overwrite conflict items (skip those in updated that are conflicts)
  *  - use-synced: replace all updated items (including conflicts)
  */
+
 export function applySubscriptionDiff(
   current: CalendarItem[],
+
   diff: SubscriptionDiff,
+
   options: ApplyOptions,
 ): CalendarItem[] {
   const { added, updated, removed, conflicts } = diff;
+
   const removedIds = new Set(removed.map((r) => r.id));
+
   let next = current.filter((a) => !removedIds.has(a.id));
 
   const conflictIds = new Set(conflicts.map((c) => c.localItem.id));
 
   // Build map for replacement
+
   const map = new Map(next.map((a) => [a.id, a]));
 
   for (const u of updated) {
-    if (options.strategy === "keep-local" && conflictIds.has(u.id)) {
-      // Skip overwrite for conflicts
+    const isConflict = conflictIds.has(u.id);
+    if (options.strategy === "keep-local" && isConflict) {
+      // Skip overwrite for conflicts (preserve localOverrides)
+
       continue;
     }
-    if (map.has(u.id)) {
-      map.set(u.id, u);
-    } else {
-      map.set(u.id, u);
+
+    let incoming = u;
+    if (
+      options.strategy === "use-synced" &&
+      isConflict &&
+      incoming.localOverrides
+    ) {
+      // Accept remote update; clear localOverrides so future diffs won't treat it as locally modified
+      const { localOverrides, ...rest } = incoming as any;
+      incoming = rest;
     }
+    map.set(incoming.id, incoming);
   }
 
   for (const a of added) {
@@ -357,6 +372,7 @@ export function applySubscriptionDiff(
   }
 
   next = Array.from(map.values());
+
   return next;
 }
 

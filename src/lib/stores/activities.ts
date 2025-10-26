@@ -163,6 +163,22 @@ function createActivityStore() {
       deleteActivity(id);
       update((activities) => activities.filter((a) => a.id !== id));
     },
+    replaceAll: (all: Activity[]) => {
+      // Atomic bulk replacement: single localStorage write + store set.
+      const normalized = all.map((a) => {
+        const copy: Activity = { ...a };
+        if (!copy.createdAt) copy.createdAt = Date.now();
+        if (!copy.lastModified) copy.lastModified = copy.createdAt;
+        return copy;
+      });
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "wochenschau_activities",
+          JSON.stringify(normalized),
+        );
+      }
+      set(normalized);
+    },
     clearAll: () => {
       clearAllActivities();
       set([]);
