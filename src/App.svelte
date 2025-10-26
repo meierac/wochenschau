@@ -1,6 +1,11 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import WeekView from "./lib/components/WeekView.svelte";
+    import {
+        refreshStatus,
+        refreshProgress,
+        refreshSummary,
+    } from "./lib/stores/refreshStatus";
     import FloatingNav from "./lib/components/FloatingNav.svelte";
     import AddActivityModal from "./lib/components/AddActivityModal.svelte";
     import SettingsSheet from "./lib/components/SettingsSheet.svelte";
@@ -24,7 +29,13 @@
     let showSettings = false;
     let showWeekPicker = false;
     let showExport = false;
-    let isSyncing = false;
+    let isSyncing = false; // legacy flag (kept for fallback)
+    $: syncingPhase = $refreshStatus.phase;
+    $: syncingActive =
+        syncingPhase !== "idle" &&
+        syncingPhase !== "completed" &&
+        syncingPhase !== "error" &&
+        syncingPhase !== "cancelled";
     let showConflictDialog = false;
     let pendingConflicts: SyncConflict[] = [];
     let pendingSyncData: Map<
@@ -385,18 +396,27 @@
     }
 
     async function handleRefreshSubscriptions() {
-        if (isSyncing) return; // Prevent multiple simultaneous syncs
+        if (syncingActive) return; // Prevent overlap with active refreshStatus flow
 
+        const enabledSubs = $subscriptions.filter((s) => s.enabled);
+        refreshStatus.start(enabledSubs.length);
         isSyncing = true;
-        console.log("Manual refresh triggered");
 
         try {
-            // Refresh all enabled subscriptions regardless of last fetch time
-            for (const subscription of $subscriptions) {
-                if (subscription.enabled) {
-                    await refreshSubscription(subscription.id);
+            for (const sub of enabledSubs) {
+                await refreshSubscription(sub.id, false);
+                // After each subscription, advance phase if still in flow
+                if (
+                    $refreshStatus.phase !== "error" &&
+                    $refreshStatus.phase !== "cancelled"
+                ) {
+                    refreshStatus.setPhase("fetching");
                 }
             }
+            refreshStatus.finish();
+        } catch (err) {
+            refreshStatus.fail(err);
+            console.error("Global header refresh failed:", err);
         } finally {
             isSyncing = false;
         }
@@ -454,16 +474,25 @@
                         </span>
                     </button>
                 </div>
-                <div class="flex gap-2">
+
+                <div class="flex gap-2 items-center">
+                    <!-- Unified Sync Button with progress & state -->
                     <button
                         on:click={handleRefreshSubscriptions}
-                        disabled={isSyncing}
-                        class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={syncingActive}
+                        class="px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
+                            {syncingActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-secondary-foreground hover:opacity-90'}"
                         aria-label="Refresh calendar subscriptions"
-                        title="Sync calendars"
+                        title={syncingActive
+                            ? $refreshSummary
+                            : "Sync calendars"}
                     >
                         <svg
-                            class="w-5 h-5 {isSyncing ? 'animate-spin' : ''}"
+                            class="w-5 h-5 {syncingActive
+                                ? 'animate-spin'
+                                : ''}"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -475,14 +504,26 @@
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                             />
                         </svg>
-                        {isSyncing ? "Syncing..." : "Sync"}
+                        {#if syncingActive}
+                            <span class="text-xs font-medium">
+                                {$refreshSummary}
+                            </span>
+                            <div
+                                class="relative w-12 h-2 bg-background/30 rounded-full overflow-hidden"
+                            >
+                                <div
+                                    class="absolute inset-y-0 left-0 bg-background/90 rounded-full transition-all duration-300"
+                                    style="width: {(
+                                        $refreshProgress * 100
+                                    ).toFixed(0)}%;"
+                                ></div>
+                            </div>
+                        {:else}
+                            Sync
+                        {/if}
                     </button>
-                    <button
-                        on:click={handleOpenAddActivity}
-                        class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity"
-                    >
-                        + Add Activity
-                    </button>
+
+                    <!-- Export Button -->
                     <button
                         on:click={handleOpenExport}
                         class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
@@ -504,10 +545,13 @@
                         </svg>
                         Export
                     </button>
+
+                    <!-- Settings Button -->
                     <button
                         on:click={handleOpenSettings}
                         class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
                         aria-label="Open settings"
+                        title="Settings"
                     >
                         <svg
                             class="w-5 h-5"
@@ -529,6 +573,29 @@
                             />
                         </svg>
                         Settings
+                    </button>
+
+                    <!-- Add Activity Button -->
+                    <button
+                        on:click={handleOpenAddActivity}
+                        class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                        aria-label="Add activity"
+                        title="Add activity"
+                    >
+                        <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 4v16m8-8H4"
+                            />
+                        </svg>
+                        Add
                     </button>
                 </div>
             </div>

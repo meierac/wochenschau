@@ -17,6 +17,13 @@
     import SwipeableSheet from "./SwipeableSheet.svelte";
     import SettingIcon from "./SettingIcon.svelte";
     import RangeSlider from "./RangeSlider.svelte";
+    import {
+        refreshStatus,
+        refreshProgress,
+        refreshSummary,
+    } from "../stores/refreshStatus";
+    import SyncConflictDialog from "./SyncConflictDialog.svelte";
+    import type { SyncConflict, ConflictResolution } from "../types/index";
 
     export let isDesktop = false;
 
@@ -84,6 +91,66 @@
     };
     let isLoading = false;
     let error = "";
+    // Global loader overlay state (derived from isLoading)
+    let showGlobalLoader = false;
+    $: showGlobalLoader = isLoading;
+
+    // Conflict dialog state
+    let showConflictDialog = false;
+    let pendingConflicts: SyncConflict[] = [];
+    let pendingDiff: {
+        added: CalendarItem[];
+        updated: CalendarItem[];
+        removed: CalendarItem[];
+        conflicts: CalendarItem[];
+        subscriptionId: string;
+        subscriptionName: string;
+    } | null = null;
+
+    function handleConflictResolution(event: CustomEvent<ConflictResolution>) {
+        const resolution = event.detail;
+        if (!pendingDiff) {
+            showConflictDialog = false;
+            return;
+        }
+
+        // Apply according to resolution
+        const { added, updated, removed, conflicts, subscriptionId } =
+            pendingDiff;
+
+        // If keep-local: for conflict items, keep existing local (do not overwrite)
+        // If use-synced: use incoming updated versions (already merged)
+        // We already prepared updated items with preserved localOverrides; so both choices are safe.
+        // Difference: keep-local skips replacing those conflict items.
+        const updatesToApply =
+            resolution === "keep-local"
+                ? updated.filter((u) => !conflicts.find((c) => c.id === u.id))
+                : updated;
+
+        // Bulk apply resolved changes in one pass
+        activities.bulkApplySubscriptionChanges({
+            added,
+            updated: updatesToApply,
+            removed,
+        });
+
+        // Mark subscription refreshed
+        const subscription = $subscriptions.find(
+            (s) => s.id === subscriptionId,
+        );
+        if (subscription) {
+            subscriptions.updateSubscription({
+                ...subscription,
+                lastFetched: Date.now(),
+            });
+        }
+
+        showConflictDialog = false;
+        pendingConflicts = [];
+        pendingDiff = null;
+        // Move to updating phase; global completion handled externally
+        refreshStatus.setPhase("updating");
+    }
 
     function handleResetExportSettings() {
         if (confirm("Reset all export settings to default?")) {
@@ -158,40 +225,159 @@
             const subscription = $subscriptions.find(
                 (s) => s.id === subscriptionId,
             );
-            if (!subscription) return;
+            if (!subscription) {
+                isLoading = false;
+                return;
+            }
 
+            // Begin tracking this subscription
+            refreshStatus.startSubscription({
+                id: subscription.id,
+                name: subscription.name,
+            });
+
+            // FETCH
+            refreshStatus.setPhase("fetching");
             const response = await fetch(subscription.url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+            const rawText = await response.text();
 
-            const text = await response.text();
-            const calendarItems = parseICalToCalendarItems(
-                text,
+            // PARSE
+            refreshStatus.setPhase("parsing");
+            const incomingItems = parseICalToCalendarItems(
+                rawText,
                 subscriptionId,
             );
+            refreshStatus.incrementCounters({ fetched: incomingItems.length });
 
-            // Remove old items from this subscription
-            const oldActivities = $activities.filter(
-                (a) => a.sourceId === subscriptionId && a.source === "ical",
+            // DIFF
+            refreshStatus.setPhase("diffing");
+            const existing = $activities.filter(
+                (a) => a.source === "ical" && a.sourceId === subscriptionId,
             );
-            for (const oldActivity of oldActivities) {
-                activities.removeActivity(oldActivity.id);
+            const existingMap = new Map(existing.map((e) => [e.id, e]));
+            const incomingMap = new Map(incomingItems.map((i) => [i.id, i]));
+
+            const added: CalendarItem[] = [];
+            const updated: CalendarItem[] = [];
+            const removed: CalendarItem[] = [];
+            let conflicts = 0;
+
+            // Added or updated
+            for (const item of incomingItems) {
+                const prev = existingMap.get(item.id);
+                if (!prev) {
+                    added.push(item);
+                } else {
+                    // Determine if remote fields changed (excluding local overrides)
+                    const changed =
+                        prev.dtstart !== item.dtstart ||
+                        prev.dtend !== item.dtend ||
+                        prev.summary !== item.summary ||
+                        prev.description !== item.description;
+
+                    if (changed) {
+                        // Preserve local overrides and timestamps:
+                        const merged: CalendarItem = {
+                            ...item,
+                            createdAt: prev.createdAt,
+                            lastModified: changed
+                                ? Date.now()
+                                : prev.lastModified,
+                            localOverrides: prev.localOverrides,
+                            color: prev.color,
+                        };
+
+                        // If user had local overrides, count as conflict
+                        if (
+                            prev.localOverrides &&
+                            Object.keys(prev.localOverrides).length > 0
+                        ) {
+                            conflicts += 1;
+                        }
+                        updated.push(merged);
+                    }
+                }
             }
 
-            // Add new calendar items
-            for (const item of calendarItems) {
-                activities.addActivity(item);
+            // Removed
+            for (const prev of existing) {
+                if (!incomingMap.has(prev.id)) {
+                    removed.push(prev);
+                }
             }
 
+            refreshStatus.incrementCounters({
+                added: added.length,
+                updated: updated.length,
+                removed: removed.length,
+                conflicts,
+            });
+
+            // CONFLICT CHECK + Dialog integration
+            const conflictItems = updated.filter(
+                (u) =>
+                    u.localOverrides &&
+                    Object.keys(u.localOverrides).length > 0,
+            );
+
+            refreshStatus.setPhase("conflict-check");
+
+            if (conflictItems.length > 0) {
+                // Build SyncConflict objects for dialog
+                pendingConflicts = conflictItems.map((ci) => {
+                    return {
+                        localItem: existingMap.get(ci.id) || ci,
+                        incomingItem: ci,
+                        subscriptionName: subscription.name,
+                    };
+                });
+
+                pendingDiff = {
+                    added,
+                    updated,
+                    removed,
+                    conflicts: conflictItems,
+                    subscriptionId: subscription.id,
+                    subscriptionName: subscription.name,
+                };
+
+                showConflictDialog = true;
+                // Defer application until user resolves
+                return;
+            }
+
+            // APPLY
+            refreshStatus.setPhase("updating");
+            // Bulk apply to avoid per-item overhead and premature override tracking
+            activities.bulkApplySubscriptionChanges({
+                added,
+                updated,
+                removed,
+            });
             // Update subscription metadata
-            const updated: ICalSubscription = {
+            const updatedSubscription: ICalSubscription = {
                 ...subscription,
                 lastFetched: Date.now(),
             };
-            subscriptions.updateSubscription(updated);
+            subscriptions.updateSubscription(updatedSubscription);
+            // Record results
+            refreshStatus.recordSubscriptionResult({
+                id: subscription.id,
+                name: subscription.name,
+                added: added.length,
+                updated: updated.length,
+                removed: removed.length,
+                conflicts,
+                fetched: incomingItems.length,
+            });
+            // Do NOT set completed here; global refresh flow will call finish().
         } catch (e) {
-            error = `Failed to refresh: ${e instanceof Error ? e.message : String(e)}`;
+            const message = e instanceof Error ? e.message : String(e);
+            error = `Failed to refresh: ${message}`;
+            refreshStatus.fail(e);
         } finally {
             isLoading = false;
         }
@@ -220,10 +406,30 @@
     }
 
     async function handleRefreshAll() {
-        for (const subscription of $subscriptions) {
-            if (subscription.enabled) {
-                await handleRefresh(subscription.id);
+        error = "";
+        const enabledSubs = $subscriptions.filter((s) => s.enabled);
+        refreshStatus.start(enabledSubs.length);
+        isLoading = true;
+
+        try {
+            for (const sub of enabledSubs) {
+                await handleRefresh(sub.id);
+                // After each individual refresh, if overall phase was set to completed by single call, revert to idle/fetching for next iteration
+                if (refreshStatus) {
+                    // Prepare for next subscription if not last
+                    const nextIndex = enabledSubs.indexOf(sub) + 1;
+                    if (nextIndex < enabledSubs.length) {
+                        refreshStatus.setPhase("fetching");
+                    }
+                }
             }
+            refreshStatus.finish();
+        } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            error = `Global refresh failed: ${message}`;
+            refreshStatus.fail(e);
+        } finally {
+            isLoading = false;
         }
     }
 
@@ -405,7 +611,80 @@
 </script>
 
 <SwipeableSheet {isDesktop} desktopMaxWidth="56rem" on:close={handleClose}>
-    <div class={`flex flex-col ${isDesktop ? "md:h-[80vh]" : "max-h-[90vh]"}`}>
+    <div
+        class={`relative flex flex-col ${isDesktop ? "md:h-[80vh]" : "max-h-[90vh]"}`}
+    >
+        {#if showGlobalLoader}
+            <!-- Loader Overlay -->
+            <div
+                class="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            >
+                <div
+                    class="flex flex-col items-center gap-4 w-[220px] text-center"
+                >
+                    <!-- Spinner -->
+                    <div class="relative w-14 h-14">
+                        <div
+                            class="absolute inset-0 rounded-full border-4 border-primary/30"
+                        ></div>
+                        <div
+                            class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"
+                        ></div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="w-full">
+                        <div
+                            class="w-full h-2 rounded-full bg-primary/20 overflow-hidden"
+                        >
+                            <div
+                                class="h-full bg-primary transition-all duration-300 ease-out"
+                                style="width: {($refreshProgress * 100).toFixed(
+                                    1,
+                                )}%;"
+                            ></div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Text -->
+                    <p class="text-xs font-medium text-muted-foreground mt-1">
+                        {$refreshSummary}
+                    </p>
+
+                    <!-- Metrics (optional compact view) -->
+                    {#if $refreshStatus.phase !== "error" && $refreshStatus.phase !== "cancelled"}
+                        <p class="text-[10px] text-muted-foreground">
+                            Added {$refreshStatus.addedCount} • Updated {$refreshStatus.updatedCount}
+                            • Removed {$refreshStatus.removedCount} • Conflicts {$refreshStatus.conflictCount}
+                        </p>
+                    {/if}
+
+                    <!-- Error Message -->
+                    {#if $refreshStatus.phase === "error"}
+                        <p class="text-[10px] text-destructive font-medium">
+                            {$refreshStatus.errorMessage}
+                        </p>
+                    {/if}
+                </div>
+            </div>
+        {/if}
+        {#if showConflictDialog}
+            <SyncConflictDialog
+                conflicts={pendingConflicts}
+                {isDesktop}
+                on:resolve={handleConflictResolution}
+                on:close={() => {
+                    // If closed without resolution, default to keep-local behavior
+                    const fakeEvent = new CustomEvent<ConflictResolution>(
+                        "resolve",
+                        {
+                            detail: "keep-local",
+                        },
+                    );
+                    handleConflictResolution(fakeEvent);
+                }}
+            />
+        {/if}
         <!-- Header (Always on top) -->
         <div
             class={`${isDesktop ? "border-b border-border min-h-[70px]" : ""} px-3 py-3 flex items-center justify-center relative shrink-0`}
