@@ -9,6 +9,7 @@ export default defineConfig({
     svelte(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: "auto",
       includeAssets: [
         "favicon.svg",
         "favicon.ico",
@@ -19,9 +20,10 @@ export default defineConfig({
       manifest: {
         name: "Wochenschau",
         short_name: "Wochenschau",
+        id: "/wochenschau/",
         description: "Your weekly overview",
-        theme_color: "#ffffff",
-        background_color: "#ffffff",
+        theme_color: "#F8FAFC", // Match light background; dark mode handled by dynamic meta theme-color
+        background_color: "#F8FAFC", // Soft light background matching app CSS variable feel
         display: "standalone",
         orientation: "portrait",
         scope: "/wochenschau/",

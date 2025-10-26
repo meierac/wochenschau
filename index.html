@@ -2,7 +2,7 @@
 <html lang="de">
     <head>
         <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <link rel="icon" type="image/svg+xml" href="vite.svg" />
         <meta
             name="viewport"
             content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
@@ -27,12 +27,46 @@
         />
         <meta name="apple-mobile-web-app-title" content="Wochenschau" />
         <meta name="description" content="Wochenschau - Your weekly overview" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+        <link rel="manifest" href="manifest.webmanifest" />
         <title>Wochenschau</title>
+        <script>
+            (function () {
+                const dynamicMeta =
+                    document.querySelector(
+                        'meta[name="theme-color"][data-dynamic]',
+                    ) ||
+                    (function () {
+                        const m = document.createElement("meta");
+                        m.name = "theme-color";
+                        m.setAttribute("data-dynamic", "true");
+                        document.head.appendChild(m);
+                        return m;
+                    })();
+
+                function resolveThemeColor() {
+                    const styles = getComputedStyle(document.documentElement);
+                    const hsl = styles.getPropertyValue("--background").trim();
+                    if (hsl) {
+                        dynamicMeta.content = `hsl(${hsl})`;
+                        return;
+                    }
+                    dynamicMeta.content = window.matchMedia(
+                        "(prefers-color-scheme: dark)",
+                    ).matches
+                        ? "#000000"
+                        : "#F8FAFC";
+                }
+
+                resolveThemeColor();
+                window
+                    .matchMedia("(prefers-color-scheme: dark)")
+                    .addEventListener("change", resolveThemeColor);
+            })();
+        </script>
     </head>
     <body>
         <div id="app"></div>
-        <script type="module" src="/src/main.ts"></script>
+        <script type="module" src="src/main.ts"></script>
     </body>
 </html>
