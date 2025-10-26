@@ -142,7 +142,7 @@
                     >
                 </div>
                 <ul class="space-y-2 ml-6">
-                    {#each conflicts.slice(0, 5) as conflict}
+                    {#each conflicts.slice(0, 2) as conflict}
                         <li
                             class="text-sm text-gray-600 dark:text-gray-400 flex items-start gap-2"
                         >
@@ -163,7 +163,7 @@
                     {/each}
                     {#if conflicts.length > 5}
                         <li class="text-xs text-gray-500 dark:text-gray-500">
-                            ... and {conflicts.length - 5} more
+                            ... and {conflicts.length - 2} more
                         </li>
                     {/if}
                 </ul>
