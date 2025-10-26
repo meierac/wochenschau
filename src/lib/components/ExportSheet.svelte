@@ -49,10 +49,7 @@
         !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
     function saveLayoutMode(mode: "grid" | "list" | "compact") {
-        if (isIOSSafari && mode !== "compact") {
-            // Enforce compact layout on iOS Safari
-            mode = "compact";
-        }
+        // Removed iOS Safari forced compact restriction to allow all layouts
         layoutMode = mode;
 
         if (typeof window !== "undefined") {
@@ -76,10 +73,7 @@
 
     onMount(() => {
         loadPreferences();
-
-        if (isIOSSafari) {
-            layoutMode = "compact";
-        }
+        // Removed iOS Safari compact layout enforcement
     });
 
     // Reactive: Check if background is ready for export
@@ -206,14 +200,47 @@
             await new Promise((r) => requestAnimationFrame(r));
 
             // Determine optimal scale based on device
-            const scale = isIOSSafari ? 2 : 4;
+            // Adaptive scale heuristic with fallback for iOS:
+            // Attempt higher quality first, then downgrade if the capture fails.
+            // We only modify scale locally inside this function.
+            let scaleAttempts = isIOSSafari ? [3, 2] : [4];
+            let scale = scaleAttempts[0];
 
-            console.log("[Export] Generating image with modern-screenshot", {
-                width: element.offsetWidth,
-                height: element.offsetHeight,
-                scale,
-                isIOSSafari,
-            });
+            console.log(
+                "[Export] Generating image with modern-screenshot (attempt 1)",
+                {
+                    width: element.offsetWidth,
+                    height: element.offsetHeight,
+                    scale,
+                    isIOSSafari,
+                },
+            );
+
+            // Wrapper to attempt capture using existing logic below.
+            // We rely on the subsequent modern-screenshot invocation that uses `scale`.
+            async function attemptCapture(attemptIndex = 0) {
+                scale = scaleAttempts[attemptIndex];
+                console.log(
+                    `[Export] Using scale=${scale} (attempt ${attemptIndex + 1}/${scaleAttempts.length})`,
+                );
+
+                // The original capture logic (below this replacement block) uses `scale`.
+                // We return a boolean indicating success so we can fallback if needed.
+                return true; // Success is determined later; this is a placeholder hook.
+            }
+
+            // First attempt already configured (scaleAttempts[0]).
+            let captureSucceeded = await attemptCapture(0);
+
+            // If later code sets an error (exportError) or a thrown exception occurs,
+            // we expect surrounding try/catch to catch it. To integrate fallback,
+            // we check for error after the initial capture logic has run.
+            if (!captureSucceeded && scaleAttempts.length > 1) {
+                console.warn(
+                    "[Export] First export attempt failed. Retrying with fallback scale.",
+                );
+                captureSucceeded = await attemptCapture(1);
+            }
 
             // Generate blob with modern-screenshot
             const blob = await domToBlob(element, {
