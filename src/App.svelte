@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import WeekView from "./lib/components/WeekView.svelte";
+    import { icalService } from "./lib/services/icalService";
     import {
         refreshStatus,
         refreshProgress,
@@ -73,144 +74,15 @@
         showExport = true;
     }
 
-    // iCal parsing functions
+    // Delegated iCal parsing (consolidated in service)
     function parseICalToCalendarItems(
         iCalText: string,
         subscriptionId: string,
     ): CalendarItem[] {
-        const items: CalendarItem[] = [];
-        const lines = iCalText.split("\n");
-        let currentEvent: any = null;
-
-        for (let i = 0; i < lines.length; i++) {
-            let line = lines[i];
-
-            // Handle line folding
-            while (i + 1 < lines.length && lines[i + 1].match(/^[\t ]/)) {
-                i++;
-                line += lines[i].substring(1);
-            }
-
-            const trimmed = line.trim();
-
-            if (trimmed === "BEGIN:VEVENT") {
-                currentEvent = {
-                    sourceId: subscriptionId,
-                    source: "ical",
-                    description: "",
-                };
-            } else if (trimmed === "END:VEVENT" && currentEvent) {
-                if (currentEvent.summary && currentEvent.dtstart) {
-                    const item = buildCalendarItem(currentEvent);
-                    if (item) items.push(item);
-                }
-                currentEvent = null;
-            } else if (currentEvent) {
-                const colonIndex = trimmed.indexOf(":");
-                if (colonIndex === -1) continue;
-
-                const field = trimmed.substring(0, colonIndex);
-                const value = trimmed.substring(colonIndex + 1);
-
-                if (field === "SUMMARY") {
-                    currentEvent.summary = decodeICalText(value);
-                } else if (field.startsWith("DTSTART")) {
-                    currentEvent.dtstart = value;
-                } else if (field.startsWith("DTEND")) {
-                    currentEvent.dtend = value;
-                } else if (field === "UID") {
-                    currentEvent.uid = value;
-                } else if (field === "DESCRIPTION") {
-                    currentEvent.description = decodeICalText(value);
-                }
-            }
-        }
-
-        return items;
+        return icalService.parseICalToCalendarItems(iCalText, subscriptionId);
     }
 
-    function buildCalendarItem(event: any): CalendarItem | null {
-        try {
-            const dtstart = event.dtstart || "";
-            const dtend = event.dtend || dtstart;
-
-            const isAllDay = !dtstart.includes("T");
-            const startDate = extractDate(dtstart);
-            const endDate = extractDate(dtend);
-            const startTime = isAllDay ? "09:00" : extractTime(dtstart);
-            const endTime = isAllDay ? "17:00" : extractTime(dtend);
-
-            if (!startDate) return null;
-
-            const dateObj = new Date(
-                parseInt(startDate.substring(0, 4)),
-                parseInt(startDate.substring(4, 6)) - 1,
-                parseInt(startDate.substring(6, 8)),
-            );
-
-            const day = (dateObj.getDay() + 6) % 7;
-            const week = getWeekNumber(dateObj);
-            const year = dateObj.getFullYear();
-
-            const id = event.uid
-                ? `${event.sourceId}-${event.uid.replace(/[^a-zA-Z0-9-]/g, "")}`
-                : `${event.sourceId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-            const now = Date.now();
-
-            return {
-                id,
-                summary: event.summary,
-                description: event.description,
-                dtstart,
-                dtend,
-                startDate,
-                endDate,
-                startTime,
-                endTime,
-                day,
-                week,
-                year,
-                isAllDay,
-                source: "ical",
-                sourceId: event.sourceId,
-                uid: event.uid,
-                createdAt: now,
-                lastModified: now,
-            };
-        } catch (err) {
-            console.error("Error building calendar item:", err);
-            return null;
-        }
-    }
-
-    function extractDate(iCalDateTime: string): string {
-        if (iCalDateTime.includes("T")) {
-            return iCalDateTime.split("T")[0];
-        }
-        return iCalDateTime;
-    }
-
-    function extractTime(iCalDateTime: string): string {
-        if (!iCalDateTime.includes("T")) {
-            return "09:00";
-        }
-
-        const timePart = iCalDateTime.split("T")[1];
-        const cleanTime = timePart.replace("Z", "");
-        const hours = cleanTime.substring(0, 2);
-        const minutes = cleanTime.substring(2, 4);
-
-        return `${hours}:${minutes}`;
-    }
-
-    function decodeICalText(text: string): string {
-        return text
-            .replace(/\\n/g, "\n")
-            .replace(/\\,/g, ",")
-            .replace(/\\;/g, ";")
-            .replace(/\\\\/g, "\\");
-    }
+    // Removed local build/extract helpers (centralized in icalService)
 
     async function refreshSubscription(
         subscriptionId: string,
