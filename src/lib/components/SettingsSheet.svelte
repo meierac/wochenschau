@@ -106,6 +106,8 @@
         subscriptionId: string;
         subscriptionName: string;
     } | null = null;
+    // Abort controller for bulk refresh (quick win to allow cancellation parity with App)
+    let refreshAbortController: AbortController | null = null;
 
     function handleConflictResolution(event: CustomEvent<ConflictResolution>) {
         const resolution = event.detail;
@@ -477,25 +479,37 @@
                 "../services/refreshService"
             );
 
-            const { diffs, aggregatedConflicts } =
-                await refreshService.fetchAndDiffAll(enabledSubs, existingMap, {
-                    parallel: true,
-                    onPhase: (phase) => {
-                        // Map generic phases to refreshStatus phases
-                        if (phase === "fetching")
-                            refreshStatus.setPhase("fetching");
-                        else if (phase === "parsing")
-                            refreshStatus.setPhase("parsing");
-                        else if (phase === "diffing")
-                            refreshStatus.setPhase("diffing");
-                        else if (phase === "aggregating")
-                            refreshStatus.setPhase("conflict-check");
-                        else if (phase === "completed")
-                            refreshStatus.setPhase("updating");
-                        else if (phase === "error")
-                            refreshStatus.setPhase("error");
-                    },
-                });
+            // Make bulk refresh abortable (quick win)
+            refreshAbortController = new AbortController();
+            let diffs, aggregatedConflicts;
+            try {
+                ({ diffs, aggregatedConflicts } =
+                    await refreshService.fetchAndDiffAll(
+                        enabledSubs,
+                        existingMap,
+                        {
+                            parallel: true,
+                            signal: refreshAbortController.signal,
+                            onPhase: (phase) => {
+                                // Map generic phases to refreshStatus phases
+                                if (phase === "fetching")
+                                    refreshStatus.setPhase("fetching");
+                                else if (phase === "parsing")
+                                    refreshStatus.setPhase("parsing");
+                                else if (phase === "diffing")
+                                    refreshStatus.setPhase("diffing");
+                                else if (phase === "aggregating")
+                                    refreshStatus.setPhase("conflict-check");
+                                else if (phase === "completed")
+                                    refreshStatus.setPhase("updating");
+                                else if (phase === "error")
+                                    refreshStatus.setPhase("error");
+                            },
+                        },
+                    ));
+            } finally {
+                refreshAbortController = null;
+            }
 
             if (aggregatedConflicts.length > 0) {
                 // Store aggregated conflicts and diffs for single dialog resolution
@@ -543,6 +557,15 @@
     }
 
     function handleClose() {
+        // If the settings sheet is being closed while the conflict dialog is open,
+        // automatically resolve using the keep-local strategy so pending diffs don't remain orphaned.
+        if (showConflictDialog) {
+            handleConflictResolution(
+                new CustomEvent<ConflictResolution>("resolve", {
+                    detail: "keep-local",
+                }),
+            );
+        }
         dispatch("close");
     }
 

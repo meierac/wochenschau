@@ -31,7 +31,9 @@
         syncingPhase !== "idle" &&
         syncingPhase !== "completed" &&
         syncingPhase !== "error" &&
-        syncingPhase !== "cancelled";
+        syncingPhase !== "cancelled" &&
+        !(syncingPhase === "conflict-check" && showConflictDialog);
+    $: canCancel = !!refreshAbortController && syncingActive;
     let showConflictDialog = false;
     let pendingConflicts: SyncConflict[] = [];
     // removed legacy pendingSyncData map (replaced by aggregated pendingDiffs)
@@ -121,8 +123,16 @@
 
     function handleConflictDialogClose() {
         // User closed dialog without choosing - treat as "keep local"
-        pendingConflicts = [];
-        showConflictDialog = false;
+        if (pendingDiffs) {
+            handleConflictResolution(
+                new CustomEvent<ConflictResolution>("resolve", {
+                    detail: "keep-local",
+                }),
+            );
+        } else {
+            pendingConflicts = [];
+            showConflictDialog = false;
+        }
     }
 
     async function autoRefreshSubscriptions() {
@@ -147,10 +157,25 @@
         const { refreshService } = await import(
             "./lib/services/refreshService"
         );
-        const { diffs, aggregatedConflicts } =
-            await refreshService.fetchAndDiffAll(subsToRefresh, existingMap, {
-                parallel: true,
-            });
+
+        // Make auto refresh abortable
+        refreshAbortController = new AbortController();
+
+        let diffs, aggregatedConflicts;
+        try {
+            ({ diffs, aggregatedConflicts } =
+                await refreshService.fetchAndDiffAll(
+                    subsToRefresh,
+                    existingMap,
+                    {
+                        parallel: true,
+                        signal: refreshAbortController.signal,
+                    },
+                ));
+        } finally {
+            // Clear controller after attempt (whether aborted or finished)
+            refreshAbortController = null;
+        }
 
         if (aggregatedConflicts.length > 0) {
             pendingConflicts = aggregatedConflicts;
@@ -316,14 +341,16 @@
                         </span>
                     </button>
                     {#if syncingActive}
-                        <button
-                            on:click={handleCancelRefresh}
-                            class="px-3 py-2 rounded-lg bg-destructive/80 text-destructive-foreground text-xs font-semibold hover:bg-destructive transition-colors"
-                            aria-label="Cancel refresh"
-                            title="Cancel refresh"
-                        >
-                            Cancel
-                        </button>
+                        {#if canCancel}
+                            <button
+                                on:click={handleCancelRefresh}
+                                class="px-3 py-2 rounded-lg bg-destructive/80 text-destructive-foreground text-xs font-semibold hover:bg-destructive transition-colors"
+                                aria-label="Cancel refresh"
+                                title="Cancel refresh"
+                            >
+                                Cancel refresh
+                            </button>
+                        {/if}
                     {/if}
                 </div>
 
@@ -533,13 +560,15 @@
                         Added {$refreshStatus.addedCount} • Updated {$refreshStatus.updatedCount}
                         • Removed {$refreshStatus.removedCount} • Conflicts {$refreshStatus.conflictCount}
                     </p>
-                    <button
-                        on:click={handleCancelRefresh}
-                        class="px-5 py-2 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold hover:opacity-90 transition-colors"
-                        aria-label="Cancel sync"
-                    >
-                        Cancel sync
-                    </button>
+                    {#if canCancel}
+                        <button
+                            on:click={handleCancelRefresh}
+                            class="px-5 py-2 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold hover:opacity-90 transition-colors"
+                            aria-label="Cancel sync"
+                        >
+                            Cancel sync
+                        </button>
+                    {/if}
                 </div>
             {/if}
 
