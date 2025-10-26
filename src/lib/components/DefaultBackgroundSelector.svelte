@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { exportSettings } from "../stores/exportSettings";
     import IconButton from "./IconButton.svelte";
+    import { DEFAULT_BACKGROUNDS } from "../stores/defaultBackgrounds";
 
     type BackgroundType = "color" | "image";
     let backgroundType: BackgroundType = "color";
@@ -41,25 +42,12 @@
         );
     }
 
-    // Predefined images from public/backgrounds folder
-    const predefinedImages = [
-        "0A96161F-408D-41FA-8B45-72986B618824.JPG",
-        "32C260C9-C5AF-421E-8E81-9112297ABC2D.JPG",
-        "62536F58-8EFA-4C12-90DC-28C9BE3526F0.JPG",
-        "IMG_0999.JPG",
-        "IMG_1014.JPG",
-        "IMG_1015.JPG",
-        "IMG_1029.JPG",
-        "IMG_2422.PNG",
-        "IMG_2423.PNG",
-        "IMG_2424.PNG",
-        "IMG_2425.PNG",
-        "IMG_2426.PNG",
-        "IMG_3186.JPG",
-    ].map((filename) => ({
-        id: filename,
-        url: `/wochenschau/backgrounds/${filename}`,
-        name: filename.replace(/\.(JPG|PNG)$/i, ""),
+    // Predefined images sourced from DEFAULT_BACKGROUNDS store (webp & other formats)
+    // Each background provides id, url, and display name
+    const predefinedImages = DEFAULT_BACKGROUNDS.map((bg) => ({
+        id: bg.id,
+        url: bg.url,
+        name: bg.name,
     }));
 
     // Initialize background type based on current settings

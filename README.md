@@ -2,42 +2,188 @@
 
 > Your weekly overview at a glance. A beautiful, intuitive calendar app for planning your week.
 
-**Wochenschau** (German for "weekly review") is a modern Progressive Web App designed to help you visualize and organize your week. Built with Svelte, TypeScript, and Tailwind CSS, it combines the elegance of iOS design patterns with the power of web technologies.
+**Wochenschau** (German for "weekly review") is a modern Progressive Web App built with Svelte 5, TypeScript, Tailwind CSS and Vite. It blends iOS-inspired design patterns with fast, private, offline-first functionality.
+
+---
 
 ## ✨ Features
 
-### Core Functionality
-- 📋 **Week-at-a-Glance View** - See all your activities organized by day in a beautiful grid layout
-- ➕ **Quick Activity Creation** - Add activities with customizable titles, times, and descriptions
-- 📝 **Activity Templates** - Save your most-used activities as templates for quick reuse
-- 🔗 **Calendar Integration** - Subscribe to iCal calendars with automatic syncing and manual refresh
-- 📸 **Export as Image** - Export your week as a beautifully formatted image to share
-- 💾 **Local Storage** - All your data is stored locally on your device for privacy
-- 🔄 **Auto-Sync** - iCal subscriptions automatically refresh when stale (24h default)
-- 👆 **Swipeable Sheets** - Swipe down to dismiss modals on mobile devices
+### Core
+- Week-at-a-glance grid view (Mon–Sun, ISO week)
+- Manual activity creation with time range
+- Activity templates (quick reuse of routine items)
+- iCal calendar subscription (import external events)
+- Local edit tracking for subscribed events (conflict resolution dialog)
+- Multi-layout export (grid, list, compact)
+- Image export (PNG) with clipboard and share-sheet support
+- Local-only data (activities, templates, subscriptions, export preferences)
 
 ### User Experience
-- 🚀 **Progressive Web App** - Install as a native app on iOS and Android
-- 🌓 **Dark & Light Mode** - Automatic system theme detection with manual override
-- 📱 **Fully Responsive** - Optimized for mobile, tablet, and desktop screens
-- ✅ **Offline Support** - Works completely offline with service worker caching
-- ⚡ **Lightning Fast** - Built with Vite for instant load times and smooth interactions
-- 🎨 **Beautiful UI** - iOS-inspired design with Tailwind CSS and custom components
+- Responsive (mobile-first, tablet & desktop enhancements)
+- Swipeable sheets & modals (mobile UX)
+- Floating bottom navigation + Add button (FAB)
+- Light/Dark mode (system detection with CSS variables)
+- IndexedDB-backed background image handling (memory efficient)
+- Local font set (reliable embedding for exports)
+- Optional daily Bible verse (German verses)
 
-### Advanced Features
-- 🎨 **Export Customization** - Control colors, fonts, borders, and background styling for exports
-- 📊 **Export Layouts** - Choose between grid and list view for exports
-- ✝️ **Bible Verse of the Day** - Optional daily inspiration with German verses
-- 🔄 **Auto-Update** - Service worker automatically updates the app when new versions are released
+### Export & Customization
+- Customizable title, fonts, colors, accent, borders, opacity, corner radius
+- Background: solid color or selected image (default gallery or user upload)
+- Separate week container styling (overlay color + opacity)
+- High-resolution rendering with platform-aware scale & caching heuristics
+- Automatic iOS/Safari workarounds (background image capture reliability)
+- Troubleshooting & platform-specific documentation (see `docs/`)
+
+### Reliability & Privacy
+- 100% client-side: no backend services
+- IndexedDB storage for large background images (migrated from legacy localStorage)
+- Graceful fallback if fonts/backgrounds unavailable
+- Conflict-safe sync: local changes to imported iCal events are never silently overwritten
+
+### Advanced Internals
+- Sync conflict detection groups modified subscribed items and prompts a global choice:
+  - Keep local changes (preserve overrides)
+  - Use fresh subscribed data (discard overrides)
+- Local override tracking per field (`summary`, `description`, times, color)
+- Derivable store helpers (`activitiesByWeek`, `activitiesByDay`)
+- Structured design tokens via Tailwind utility composition
+
+---
+
+## 🚧 Current Limitations
+
+| Area | Status |
+|------|--------|
+| Recurring iCal events (RRULE) | Not yet implemented (RRULE field parsed but unused) |
+| Per-item conflict resolution | Global apply (dialog offers one decision for all conflicts) |
+| Multi-week span events | Represented as single-day; week-crossing logic is minimal |
+| Cloud sync / multi-device | Not supported (intentionally local-first) |
+| Authentication | None (no external services) |
+
+---
+
+## 📂 Project Structure (High-level)
+
+```
+src/
+└── lib/
+    ├── components/
+    │   ├── WeekView.svelte
+    │   ├── DayColumn.svelte
+    │   ├── ActivityCard.svelte
+    │   ├── ActivityEditSheet.svelte
+    │   ├── AddActivityModal.svelte
+    │   ├── TemplateManager.svelte
+    │   ├── ICalManager.svelte
+    │   ├── SyncConflictDialog.svelte
+    │   ├── ExportSheet.svelte
+    │   ├── SettingsSheet.svelte
+    │   ├── DefaultBackgroundSelector.svelte
+    │   ├── FloatingNav.svelte
+    │   ├── WeekPicker.svelte
+    │   ├── SwipeableSheet.svelte
+    │   ├── RangeSlider.svelte
+    │   ├── SettingIcon.svelte
+    │   ├── Button.svelte / IconButton.svelte
+    │   ├── Card.svelte / Input.svelte / List*.svelte
+    │   └── index.ts
+    ├── stores/
+    │   ├── activities.ts
+    │   ├── templates.ts
+    │   ├── ical.ts
+    │   ├── exportSettings.ts
+    │   ├── imageStorage.ts
+    │   ├── bibleVerse.ts
+    │   ├── defaultBackgrounds.ts
+    │   └── week.ts
+    ├── utils/
+    │   ├── date.ts
+    │   ├── cn.ts
+    │   └── storage.ts
+    ├── types/
+    │   └── index.ts
+    ├── data/
+    │   └── bibleVerses.ts
+    ├── App.svelte
+    ├── main.ts
+    ├── app.css
+    └── fonts.css
+docs/
+└── export-troubleshooting.md
+└── ios-background-fix.md
+public/
+└── backgrounds/ (default selectable images)
+```
+
+---
+
+## 🧱 Key Technologies
+
+| Tech | Purpose |
+|------|---------|
+| Svelte 5 | Reactive UI & compiled components |
+| TypeScript | Type safety & domain modeling |
+| Tailwind CSS | Utility-first styling |
+| Vite | Fast dev server + build |
+| vite-plugin-pwa | Service worker + manifest |
+| IndexedDB | Large background image persistence |
+| LocalStorage | Lightweight structured data (activities, templates, subscriptions) |
+| Custom render/export logic | High-quality image export (PNG) using tuned caching & scale |
+
+---
+
+## 🔄 Data Model Overview
+
+### `Activity` (alias of `CalendarItem`)
+- `source`: `"manual" | "ical" | "template"`
+- `localOverrides`: captured differences for iCal-origin events
+- Time stored in iCal-like (`YYYYMMDDTHHMMSS`) for start/end + derived fields (`startTime`, `day`, `week`)
+
+### Sync Conflict Flow
+1. Subscription refresh pulls raw iCal items.
+2. Items matched by `uid` / local `id`.
+3. Modified subscribed items (with `localOverrides`) aggregated.
+4. Dialog: user chooses global resolution.
+5. Applied accordingly; local timestamps updated.
+
+---
+
+## 📤 Export Logic (Summary)
+
+Adaptive strategies:
+- Scale: Desktop up to 4×, iOS/Safari reduced to 3× (fallback 2× on memory pressure)
+- Cache strategy: Disabled when using image background to avoid stale/corruption issues
+- DOM layering: Real `<img>` element for background (fixes iOS CSS background capture)
+- Font embedding: Local font families only (ensures reproducibility)
+- Filter excludes transient UI elements (sheet chrome, buttons)
+
+Troubleshooting references:
+- `docs/export-troubleshooting.md`
+- `docs/ios-background-fix.md`
+
+---
+
+## 💾 Storage Strategy
+
+| Concern | Approach |
+|---------|----------|
+| Large images | IndexedDB (blob) via `imageStorage` |
+| Migration | Automatic from legacy base64 in export settings |
+| Settings | Stored sans large base64 to keep localStorage lean |
+| Activities | LocalStorage list with incremental append/replace |
+| Templates | LocalStorage list |
+| Subscriptions | LocalStorage list (items stored inside activities; no separate event cache now) |
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js 18+
-- pnpm 8+
+- pnpm ≥ 8
 
-### Installation
-
+### Install
 ```bash
 git clone https://github.com/meierac/wochenschau.git
 cd wochenschau
@@ -45,221 +191,93 @@ pnpm install
 ```
 
 ### Development
-
 ```bash
 pnpm dev
 ```
-
-The app will be available at `http://localhost:5173`
-
-### Build for Production
-
-```bash
-pnpm build
-```
-
-### Preview Production Build
-
-```bash
-pnpm preview
-```
-
-## 📁 Project Structure
-
-```
-wochenschau/
-├── public/                          # Static assets & favicons
-│   ├── favicon.svg                 # App icon (SVG)
-│   ├── favicon.ico                 # Favicon
-│   ├── apple-touch-icon.png        # iOS home screen icon
-│   ├── web-app-manifest-192x192.png
-│   ├── web-app-manifest-512x512.png
-│   └── [other favicon variants]
-│
-├── src/
-│   ├── lib/
-│   │   ├── components/             # Reusable UI components
-│   │   │   ├── WeekView.svelte              # Main week calendar view
-│   │   │   ├── DayColumn.svelte             # Individual day column
-│   │   │   ├── ActivityCard.svelte          # Activity item display
-│   │   │   ├── ActivityEditSheet.svelte     # Activity editor
-│   │   │   ├── ExportSheet.svelte           # Export dialog & preview
-│   │   │   ├── SettingsSheet.svelte         # Settings menu
-│   │   │   ├── TemplateManager.svelte       # Template management
-│   │   │   ├── ICalManager.svelte           # Calendar subscriptions
-│   │   │   ├── WeekPicker.svelte            # Week selection
-│   │   │   └── [UI components]...           # Button, Card, Input, etc.
-│   │   │
-│   │   ├── stores/                 # Svelte stores
-│   │   │   ├── activities.ts       # Activity data store
-│   │   │   ├── bibleVerse.ts       # Bible verse store
-│   │   │   ├── exportSettings.ts   # Export customization
-│   │   │   ├── ical.ts             # iCal subscription management
-│   │   │   ├── templates.ts        # Activity templates
-│   │   │   └── week.ts             # Current week tracking
-│   │   │
-│   │   ├── data/
-│   │   │   └── bibleVerses.ts      # 100 German Bible verses
-│   │   │
-│   │   ├── utils/                  # Utility functions
-│   │   │   ├── date.ts             # Date calculation utilities
-│   │   │   └── cn.ts               # Tailwind class merging
-│   │   │
-│   │   └── types/
-│   │       └── index.ts            # TypeScript interfaces
-│   │
-│   ├── App.svelte                  # Main app component
-│   ├── main.ts                     # Entry point
-│   ├── app.css                     # Global styles
-│   └── fonts.css                   # Google Fonts imports
-│
-├── index.html                       # HTML entry point
-├── vite.config.ts                  # Vite & PWA configuration
-├── tailwind.config.js              # Tailwind CSS configuration
-├── tsconfig.json                   # TypeScript configuration
-├── package.json                    # Dependencies & scripts
-└── README.md                       # This file
-```
-
-## 🎯 Key Technologies
-
-- **Svelte 5** - Reactive UI framework
-- **TypeScript** - Type-safe JavaScript
-- **Vite** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first CSS framework
-- **PWA Kit** - Progressive Web App support
-- **Svelte Stores** - State management
-- **modern-screenshot** - Image export functionality optimized for iOS/Safari
-- **Local Fonts** - Self-hosted typography for reliable exports
-
-## 🎨 Customization
-
-### Export Settings
-Users can customize how their week is exported:
-- **Colors**: Text, accent, background colors for week containers
-- **Typography**: Font families for headers and body text
-- **Styling**: Border radius, opacity, border visibility
-- **Layout**: Grid or list view options
-- **Background**: Optional background images with opacity control
-
-### Settings Menu
-The settings panel includes:
-- **Activity Templates** - Create and manage reusable activity templates
-- **Calendar Subscriptions** - Add iCal URLs to sync external calendars
-- **Export Settings** - Customize export appearance
-- **Bible Verse Settings** - Toggle daily inspiration
-- **About** - App version and hidden features guide
-
-## 💾 Data Storage
-
-- **Local Storage** - All activities, templates, and settings are stored in browser's local storage
-- **No Cloud Required** - Your data stays on your device
-- **Privacy First** - No data is sent to any server
-- **Persistent** - Data survives app updates and browser restarts
-
-## 📤 iCal Integration
-
-Subscribe to external calendars (Google Calendar, Outlook, Apple Calendar, etc.) via their iCal URLs:
-1. Get the iCal subscription URL from your calendar provider
-2. Add it in Settings → Calendar Subscriptions
-3. Events automatically sync and appear in your weekly view
-4. Toggling subscriptions on/off doesn't delete the events
-
-### 🔄 Sync Conflict Resolution
-
-**Protecting Your Local Edits**
-
-If you've edited synced calendar items (changed titles, times, descriptions, etc.), the app will detect conflicts before overwriting your changes:
-
-- **Automatic Detection** - Tracks when you modify synced items
-- **User Choice** - Asks whether to keep your changes or use synced data
-- **No Data Loss** - Your edits are never silently overwritten
-
-**How It Works:**
-1. You edit a synced calendar item (e.g., change "Meeting" to "Meeting - POSTPONED")
-2. Next sync detects the local modification
-3. A dialog appears showing what you changed
-4. You choose: **Keep My Changes** or **Use Synced Data**
-
-**Your Options:**
-- **Keep My Changes** - Preserves your edits, updates sync timestamp (your changes won't sync back to source)
-- **Use Synced Data** - Discards your edits, accepts fresh data from calendar subscription
-
-See [SYNC_CONFLICT_RESOLUTION.md](./SYNC_CONFLICT_RESOLUTION.md) for detailed documentation.
-
-## 📸 Export & Sharing
-
-Export your week as a high-quality image:
-- **Customizable appearance** - Colors, fonts, backgrounds, borders
-- **Multiple layouts** - Grid (compact) or list (detailed) view
-- **Direct sharing** - Copy to clipboard or share via native share sheet
-- **Beautiful format** - Perfect for sharing on social media or printing
-
-## 🛠️ Development
-
-### Project Setup
-```bash
-pnpm install
-```
-
-### Start Development Server
-```bash
-pnpm dev
-```
+Visit: `http://localhost:5173`
 
 ### Type Check
 ```bash
 pnpm check
 ```
 
-### Build for Production
+### Production Build
 ```bash
 pnpm build
 ```
 
-### Preview Production Build
+### Preview Production
 ```bash
 pnpm preview
 ```
 
-## 📦 PWA Configuration
+---
 
-The app is fully configured as a Progressive Web App:
-- **Service Worker** - Offline support and caching
-- **Auto-Update** - New versions automatically downloaded and installed
-- **Home Screen Installation** - "Add to Home Screen" on iOS/Android
-- **App Manifest** - Custom app name, colors, and icons
-- **Web App Icon** - Beautiful Wochenschau logo
+## 🛠 Contributing
 
-### Installing the App
+While this is a personal project, feel free to:
+1. Open issues describing UX or export reliability improvements.
+2. Suggest performance tweaks (DOM size during export, memory usage).
+3. Propose modularization (e.g., per-item conflict resolution, recurrence parsing).
 
-**iOS:**
-1. Open the app in Safari
-2. Tap the Share button
-3. Select "Add to Home Screen"
-
-**Android:**
-1. Open the app in Chrome
-2. Tap the menu (three dots)
-3. Select "Install app" or "Add to Home screen"
-
-## 🌍 Browser Support
-
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 15.1+
-- Any modern browser supporting PWA standards
-
-## 📄 License
-
-MIT
-
-## 👤 About
-
-**Created in the heart of Kaiserstuhl 🍇**
-
-Wochenschau is a passion project designed to help you stay organized and focused on what matters most – your weekly goals and activities.
+Please:
+- Keep PRs focused (one feature/fix).
+- Include before/after screenshots for UI changes.
+- Avoid adding external heavy dependencies without clear benefit.
 
 ---
 
-**Version:** 1.0.1 | [GitHub](https://github.com/meierac/wochenschau)
+## 🧪 Ideas / Future Enhancements
+
+| Idea | Description |
+|------|-------------|
+| Recurrence support | Parse & expand `RRULE` for weekly repeating events |
+| Per-item conflict choices | Granular keep/replace decisions in dialog |
+| Timezone handling | Explicit timezone conversions for cross-region subscriptions |
+| Multi-day events | Span rendering across columns (current simplified to single-day) |
+| Export presets | Save & load multiple export style configurations |
+| Data portability | Import/export JSON bundle for activities & templates |
+
+---
+
+## 🔐 Privacy
+
+- No tracking, analytics, or network calls except explicit iCal subscriptions & background image fetches.
+- All computation happens locally.
+- Removing background image clears IndexedDB blob cleanly.
+
+---
+
+## 🌍 Browser Support (Targeted)
+
+- Chrome / Edge (latest two versions)
+- Firefox (recent ESR + latest)
+- Safari (15.1+; iOS tweaks implemented)
+- Progressive Web App install flows (Android Chrome, iOS Safari manual Add to Home Screen)
+
+---
+
+## 📚 Documentation Index
+
+| File | Purpose |
+|------|---------|
+| `docs/export-troubleshooting.md` | Debugging broken or corrupted exports |
+| `docs/ios-background-fix.md` | Technical breakdown of iOS image rendering fix |
+
+---
+
+## 🧾 License
+
+MIT
+
+---
+
+## 👤 About
+
+Created in the heart of Kaiserstuhl 🍇  
+A focused weekly planner prioritizing clarity, speed, and local ownership of your data.
+
+---
+
+**Version:** 1.0.0  
+**Repository:** https://github.com/meierac/wochenschau

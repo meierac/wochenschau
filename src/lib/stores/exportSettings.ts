@@ -10,6 +10,7 @@ export interface ExportSettings {
   // Title/Headline
   title: string;
   titleFontSize: number; // in pixels
+  titleOpacity: number; // 0-100 (opacity for headline/title text)
   showWeekNumber: boolean; // Show "KW XX" below title
 
   // Background
@@ -39,6 +40,7 @@ const defaultSettings: ExportSettings = {
   // Title/Headline
   title: "Wochenschau",
   titleFontSize: 60,
+  titleOpacity: 100,
   showWeekNumber: false,
 
   // Background
@@ -242,7 +244,10 @@ export const FONT_FAMILIES = [
   { name: "Edu QLD Hand (Handwriting)", value: "'Edu QLD Hand'" },
   { name: "Edu SA Hand (Handwriting)", value: "'Edu SA Hand'" },
   { name: "Handlee (Handwriting)", value: "'Handlee'" },
+  { name: "Kavivanar (Handwriting)", value: "'Kavivanar'" },
+  { name: "Sedgwick Ave (Handwriting)", value: "'Sedgwick Ave'" },
   { name: "Ms Madi (Script)", value: "'Ms Madi'" },
+  { name: "Yesteryear (Script)", value: "'Yesteryear'" },
 
   // Serif Fonts (Local)
   { name: "Lora (Serif)", value: "'Lora'" },
@@ -254,6 +259,8 @@ export const FONT_FAMILIES = [
 
   // Display/Decorative (Local)
   { name: "Pirata One (Display)", value: "'Pirata One'" },
+  { name: "Chango (Display)", value: "'Chango'" },
+  { name: "Climate Crisis (Display)", value: "'Climate Crisis'" },
 
   // Monospace Fonts (Local)
   { name: "Space Mono (Mono)", value: "'Space Mono'" },

@@ -599,7 +599,8 @@
                             <div class="space-y-4 pt-7 text-center">
                                 <h2
                                     class="mb-2 font-medium"
-                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px;"
+                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
+                                        100};"
                                 >
                                     {$exportSettings.title}
                                 </h2>
@@ -798,7 +799,7 @@
                                             <div class="flex gap-0.5">
                                                 <div
                                                     class=" py-3 pr-0 pl-2 min-w-20"
-                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: {$exportSettings.borderRadius}px 0 0 {$exportSettings.borderRadius}px;"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: {$exportSettings.borderRadius}px 2px 2px {$exportSettings.borderRadius}px;"
                                                 >
                                                     <div
                                                         class="flex flex-col h-full pr-2 text-right gap-1"
@@ -820,7 +821,7 @@
                                                 </div>
                                                 <div
                                                     class="flex-1"
-                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: 0;"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()};border-radius: 2px 0 0 2px;"
                                                 >
                                                     {#if getDayActivities(dayIndex).length === 0}
                                                         <div

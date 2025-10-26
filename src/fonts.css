@@ -121,3 +121,49 @@
     font-style: normal;
     font-display: swap;
 }
+
+/* Chango - Regular (Display) */
+@font-face {
+    font-family: "Chango";
+    src: url("/fonts/Chango-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Climate Crisis - Variable (Display) */
+@font-face {
+    font-family: "Climate Crisis";
+    src: url("/fonts/ClimateCrisis-Regular-VariableFont_YEAR.ttf")
+        format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Kavivanar - Regular (Handwriting) */
+@font-face {
+    font-family: "Kavivanar";
+    src: url("/fonts/Kavivanar-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Sedgwick Ave - Regular (Handwriting) */
+@font-face {
+    font-family: "Sedgwick Ave";
+    src: url("/fonts/SedgwickAve-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Yesteryear - Regular (Script) */
+@font-face {
+    font-family: "Yesteryear";
+    src: url("/fonts/Yesteryear-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}

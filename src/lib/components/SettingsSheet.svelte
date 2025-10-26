@@ -1018,6 +1018,21 @@
                                                 $exportSettings.titleFontSize
                                             }
                                         />
+                                        <label
+                                            for="title-opacity-export"
+                                            class="block text-xs font-medium text-muted-foreground mb-2 mt-4"
+                                        >
+                                            Title Opacity: {$exportSettings.titleOpacity}%
+                                        </label>
+                                        <RangeSlider
+                                            id="title-opacity-export"
+                                            min={10}
+                                            max={100}
+                                            step={5}
+                                            bind:value={
+                                                $exportSettings.titleOpacity
+                                            }
+                                        />
                                     </div>
 
                                     <!-- Show Week Number -->
@@ -1789,6 +1804,21 @@
                                         step={2}
                                         bind:value={
                                             $exportSettings.titleFontSize
+                                        }
+                                    />
+                                    <label
+                                        for="title-opacity-export-desktop"
+                                        class="block text-xs font-medium text-muted-foreground mb-2 mt-4"
+                                    >
+                                        Title Opacity: {$exportSettings.titleOpacity}%
+                                    </label>
+                                    <RangeSlider
+                                        id="title-opacity-export-desktop"
+                                        min={10}
+                                        max={100}
+                                        step={5}
+                                        bind:value={
+                                            $exportSettings.titleOpacity
                                         }
                                     />
                                 </div>
