@@ -10,7 +10,6 @@
         ICalSubscription,
         CalendarItem,
     } from "../types/index";
-    import { getWeekNumber } from "../utils/date";
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
     import DefaultBackgroundSelector from "./DefaultBackgroundSelector.svelte";
@@ -110,32 +109,83 @@
 
     function handleConflictResolution(event: CustomEvent<ConflictResolution>) {
         const resolution = event.detail;
+
+        // Aggregated diff path: when refreshAll collected multiple subscription diffs
+        // We store them inside pendingDiff.diffs (array of SubscriptionDiff from refreshService)
+        if (pendingDiff && (pendingDiff as any).diffs) {
+            const diffContainer = pendingDiff as any;
+            const diffs = diffContainer.diffs;
+
+            // Dynamic import to avoid top-level edit (tooling constraints)
+            (async () => {
+                const { refreshService } = await import(
+                    "../services/refreshService"
+                );
+                const strategy =
+                    resolution === "use-synced" ? "use-synced" : "keep-local";
+
+                // Apply all diffs using chosen strategy
+                const applied = refreshService.applyAllDiffs(
+                    $activities,
+                    diffs,
+                    { strategy },
+                );
+
+                // Persist in bulk (single localStorage write)
+                localStorage.setItem(
+                    "wochenschau_activities",
+                    JSON.stringify(applied),
+                );
+
+                // Replace activities store content atomically
+                // (clear then add each to preserve existing derived logic)
+                activities.clearAll();
+                for (const a of applied) {
+                    activities.addActivity(a);
+                }
+
+                // Update lastFetched for all affected subscriptions
+                const affectedIds = new Set(
+                    diffs.map((d: any) => d.subscriptionId),
+                );
+                for (const sub of $subscriptions) {
+                    if (affectedIds.has(sub.id)) {
+                        subscriptions.updateSubscription({
+                            ...sub,
+                            lastFetched: Date.now(),
+                        });
+                    }
+                }
+
+                showConflictDialog = false;
+                pendingConflicts = [];
+                pendingDiff = null;
+                refreshStatus.setPhase("completed");
+            })();
+
+            return;
+        }
+
+        // Legacy single-subscription path (fallback)
         if (!pendingDiff) {
             showConflictDialog = false;
             return;
         }
 
-        // Apply according to resolution
         const { added, updated, removed, conflicts, subscriptionId } =
             pendingDiff;
 
-        // If keep-local: for conflict items, keep existing local (do not overwrite)
-        // If use-synced: use incoming updated versions (already merged)
-        // We already prepared updated items with preserved localOverrides; so both choices are safe.
-        // Difference: keep-local skips replacing those conflict items.
         const updatesToApply =
             resolution === "keep-local"
                 ? updated.filter((u) => !conflicts.find((c) => c.id === u.id))
                 : updated;
 
-        // Bulk apply resolved changes in one pass
         activities.bulkApplySubscriptionChanges({
             added,
             updated: updatesToApply,
             removed,
         });
 
-        // Mark subscription refreshed
         const subscription = $subscriptions.find(
             (s) => s.id === subscriptionId,
         );
@@ -149,7 +199,6 @@
         showConflictDialog = false;
         pendingConflicts = [];
         pendingDiff = null;
-        // Move to updating phase; global completion handled externally
         refreshStatus.setPhase("updating");
     }
 
@@ -413,17 +462,76 @@
         isLoading = true;
 
         try {
-            for (const sub of enabledSubs) {
-                await handleRefresh(sub.id);
-                // After each individual refresh, if overall phase was set to completed by single call, revert to idle/fetching for next iteration
-                if (refreshStatus) {
-                    // Prepare for next subscription if not last
-                    const nextIndex = enabledSubs.indexOf(sub) + 1;
-                    if (nextIndex < enabledSubs.length) {
-                        refreshStatus.setPhase("fetching");
-                    }
+            // Build existing items map
+            const existingMap = new Map(
+                enabledSubs.map((sub) => [
+                    sub.id,
+                    $activities.filter(
+                        (a) => a.source === "ical" && a.sourceId === sub.id,
+                    ),
+                ]),
+            );
+
+            // Dynamic import refreshService (avoid top-level import edit)
+            const { refreshService } = await import(
+                "../services/refreshService"
+            );
+
+            const { diffs, aggregatedConflicts, summary } =
+                await refreshService.fetchAndDiffAll(enabledSubs, existingMap, {
+                    parallel: true,
+                    onPhase: (phase, ctx) => {
+                        // Map generic phases to refreshStatus phases
+                        if (phase === "fetching")
+                            refreshStatus.setPhase("fetching");
+                        else if (phase === "parsing")
+                            refreshStatus.setPhase("parsing");
+                        else if (phase === "diffing")
+                            refreshStatus.setPhase("diffing");
+                        else if (phase === "aggregating")
+                            refreshStatus.setPhase("conflict-check");
+                        else if (phase === "completed")
+                            refreshStatus.setPhase("updating");
+                        else if (phase === "error")
+                            refreshStatus.setPhase("error");
+                    },
+                });
+
+            if (aggregatedConflicts.length > 0) {
+                // Store aggregated conflicts and diffs for single dialog resolution
+                pendingConflicts = aggregatedConflicts;
+                pendingDiff = {
+                    diffs,
+                } as any;
+                showConflictDialog = true;
+                refreshStatus.setPhase("conflict-check");
+                return;
+            }
+
+            // No conflicts: auto apply with use-synced strategy
+            const applied = refreshService.applyAllDiffs($activities, diffs, {
+                strategy: "use-synced",
+            });
+
+            // Persist bulk
+            localStorage.setItem(
+                "wochenschau_activities",
+                JSON.stringify(applied),
+            );
+            activities.clearAll();
+            for (const a of applied) activities.addActivity(a);
+
+            // Update lastFetched on all affected subscriptions
+            const affectedIds = new Set(diffs.map((d) => d.subscriptionId));
+            for (const sub of $subscriptions) {
+                if (affectedIds.has(sub.id)) {
+                    subscriptions.updateSubscription({
+                        ...sub,
+                        lastFetched: Date.now(),
+                    });
                 }
             }
+
             refreshStatus.finish();
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
