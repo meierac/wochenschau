@@ -68,9 +68,7 @@ function sanitizeUid(uid: string): string {
  * Extract date portion (YYYYMMDD) from an iCal date/datetime.
  */
 function extractDate(iCalDateTime: string): string {
-  return iCalDateTime.includes("T")
-    ? iCalDateTime.split("T")[0]
-    : iCalDateTime;
+  return iCalDateTime.includes("T") ? iCalDateTime.split("T")[0] : iCalDateTime;
 }
 
 /**
@@ -98,16 +96,14 @@ function decodeICalText(text: string): string {
 /**
  * Build a CalendarItem from a parsed interim event object.
  */
-function buildCalendarItem(
-  event: {
-    summary?: string;
-    description?: string;
-    dtstart?: string;
-    dtend?: string;
-    uid?: string;
-    sourceId: string;
-  },
-): CalendarItem | null {
+function buildCalendarItem(event: {
+  summary?: string;
+  description?: string;
+  dtstart?: string;
+  dtend?: string;
+  uid?: string;
+  sourceId: string;
+}): CalendarItem | null {
   try {
     const dtstart = event.dtstart || "";
     const dtend = event.dtend || dtstart;
@@ -188,7 +184,15 @@ export function parseICalToCalendarItems(
 ): CalendarItem[] {
   const items: CalendarItem[] = [];
   const lines = rawText.split(/\r?\n/);
-  let currentEvent: Record<string, any> | null = null;
+  // Narrow event typing for safer buildCalendarItem usage
+  let currentEvent: {
+    summary?: string;
+    description?: string;
+    dtstart?: string;
+    dtend?: string;
+    uid?: string;
+    sourceId: string;
+  } | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
@@ -201,7 +205,7 @@ export function parseICalToCalendarItems(
 
     const trimmed = line.trim();
     if (trimmed === "BEGIN:VEVENT") {
-      currentEvent = { sourceId: subscriptionId, source: "ical", description: "" };
+      currentEvent = { sourceId: subscriptionId, description: "" };
       continue;
     }
     if (trimmed === "END:VEVENT") {
@@ -335,10 +339,7 @@ export function applySubscriptionDiff(
   const map = new Map(next.map((a) => [a.id, a]));
 
   for (const u of updated) {
-    if (
-      options.strategy === "keep-local" &&
-      conflictIds.has(u.id)
-    ) {
+    if (options.strategy === "keep-local" && conflictIds.has(u.id)) {
       // Skip overwrite for conflicts
       continue;
     }
