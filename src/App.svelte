@@ -627,13 +627,13 @@
                 </h1>
                 <button
                     on:click={handleRefreshSubscriptions}
-                    disabled={isSyncing}
+                    disabled={syncingActive}
                     class="pointer-events-auto p-2 rounded-lg active:bg-muted transition-colors disabled:opacity-50"
                     aria-label="Sync calendars"
-                    title={isSyncing ? "Syncing..." : "Sync calendars"}
+                    title={syncingActive ? $refreshSummary : "Sync calendars"}
                 >
                     <svg
-                        class="w-6 h-6 {isSyncing ? 'animate-spin' : ''}"
+                        class="w-6 h-6 {syncingActive ? 'animate-spin' : ''}"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -647,6 +647,48 @@
                     </svg>
                 </button>
             </div>
+
+            <!-- Mobile Sync Overlay Splash -->
+            {#if syncingActive}
+                <div
+                    class="fixed inset-0 z-40 flex flex-col items-center justify-center bg-background/90 backdrop-blur-lg"
+                >
+                    <div class="relative w-20 h-20 mb-6">
+                        <div
+                            class="absolute inset-0 rounded-full border-4 border-primary/30"
+                        ></div>
+                        <div
+                            class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"
+                        ></div>
+                        <div
+                            class="absolute inset-0 rounded-full animate-ping bg-primary/10"
+                        ></div>
+                    </div>
+                    <p class="text-sm font-semibold mb-2">
+                        {$refreshSummary}
+                    </p>
+                    <div
+                        class="w-40 h-3 rounded-full bg-muted overflow-hidden mb-3"
+                    >
+                        <div
+                            class="h-full bg-primary transition-all duration-300"
+                            style="width: {($refreshProgress * 100).toFixed(
+                                0,
+                            )}%;"
+                        ></div>
+                    </div>
+                    <p class="text-[10px] text-muted-foreground mb-4">
+                        Added {$refreshStatus.addedCount} • Updated {$refreshStatus.updatedCount}
+                        • Removed {$refreshStatus.removedCount} • Conflicts {$refreshStatus.conflictCount}
+                    </p>
+                    <button
+                        class="px-5 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold opacity-70 cursor-not-allowed"
+                        aria-label="Sync in progress"
+                    >
+                        Sync in progress...
+                    </button>
+                </div>
+            {/if}
 
             <!-- Week View -->
             <div class="flex-1 overflow-hidden">
