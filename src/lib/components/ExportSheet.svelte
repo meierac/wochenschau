@@ -393,8 +393,6 @@
             }
 
             await navigator.share({
-                title: `Wochenschau Week ${$currentWeek}`,
-                text: `My weekly agenda for week ${$currentWeek} ${$currentYear}`,
                 files: [file],
             });
 
