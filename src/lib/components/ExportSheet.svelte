@@ -624,7 +624,7 @@
                             <div class="space-y-4 pt-7 text-center">
                                 <h2
                                     class="mb-2 font-medium"
-                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.textColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
+                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
                                         100};"
                                 >
                                     {$exportSettings.title}

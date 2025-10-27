@@ -8,9 +8,14 @@ export interface ExportSettings {
   textColor: string;
 
   // Title/Headline
+
   title: string;
+
   titleFontSize: number; // in pixels
+
   titleOpacity: number; // 0-100 (opacity for headline/title text)
+
+  titleColor: string; // Separate color for main title
   showWeekNumber: boolean; // Show "KW XX" below title
 
   // Background
@@ -38,9 +43,14 @@ const defaultSettings: ExportSettings = {
   textColor: "#ffffff",
 
   // Title/Headline
+
   title: "Wochenschau",
+
   titleFontSize: 60,
+
   titleOpacity: 100,
+
+  titleColor: "#000000",
   showWeekNumber: false,
 
   // Background
@@ -70,11 +80,18 @@ function createExportSettingsStore() {
     // Ensure new fields exist for backward compatibility
     initial = {
       ...defaultSettings,
+
       ...parsed,
+
+      titleColor: parsed.titleColor ?? defaultSettings.titleColor,
       backgroundMode: parsed.backgroundMode ?? "color",
+
       backgroundImageUrl: parsed.backgroundImageUrl ?? null,
+
       backgroundImageType: parsed.backgroundImageType ?? null,
+
       // Don't load backgroundImage from localStorage - will load from IndexedDB
+
       backgroundImage: null,
     };
   } else {

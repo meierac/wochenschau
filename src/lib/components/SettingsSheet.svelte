@@ -1310,6 +1310,34 @@
                                                 $exportSettings.titleOpacity
                                             }
                                         />
+
+                                        <!-- Title Color -->
+                                        <div class="mt-4">
+                                            <label
+                                                for="title-color-export"
+                                                class="block text-xs font-medium text-muted-foreground mb-2"
+                                            >
+                                                Title Color
+                                            </label>
+                                            <div class="flex gap-2">
+                                                <input
+                                                    id="title-color-export"
+                                                    type="color"
+                                                    bind:value={
+                                                        $exportSettings.titleColor
+                                                    }
+                                                    class="h-8 w-12 rounded border border-border bg-muted"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    bind:value={
+                                                        $exportSettings.titleColor
+                                                    }
+                                                    class="flex-1 px-2 py-1 rounded border border-border text-xs bg-background"
+                                                    placeholder="#000000"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <!-- Show Week Number -->
@@ -2098,6 +2126,33 @@
                                             $exportSettings.titleOpacity
                                         }
                                     />
+                                    <!-- Title Color -->
+                                    <div class="mt-4">
+                                        <label
+                                            for="title-color-export-desktop"
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Title Color
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input
+                                                id="title-color-export-desktop"
+                                                type="color"
+                                                bind:value={
+                                                    $exportSettings.titleColor
+                                                }
+                                                class="h-8 w-12 rounded border border-border bg-muted"
+                                            />
+                                            <input
+                                                type="text"
+                                                bind:value={
+                                                    $exportSettings.titleColor
+                                                }
+                                                class="flex-1 px-2 py-1 rounded border border-border text-xs bg-background"
+                                                placeholder="#000000"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Show Week Number -->
