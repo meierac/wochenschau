@@ -30,6 +30,7 @@ import type {
   ICalSubscription,
   SyncConflict,
 } from "../types/index.js";
+import { getUserTimeZone, getDateInTimeZone } from "../utils/date.js";
 
 /* ---------------------------------- Types ---------------------------------- */
 
@@ -76,10 +77,36 @@ function extractDate(iCalDateTime: string): string {
  */
 function extractTime(iCalDateTime: string): string {
   if (!iCalDateTime.includes("T")) return "09:00";
-  const timePart = iCalDateTime.split("T")[1].replace("Z", "");
-  const hours = timePart.substring(0, 2);
-  const minutes = timePart.substring(2, 4);
-  return `${hours}:${minutes}`;
+
+  const [datePart, timeAndZone] = iCalDateTime.split("T");
+  const timePartRaw = timeAndZone.replace(/Z$/, "");
+  const hoursNum = parseInt(timePartRaw.substring(0, 2), 10);
+  const minutesNum = parseInt(timePartRaw.substring(2, 4), 10);
+  const secondsNum =
+    timePartRaw.length >= 6 ? parseInt(timePartRaw.substring(4, 6), 10) : 0;
+
+  // If the original string ends with Z, treat as UTC and convert to user timezone (fallback Europe/Berlin)
+  if (/Z$/.test(iCalDateTime)) {
+    try {
+      const year = parseInt(datePart.substring(0, 4), 10);
+      const month = parseInt(datePart.substring(4, 6), 10) - 1;
+      const day = parseInt(datePart.substring(6, 8), 10);
+      const utcDate = new Date(
+        Date.UTC(year, month, day, hoursNum, minutesNum, secondsNum),
+      );
+      const tz = getUserTimeZone();
+      const zoned = getDateInTimeZone(utcDate, tz);
+      const hh = String(zoned.getHours()).padStart(2, "0");
+      const mm = String(zoned.getMinutes()).padStart(2, "0");
+      return `${hh}:${mm}`;
+    } catch (_e) {
+      // Fall back to raw parsed time if conversion fails
+    }
+  }
+
+  const hh = String(hoursNum).padStart(2, "0");
+  const mm = String(minutesNum).padStart(2, "0");
+  return `${hh}:${mm}`;
 }
 
 /**
