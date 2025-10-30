@@ -8,7 +8,13 @@
     export let currentYear: number;
     export let isDesktop = false;
 
-    const dispatch = createEventDispatcher();
+    // Whether selecting a week auto-saves & closes (requested behavior)
+    export let autoCloseOnWeekSelect: boolean = true;
+
+    const dispatch = createEventDispatcher<{
+        weekSelected: { week: number; year: number };
+        close: void;
+    }>();
 
     let selectedWeek = currentWeek;
     let selectedYear = currentYear;
@@ -23,6 +29,15 @@
 
     function handleClose() {
         dispatch("close");
+    }
+
+    function selectWeek(week: number) {
+        selectedWeek = week;
+        handleSelect();
+        if (autoCloseOnWeekSelect) {
+            // Close after a tick to allow any parent listener to process weekSelected first
+            queueMicrotask(() => handleClose());
+        }
     }
 </script>
 
@@ -61,27 +76,32 @@
             Select Week
         </h3>
 
-        <!-- Save button (right) -->
-        <IconButton
-            variant="secondary"
-            size="lg"
-            ariaLabel="Select week"
-            on:click={handleSelect}
-        >
-            <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        <!-- (Optional) Manual save button retained for desktop / non-auto flows -->
+        {#if !autoCloseOnWeekSelect}
+            <IconButton
+                variant="secondary"
+                size="lg"
+                ariaLabel="Select week"
+                on:click={handleSelect}
             >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                />
-            </svg>
-        </IconButton>
+                <svg
+                    class="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                    />
+                </svg>
+            </IconButton>
+        {:else}
+            <!-- Spacer to keep layout balanced when save button absent -->
+            <div class="w-10 h-10"></div>
+        {/if}
     </div>
 
     <!-- Content -->
@@ -108,11 +128,13 @@
 
         <!-- Week Selection Grid -->
         <fieldset class="space-y-2">
-            <legend class="text-sm font-semibold text-foreground">Week</legend>
+            <legend class="text-sm font-semibold text-foreground">
+                Week {selectedWeek}
+            </legend>
             <div class="grid grid-cols-6 gap-2">
                 {#each weeks as week}
                     <Button
-                        on:click={() => (selectedWeek = week)}
+                        on:click={() => selectWeek(week)}
                         aria-pressed={selectedWeek === week}
                         class={`px-2 py-2 rounded text-sm font-semibold transition-colors ${
                             selectedWeek === week
@@ -125,5 +147,11 @@
                 {/each}
             </div>
         </fieldset>
+
+        {#if autoCloseOnWeekSelect}
+            <p class="text-xs text-muted-foreground">
+                Selecting a week automatically saves and closes.
+            </p>
+        {/if}
     </div>
 </SwipeableSheet>
