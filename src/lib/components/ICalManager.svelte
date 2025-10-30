@@ -120,6 +120,16 @@
         dispatch("close");
     }
 
+    // Format long URLs with a middle ellipsis so protocol + domain and tail are visible.
+    function middleEllipsis(url: string, max: number = 60) {
+        if (!url) return "";
+        if (url.length <= max) return url;
+        const half = Math.floor((max - 3) / 2);
+        const start = url.slice(0, half + (max % 2));
+        const end = url.slice(-half);
+        return `${start}...${end}`;
+    }
+
     $: itemCount = (subscriptionId: string) => {
         return $activities.filter(
             (a) => a.sourceId === subscriptionId && a.source === "ical",
@@ -185,8 +195,9 @@
                                     </div>
                                     <div
                                         class="text-xs text-muted-foreground truncate"
+                                        title={subscription.url}
                                     >
-                                        {subscription.url}
+                                        {middleEllipsis(subscription.url, 60)}
                                     </div>
                                 </div>
                                 <label
@@ -195,12 +206,20 @@
                                     <input
                                         type="checkbox"
                                         checked={subscription.enabled}
+                                        aria-label="Toggle subscription active state"
                                         on:change={() =>
                                             handleToggleSubscription(
                                                 subscription.id,
                                             )}
                                         class="w-4 h-4 rounded cursor-pointer"
                                     />
+                                    <span
+                                        class="text-xs text-muted-foreground select-none"
+                                    >
+                                        {subscription.enabled
+                                            ? "Active"
+                                            : "Inactive"}
+                                    </span>
                                 </label>
                             </div>
 
@@ -226,10 +245,19 @@
                                 <button
                                     on:click={() =>
                                         handleRefresh(subscription.id)}
-                                    disabled={isLoading}
+                                    disabled={isLoading ||
+                                        !subscription.enabled}
                                     class="flex-1 px-2 py-1 text-xs bg-primary text-primary-foreground rounded active:opacity-80 transition-opacity disabled:opacity-50"
+                                    aria-disabled={!subscription.enabled}
+                                    title={!subscription.enabled
+                                        ? "Enable subscription to refresh"
+                                        : "Refresh subscription"}
                                 >
-                                    {isLoading ? "Loading..." : "Refresh"}
+                                    {isLoading
+                                        ? "Loading..."
+                                        : subscription.enabled
+                                          ? "Refresh"
+                                          : "Disabled"}
                                 </button>
                                 <button
                                     on:click={() =>

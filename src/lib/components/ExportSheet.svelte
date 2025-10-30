@@ -6,6 +6,8 @@
     import { bibleVerse } from "../stores/bibleVerse";
     import { getDaysOfWeek } from "../utils/date";
     import { WEEKDAYS_DE } from "../types/index";
+    import type { ICalSubscription } from "../types/index";
+    import { subscriptions } from "../stores/ical";
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
@@ -414,10 +416,21 @@
     // Reactive: Get days of the current week
     $: days = getDaysOfWeek($currentWeek, $currentYear);
 
-    // Reactive: Get activities for the current week
-    $: weekActivities = $activities.filter(
-        (a) => a.week === $currentWeek && a.year === $currentYear,
+    // Reactive: Enabled subscription IDs (only active ones)
+    $: enabledSubscriptions = new Set(
+        $subscriptions
+            .filter((s: ICalSubscription) => s.enabled)
+            .map((s: ICalSubscription) => s.id),
     );
+
+    // Reactive: Get activities for the current week (filter out disabled iCal subscriptions)
+    $: weekActivities = $activities
+        .filter((a) => a.week === $currentWeek && a.year === $currentYear)
+        .filter(
+            (a) =>
+                a.source !== "ical" ||
+                (a.sourceId && enabledSubscriptions.has(a.sourceId)),
+        );
 
     /**
      * Get activities for a specific day

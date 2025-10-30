@@ -3,6 +3,9 @@
     import { currentWeek, currentYear } from "../stores/week";
     import { getDaysOfWeek } from "../utils/date";
     import { bibleVerse } from "../stores/bibleVerse";
+    import { subscriptions } from "../stores/ical";
+    import type { ICalSubscription } from "../types/index";
+    import { derived } from "svelte/store";
 
     import DayColumn from "./DayColumn.svelte";
     import WeekPicker from "./WeekPicker.svelte";
@@ -13,10 +16,22 @@
     let showWeekPicker = false;
 
     // Reactive
+
     $: days = getDaysOfWeek($currentWeek, $currentYear);
-    $: weekActivities = $activities.filter(
-        (a) => a.week === $currentWeek && a.year === $currentYear,
+
+    const enabledSubscriptions = derived(
+        subscriptions,
+        ($subs: ICalSubscription[]) =>
+            new Set($subs.filter((s) => s.enabled).map((s) => s.id)),
     );
+
+    $: weekActivities = $activities
+        .filter((a) => a.week === $currentWeek && a.year === $currentYear)
+        .filter(
+            (a) =>
+                a.source !== "ical" ||
+                (a.sourceId && $enabledSubscriptions.has(a.sourceId)),
+        );
 
     function handleWeekSelected(
         event: CustomEvent<{ week: number; year: number }>,
