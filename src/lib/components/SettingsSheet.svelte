@@ -692,8 +692,7 @@
                 <div class="absolute left-3 top-3">
                     <Button
                         on:click={backToList}
-                        variants="secondary"
-                        class="bg-muted hover:bg-muted/80 flex items-center gap-2"
+                        class="text-secondary-foreground bg-muted hover:bg-muted/80 flex items-center gap-2"
                         aria-label="Back to settings"
                     >
                         <svg

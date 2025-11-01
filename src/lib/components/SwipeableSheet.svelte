@@ -264,7 +264,7 @@
     .backdrop {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.1);
         z-index: 50;
         display: flex;
         align-items: flex-end;
@@ -287,15 +287,14 @@
     }
 
     .sheet {
-        background: hsl(var(--card) / 0.1);
+        background: hsl(var(--background) / 0.3);
         backdrop-filter: blur(40px);
         -webkit-backdrop-filter: blur(40px);
         box-shadow:
-            0 -4px 24px rgba(0, 0, 0, 0.2),
-            0 0 0 1px hsl(var(--border) / 0.9),
             0 0px 2px rgba(255, 255, 255, 0.2) inset,
-            0 0px 10px rgba(255, 255, 255, 0.05) inset;
-
+            0 0px 10px rgba(255, 255, 255, 0.05) inset,
+            rgba(0, 0, 0, 0.16) 0px 10px 36px 0px,
+            rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;
         width: 100%;
         max-width: 100%;
         display: flex;

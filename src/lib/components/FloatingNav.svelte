@@ -102,7 +102,7 @@
     >
         <button
             on:click={() => dispatch("openAddActivity")}
-            class="text-primary-foreground p-3 rounded-full shadow-lg active:scale-95 transition-transform flex items-center justify-center text-xl font-semibold hover:shadow-xl shrink-0"
+            class=" p-3 rounded-full active:scale-95 transition-transform flex items-center justify-center text-xl font-semibold shrink-0"
             aria-label="Add activity"
         >
             <svg
