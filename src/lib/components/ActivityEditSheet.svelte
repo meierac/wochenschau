@@ -198,7 +198,7 @@
                     id="start-time"
                     type="time"
                     bind:value={editData.startTime}
-                    style="width: 100%;"
+                    style="width: stretch;"
                     class="min-w-10 px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
             </div>
@@ -213,7 +213,7 @@
                     id="end-time"
                     type="time"
                     bind:value={editData.endTime}
-                    style="width: 100%;"
+                    style="width: stretch;"
                     class="min-w-10 px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
             </div>
