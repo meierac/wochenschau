@@ -754,7 +754,7 @@
                                 <button
                                     on:click={() => selectSetting(item.id)}
                                     style="border-radius: 28px;"
-                                    class="w-full p-4 bg-muted/50 border border-border hover:border-primary transition-colors text-left flex items-center justify-between gap-3"
+                                    class="w-full p-4 bg-muted/50 border border-border transition-colors text-left flex items-center justify-between gap-3"
                                 >
                                     <div class="shrink-0 self-center">
                                         <SettingIcon icon={item.icon} />
@@ -1326,14 +1326,14 @@
                                                     bind:value={
                                                         $exportSettings.titleColor
                                                     }
-                                                    class="h-8 w-12 rounded border border-border bg-muted"
+                                                    class="w-12 h-10 rounded border border-input cursor-pointer"
                                                 />
                                                 <input
                                                     type="text"
                                                     bind:value={
                                                         $exportSettings.titleColor
                                                     }
-                                                    class="flex-1 px-2 py-1 rounded border border-border text-xs bg-background"
+                                                    class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                                     placeholder="#000000"
                                                 />
                                             </div>
@@ -1373,7 +1373,7 @@
                                             bind:value={
                                                 $exportSettings.headerFontFamily
                                             }
-                                            class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                            class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                             style="font-family: {$exportSettings.headerFontFamily};"
                                         >
                                             {#each FONT_FAMILIES as font}
@@ -1399,7 +1399,7 @@
                                             bind:value={
                                                 $exportSettings.bodyFontFamily
                                             }
-                                            class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                            class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                             style="font-family: {$exportSettings.bodyFontFamily};"
                                         >
                                             {#each FONT_FAMILIES as font}
@@ -2141,14 +2141,14 @@
                                                 bind:value={
                                                     $exportSettings.titleColor
                                                 }
-                                                class="h-8 w-12 rounded border border-border bg-muted"
+                                                class="w-12 h-10 rounded border border-input cursor-pointer"
                                             />
                                             <input
                                                 type="text"
                                                 bind:value={
                                                     $exportSettings.titleColor
                                                 }
-                                                class="flex-1 px-2 py-1 rounded border border-border text-xs bg-background"
+                                                class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                                 placeholder="#000000"
                                             />
                                         </div>
@@ -2186,7 +2186,7 @@
                                         bind:value={
                                             $exportSettings.headerFontFamily
                                         }
-                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                         style="font-family: {$exportSettings.headerFontFamily};"
                                     >
                                         {#each FONT_FAMILIES as font}
@@ -2212,7 +2212,7 @@
                                         bind:value={
                                             $exportSettings.bodyFontFamily
                                         }
-                                        class="w-full px-3 py-2 bg-background border border-input rounded text-foreground text-sm"
+                                        class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
                                         style="font-family: {$exportSettings.bodyFontFamily};"
                                     >
                                         {#each FONT_FAMILIES as font}

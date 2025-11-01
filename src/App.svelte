@@ -462,16 +462,23 @@
                         title="Add activity"
                     >
                         <svg
-                            class="w-5 h-5"
+                            class="w-6 h-6"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
+                            aria-label="Edit"
                         >
                             <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                                d="M4 20l1.05-4.2a2 2 0 0 1 .53-.95L15.3 5.13a2.5 2.5 0 0 1 3.54 0l.03.03a2.5 2.5 0 0 1 0 3.54L9.15 18.42a2 2 0 0 1-.95.53L4 20Z"
+                                stroke="currentColor"
                                 stroke-width="2"
-                                d="M12 4v16m8-8H4"
+                                stroke-linejoin="round"
+                            />
+                            <path
+                                d="M13.5 7.5l3 3"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
                             />
                         </svg>
                         Add

@@ -287,12 +287,15 @@
     }
 
     .sheet {
-        background: hsl(var(--card) / 0.6);
+        background: hsl(var(--card) / 0.1);
         backdrop-filter: blur(40px);
         -webkit-backdrop-filter: blur(40px);
         box-shadow:
             0 -4px 24px rgba(0, 0, 0, 0.2),
-            0 0 0 1px hsl(var(--border) / 0.9);
+            0 0 0 1px hsl(var(--border) / 0.9),
+            0 0px 2px rgba(255, 255, 255, 0.2) inset,
+            0 0px 10px rgba(255, 255, 255, 0.05) inset;
+
         width: 100%;
         max-width: 100%;
         display: flex;

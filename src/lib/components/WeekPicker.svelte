@@ -147,11 +147,5 @@
                 {/each}
             </div>
         </fieldset>
-
-        {#if autoCloseOnWeekSelect}
-            <p class="text-xs text-muted-foreground">
-                Selecting a week automatically saves and closes.
-            </p>
-        {/if}
     </div>
 </SwipeableSheet>
