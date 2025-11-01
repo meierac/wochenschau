@@ -198,7 +198,8 @@
                     id="start-time"
                     type="time"
                     bind:value={editData.startTime}
-                    class="w-full min-w-10 px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    style="width: 100%;"
+                    class="min-w-10 px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
             </div>
             <div>
@@ -212,7 +213,8 @@
                     id="end-time"
                     type="time"
                     bind:value={editData.endTime}
-                    class="w-full min-w-10 px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    style="width: 100%;"
+                    class="min-w-10 px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
             </div>
         </div>
