@@ -25,7 +25,10 @@
     <!-- Floating Navigation Bar -->
     <div
         class="flex-1 bg-background/40 backdrop-blur-xl"
-        style="border-radius: 100px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);box-shadow: 0 0px 2px rgba(255, 255, 255, 0.2) inset, 0 0px 15px rgba(255, 255, 255, 0.1) inset;"
+        style="border-radius: 100px; box-shadow: 0 0px 2px rgba(255, 255, 255, 0.2) inset,
+        0 0px 10px rgba(255, 255, 255, 0.05) inset,
+        rgba(0, 0, 0, 0.16) 0px 10px 36px 0px,
+        rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;;"
     >
         <!-- Navigation Items -->
         <div class="flex items-center justify-around p-2 gap-0">
@@ -98,7 +101,10 @@
     <!-- Floating Action Button (on same level) -->
     <div
         class="bg-background/40 backdrop-blur-xl p-2"
-        style="border-radius: 100px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);box-shadow: 0 0px 2px rgba(255, 255, 255, 0.2) inset, 0 0px 15px rgba(255, 255, 255, 0.1) inset;"
+        style="border-radius: 100px; box-shadow:0 0px 2px rgba(255, 255, 255, 0.2) inset,
+        0 0px 10px rgba(255, 255, 255, 0.05) inset,
+        rgba(0, 0, 0, 0.16) 0px 10px 36px 0px,
+        rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;;"
     >
         <button
             on:click={() => dispatch("openAddActivity")}
