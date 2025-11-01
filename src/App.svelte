@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+
     import WeekView from "./lib/components/WeekView.svelte";
 
     import {
@@ -7,39 +8,71 @@
         refreshProgress,
         refreshSummary,
     } from "./lib/stores/refreshStatus";
+
     import FloatingNav from "./lib/components/FloatingNav.svelte";
+
     import AddActivityModal from "./lib/components/AddActivityModal.svelte";
+
     import SettingsSheet from "./lib/components/SettingsSheet.svelte";
+
     import ExportSheet from "./lib/components/ExportSheet.svelte";
+
     import SyncConflictDialog from "./lib/components/SyncConflictDialog.svelte";
+
     import { currentWeek, currentYear } from "./lib/stores/week";
+
     import { subscriptions } from "./lib/stores/ical";
+
     import { activities } from "./lib/stores/activities";
+
     import { formatDateRange } from "./lib/utils/date";
+
     import WeekPicker from "./lib/components/WeekPicker.svelte";
-    import type { SyncConflict, ConflictResolution } from "./lib/types/index";
+
+    import ActivityEditSheet from "./lib/components/ActivityEditSheet.svelte";
+    import type {
+        SyncConflict,
+        ConflictResolution,
+        CalendarItem,
+    } from "./lib/types/index";
 
     let isDesktop =
         typeof window !== "undefined" ? window.innerWidth >= 768 : false;
+
     let showAddActivity = false;
+
     let showSettings = false;
+
     let showWeekPicker = false;
+
     let showExport = false;
+
+    let editingActivity: CalendarItem | null = null;
     // legacy isSyncing flag removed
+
     $: syncingPhase = $refreshStatus.phase;
+
     $: syncingActive =
         syncingPhase !== "idle" &&
         syncingPhase !== "completed" &&
         syncingPhase !== "error" &&
         syncingPhase !== "cancelled" &&
         !(syncingPhase === "conflict-check" && showConflictDialog);
+
     $: canCancel = !!refreshAbortController && syncingActive;
+
     let showConflictDialog = false;
+
     let pendingConflicts: SyncConflict[] = [];
+
     // removed legacy pendingSyncData map (replaced by aggregated pendingDiffs)
+
     // Aggregated diffs for conflict dialog (produced by refreshService)
+
     let pendingDiffs: any = null;
+
     // Abort controller for cancellable refresh
+
     let refreshAbortController: AbortController | null = null;
 
     const REFRESH_INTERVAL_HOURS = 72; // Auto-refresh if data is older than 24 hours
@@ -64,7 +97,9 @@
         event: CustomEvent<{ week: number; year: number }>,
     ) {
         currentWeek.set(event.detail.week);
+
         currentYear.set(event.detail.year);
+
         showWeekPicker = false;
     }
 
@@ -72,7 +107,20 @@
         showExport = true;
     }
 
+    // Activity editing handlers (global sheet)
+    function handleRequestEditActivity(event: CustomEvent<CalendarItem>) {
+        editingActivity = event.detail;
+    }
+    function handleCloseEditActivity() {
+        editingActivity = null;
+    }
+    function handleSaveActivity(event: CustomEvent<CalendarItem>) {
+        activities.updateActivity(event.detail);
+        editingActivity = null;
+    }
+
     // Delegated iCal parsing (consolidated in service)
+
     // parseICalToCalendarItems removed (handled entirely by refreshService/icalService where needed)
 
     // Removed local build/extract helpers (centralized in icalService)
@@ -81,32 +129,41 @@
 
     function handleConflictResolution(event: CustomEvent<ConflictResolution>) {
         const resolution = event.detail;
+
         (async () => {
             const { refreshService } = await import(
                 "./lib/services/refreshService"
             );
+
             if (pendingDiffs) {
                 const strategy =
                     resolution === "use-synced" ? "use-synced" : "keep-local";
+
                 const applied = refreshService.applyAllDiffs(
                     $activities,
+
                     pendingDiffs,
+
                     {
                         strategy,
                     },
                 );
 
                 // Atomic bulk replace (single write)
+
                 activities.replaceAll(applied);
 
                 // Update lastFetched on affected subscriptions
+
                 const affectedIds = new Set(
                     pendingDiffs.map((d: any) => d.subscriptionId),
                 );
+
                 for (const sub of $subscriptions) {
                     if (affectedIds.has(sub.id)) {
                         subscriptions.updateSubscription({
                             ...sub,
+
                             lastFetched: Date.now(),
                         });
                     }
@@ -114,15 +171,20 @@
 
                 refreshStatus.finish();
             }
+
             // Clear pending data
+
             pendingConflicts = [];
+
             pendingDiffs = null;
+
             showConflictDialog = false;
         })();
     }
 
     function handleConflictDialogClose() {
         // User closed dialog without choosing - treat as "keep local"
+
         if (pendingDiffs) {
             handleConflictResolution(
                 new CustomEvent<ConflictResolution>("resolve", {
@@ -131,23 +193,28 @@
             );
         } else {
             pendingConflicts = [];
+
             showConflictDialog = false;
         }
     }
 
     async function autoRefreshSubscriptions() {
         const now = Date.now();
+
         const refreshThreshold = REFRESH_INTERVAL_HOURS * 60 * 60 * 1000;
+
         const subsToRefresh = $subscriptions.filter(
             (s) =>
                 s.enabled &&
                 (!s.lastFetched || now - s.lastFetched > refreshThreshold),
         );
+
         if (subsToRefresh.length === 0) return;
 
         const existingMap = new Map(
             subsToRefresh.map((sub) => [
                 sub.id,
+
                 $activities.filter(
                     (a) => a.source === "ical" && a.sourceId === sub.id,
                 ),
@@ -159,29 +226,39 @@
         );
 
         // Make auto refresh abortable
+
         refreshAbortController = new AbortController();
 
         let diffs, aggregatedConflicts;
+
         try {
             ({ diffs, aggregatedConflicts } =
                 await refreshService.fetchAndDiffAll(
                     subsToRefresh,
+
                     existingMap,
+
                     {
                         parallel: true,
+
                         signal: refreshAbortController.signal,
                     },
                 ));
         } finally {
             // Clear controller after attempt (whether aborted or finished)
+
             refreshAbortController = null;
         }
 
         if (aggregatedConflicts.length > 0) {
             pendingConflicts = aggregatedConflicts;
+
             pendingDiffs = diffs;
+
             showConflictDialog = true;
+
             refreshStatus.setPhase("conflict-check");
+
             return;
         }
 
@@ -192,10 +269,12 @@
         activities.replaceAll(applied);
 
         const affectedIds = new Set(diffs.map((d) => d.subscriptionId));
+
         for (const sub of $subscriptions) {
             if (affectedIds.has(sub.id)) {
                 subscriptions.updateSubscription({
                     ...sub,
+
                     lastFetched: Date.now(),
                 });
             }
@@ -206,11 +285,13 @@
         if (syncingActive) return;
 
         const enabledSubs = $subscriptions.filter((s) => s.enabled);
+
         refreshStatus.start(enabledSubs.length);
 
         const existingMap = new Map(
             enabledSubs.map((sub) => [
                 sub.id,
+
                 $activities.filter(
                     (a) => a.source === "ical" && a.sourceId === sub.id,
                 ),
@@ -223,10 +304,13 @@
             const { refreshService } = await import(
                 "./lib/services/refreshService"
             );
+
             const { diffs, aggregatedConflicts } =
                 await refreshService.fetchAndDiffAll(enabledSubs, existingMap, {
                     parallel: true,
+
                     signal: refreshAbortController.signal,
+
                     onPhase: (phase) => {
                         if (phase === "fetching")
                             refreshStatus.setPhase("fetching");
@@ -248,9 +332,13 @@
 
             if (aggregatedConflicts.length > 0) {
                 pendingConflicts = aggregatedConflicts;
+
                 pendingDiffs = diffs;
+
                 showConflictDialog = true;
+
                 refreshStatus.setPhase("conflict-check");
+
                 return;
             }
 
@@ -261,10 +349,12 @@
             activities.replaceAll(applied);
 
             const affectedIds = new Set(diffs.map((d) => d.subscriptionId));
+
             for (const sub of $subscriptions) {
                 if (affectedIds.has(sub.id)) {
                     subscriptions.updateSubscription({
                         ...sub,
+
                         lastFetched: Date.now(),
                     });
                 }
@@ -276,6 +366,7 @@
                 refreshStatus.cancel();
             } else {
                 refreshStatus.fail(err);
+
                 console.error("Global header refresh failed:", err);
             }
         } finally {
@@ -291,6 +382,7 @@
 
     onMount(() => {
         // Auto-refresh subscriptions on app start if they're outdated
+
         autoRefreshSubscriptions();
     });
 </script>
@@ -488,7 +580,10 @@
 
             <!-- Week View -->
             <div class="flex-1 overflow-hidden">
-                <WeekView {isDesktop} />
+                <WeekView
+                    {isDesktop}
+                    on:requestEditActivity={handleRequestEditActivity}
+                />
             </div>
         </div>
     {:else}
@@ -581,7 +676,10 @@
 
             <!-- Week View -->
             <div class="flex-1 overflow-hidden">
-                <WeekView {isDesktop} />
+                <WeekView
+                    {isDesktop}
+                    on:requestEditActivity={handleRequestEditActivity}
+                />
             </div>
             <!-- Floating Navigation Bar -->
             <FloatingNav
@@ -614,6 +712,21 @@
 
 {#if showExport}
     <ExportSheet on:close={() => (showExport = false)} {isDesktop} />
+{/if}
+
+{#if editingActivity}
+    <ActivityEditSheet
+        {isDesktop}
+        activity={editingActivity}
+        on:save={handleSaveActivity}
+        on:delete={() => {
+            if (editingActivity) {
+                activities.removeActivity(editingActivity.id);
+            }
+            editingActivity = null;
+        }}
+        on:close={handleCloseEditActivity}
+    />
 {/if}
 
 <!-- Sync Conflict Dialog -->

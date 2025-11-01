@@ -1,19 +1,23 @@
 <script lang="ts">
+    import { createEventDispatcher } from "svelte";
     import type { CalendarItem } from "../types/index";
     import { WEEKDAYS } from "../types/index";
     import { activities } from "../stores/activities";
     import ActivityCard from "./ActivityCard.svelte";
-    import ActivityEditSheet from "./ActivityEditSheet.svelte";
 
     export let day: Date;
     export let dayIndex: number;
     export let dayActivities: CalendarItem[] = [];
     export let isDesktop = false;
 
+    // Dispatch events upward so App (or a higher-level component) can manage the edit sheet
+    const dispatch = createEventDispatcher<{
+        requestEditActivity: CalendarItem;
+        deleteActivity: string;
+    }>();
+
     // Debug logging
     $: console.log("DayColumn isDesktop:", isDesktop);
-
-    let editingActivity: CalendarItem | null = null;
 
     function formatDate(date: Date): string {
         return date.toLocaleDateString("de-DE", {
@@ -23,21 +27,13 @@
     }
 
     function handleEditActivity(event: CustomEvent<CalendarItem>) {
-        editingActivity = event.detail;
+        // Bubble the activity up to the parent – no local sheet management anymore
+        dispatch("requestEditActivity", event.detail);
     }
 
     function handleDeleteActivity(activity: CalendarItem) {
         activities.removeActivity(activity.id);
-    }
-
-    function handleSaveActivity(event: CustomEvent<CalendarItem>) {
-        const updatedActivity = event.detail;
-        activities.updateActivity(updatedActivity);
-        editingActivity = null;
-    }
-
-    function handleCloseEditSheet() {
-        editingActivity = null;
+        dispatch("deleteActivity", activity.id);
     }
 </script>
 
@@ -74,18 +70,9 @@
     </div>
 </div>
 
-<!-- Edit Sheet -->
-{#if editingActivity}
-    <ActivityEditSheet
-        {isDesktop}
-        activity={editingActivity}
-        on:save={handleSaveActivity}
-        on:delete={() => {
-            if (editingActivity) {
-                activities.removeActivity(editingActivity.id);
-            }
-            editingActivity = null;
-        }}
-        on:close={handleCloseEditSheet}
-    />
-{/if}
+<!--
+    ActivityEditSheet management removed.
+    Parent component should listen for:
+    - on:requestEditActivity to open the global ActivityEditSheet
+    - on:deleteActivity (optional) if parent wants to react to deletions
+-->

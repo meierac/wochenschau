@@ -1,30 +1,43 @@
 <script lang="ts">
+    import { createEventDispatcher } from "svelte";
+    import { derived } from "svelte/store";
+
     import { activities } from "../stores/activities";
     import { currentWeek, currentYear } from "../stores/week";
     import { getDaysOfWeek } from "../utils/date";
     import { bibleVerse } from "../stores/bibleVerse";
     import { subscriptions } from "../stores/ical";
-    import type { ICalSubscription } from "../types/index";
-    import { derived } from "svelte/store";
 
     import DayColumn from "./DayColumn.svelte";
     import WeekPicker from "./WeekPicker.svelte";
     import Button from "./Button.svelte";
 
+    import type { ICalSubscription, CalendarItem } from "../types/index";
+
     export let isDesktop = false;
 
     let showWeekPicker = false;
 
-    // Reactive
+    const dispatch = createEventDispatcher<{
+        requestEditActivity: CalendarItem;
+    }>();
 
+    function handleRequestEditActivity(event: CustomEvent<CalendarItem>) {
+        // Forward to parent so the global ActivityEditSheet in App.svelte can open
+        dispatch("requestEditActivity", event.detail);
+    }
+
+    // Reactive week days
     $: days = getDaysOfWeek($currentWeek, $currentYear);
 
+    // Enabled subscription ids
     const enabledSubscriptions = derived(
         subscriptions,
         ($subs: ICalSubscription[]) =>
             new Set($subs.filter((s) => s.enabled).map((s) => s.id)),
     );
 
+    // Activities filtered for current week/year and enabled subscriptions
     $: weekActivities = $activities
         .filter((a) => a.week === $currentWeek && a.year === $currentYear)
         .filter(
@@ -42,7 +55,7 @@
     }
 
     function handleResize() {
-        // Handle resize if needed for future desktop-specific logic
+        // Reserved for future responsive adjustments
     }
 
     export function openWeekPicker() {
@@ -50,17 +63,14 @@
     }
 
     export function openAddActivity() {
-        // Handled by parent
+        // Intentionally empty – parent handles opening AddActivityModal
     }
 </script>
 
 <svelte:window on:resize={handleResize} />
 
 <div class="flex flex-col h-full w-full px-2">
-    <!-- Week Days Layout - Responsive -->
-    <!-- Mobile: Stack vertically (1 column) with overflow-y -->
-    <!-- Tablet: 2-3 columns with overflow-y -->
-    <!-- Desktop: 4 columns max (max 4 days per row) with overflow-y -->
+    <!-- Days grid -->
     <div
         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 flex-1 overflow-y-auto md:pb-0 pt-6 md:pt-0"
         style="padding-bottom: {isDesktop ? '20px' : '200px'}"
@@ -74,11 +84,12 @@
                     dayActivities={weekActivities.filter(
                         (a) => a.day === dayIndex,
                     )}
+                    on:requestEditActivity={handleRequestEditActivity}
                 />
             </div>
         {/each}
 
-        <!-- Bible Verse of the Day as Last Item -->
+        <!-- Bible Verse -->
         {#if $bibleVerse.enabled}
             <div class="h-full flex flex-col">
                 <div
@@ -121,7 +132,7 @@
         {/if}
     </div>
 
-    <!-- Week Picker Modal/Sheet -->
+    <!-- Week Picker Sheet -->
     {#if showWeekPicker}
         <WeekPicker
             isDesktop={false}

@@ -296,7 +296,7 @@
                             id="start-time"
                             type="time"
                             bind:value={startTime}
-                            class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            class="w-full min-w-20 px-3 py-2 bg-background border border-input rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                     </div>
                     <div>
@@ -309,7 +309,7 @@
                             id="end-time"
                             type="time"
                             bind:value={endTime}
-                            class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            class="w-full min-w-20 px-3 py-2 bg-background border border-input rounded-2xl text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                     </div>
                 </div>
