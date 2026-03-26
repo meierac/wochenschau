@@ -1,0 +1,42 @@
+<ContentDialog
+    x:Class="Wochenschau.Dialogs.AddSubscriptionDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="iCal-Abonnement hinzufügen"
+    PrimaryButtonText="Hinzufügen"
+    CloseButtonText="Abbrechen"
+    DefaultButton="Primary"
+    IsPrimaryButtonEnabled="{x:Bind IsSaveEnabled, Mode=OneWay}">
+
+    <StackPanel Spacing="12" Width="340">
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Name *" FontWeight="SemiBold" />
+            <TextBox x:Name="NameBox"
+                     PlaceholderText="z. B. Arbeit"
+                     TextChanged="Validate" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="iCal-URL *" FontWeight="SemiBold" />
+            <TextBox x:Name="UrlBox"
+                     PlaceholderText="https://…/calendar.ics"
+                     TextChanged="Validate" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Farbe (optional)" FontWeight="SemiBold" />
+            <TextBox x:Name="ColorBox"
+                     PlaceholderText="#4F46E5" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Sync-Intervall (Minuten)" FontWeight="SemiBold" />
+            <NumberBox x:Name="SyncIntervalBox"
+                       Value="60"
+                       Minimum="0"
+                       SpinButtonPlacementMode="Inline" />
+        </StackPanel>
+
+    </StackPanel>
+</ContentDialog>

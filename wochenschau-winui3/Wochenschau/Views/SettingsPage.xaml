@@ -1,0 +1,136 @@
+<Page
+    x:Class="Wochenschau.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Wochenschau.Views"
+    xmlns:models="using:Wochenschau.Models"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer>
+        <StackPanel Spacing="24" Padding="24">
+
+            <!-- ── iCal Subscriptions ── -->
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="iCal-Abonnements"
+                               Style="{ThemeResource SubtitleTextBlockStyle}" />
+                    <Button Grid.Column="1"
+                            Click="AddSubscriptionButton_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="Hinzufügen" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Subscriptions, Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:ICalSubscription">
+                            <Border Margin="0,4" Padding="12"
+                                    CornerRadius="8"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1">
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{x:Bind Url}" FontSize="11"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1" Margin="8,0"
+                                                 IsOn="{x:Bind Enabled, Mode=OneWay}"
+                                                 Toggled="SubToggle_Toggled"
+                                                 Tag="{x:Bind Id}"
+                                                 OffContent="" OnContent="" />
+                                    <Button Grid.Column="2"
+                                            Content="&#xE74D;"
+                                            FontFamily="Segoe MDL2 Assets"
+                                            Tag="{x:Bind Id}"
+                                            Click="DeleteSubscriptionButton_Click" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Keine Abonnements. Klicke auf &#39;Hinzufügen&#39;, um einen iCal-Kalender zu importieren."
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           FontStyle="Italic"
+                           Visibility="{x:Bind EmptySubscriptionsVisible, Mode=OneWay}" />
+            </StackPanel>
+
+            <MenuFlyoutSeparator />
+
+            <!-- ── Activity Templates ── -->
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Aktivitäts-Vorlagen"
+                               Style="{ThemeResource SubtitleTextBlockStyle}" />
+                    <Button Grid.Column="1"
+                            Click="AddTemplateButton_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="Hinzufügen" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Templates, Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:ActivityTemplate">
+                            <Border Margin="0,4" Padding="12"
+                                    CornerRadius="8"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock Text="{x:Bind Name}" FontWeight="SemiBold" />
+                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                            <TextBlock Text="{x:Bind StartTime}" FontSize="11"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Text="–" FontSize="11"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Text="{x:Bind EndTime}" FontSize="11"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="&#xE74D;"
+                                            FontFamily="Segoe MDL2 Assets"
+                                            Tag="{x:Bind Id}"
+                                            Click="DeleteTemplateButton_Click" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Keine Vorlagen vorhanden."
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           FontStyle="Italic"
+                           Visibility="{x:Bind EmptyTemplatesVisible, Mode=OneWay}" />
+            </StackPanel>
+
+            <MenuFlyoutSeparator />
+
+            <!-- ── About ── -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Über Wochenschau" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                <TextBlock Text="Wochenschau ist ein lokaler Wochenplaner für Windows."
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="Version 1.0.0"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+
+    <Page.Resources>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </Page.Resources>
+</Page>
