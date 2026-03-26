@@ -6,8 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:tauri": "tsc && vite build",
     "preview": "vite preview",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:ios:init": "tauri ios init",
+    "tauri:ios:dev": "tauri ios dev",
+    "tauri:ios:build": "tauri ios build",
+    "tauri:android:init": "tauri android init",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:android:build": "tauri android build"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",

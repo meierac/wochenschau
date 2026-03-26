@@ -4,6 +4,8 @@
 
 **Wochenschau** (German for "weekly review") is a modern Progressive Web App built with Svelte 5, TypeScript, Tailwind CSS and Vite. It blends iOS-inspired design patterns with fast, private, offline-first functionality.
 
+Cross-platform native desktop and mobile apps are powered by **[Tauri v2](https://tauri.app/)**, targeting Windows, macOS, and iOS.
+
 ---
 
 ## ✨ Features
@@ -127,6 +129,7 @@ public/
 | Tailwind CSS | Utility-first styling |
 | Vite | Fast dev server + build |
 | vite-plugin-pwa | Service worker + manifest |
+| **Tauri v2** | **Cross-platform native shell (Windows, macOS, iOS)** |
 | IndexedDB | Large background image persistence |
 | LocalStorage | Lightweight structured data (activities, templates, subscriptions) |
 | Custom render/export logic | High-quality image export (PNG) using tuned caching & scale |
@@ -190,7 +193,7 @@ cd wochenschau
 pnpm install
 ```
 
-### Development
+### Development (Web / PWA)
 ```bash
 pnpm dev
 ```
@@ -201,7 +204,7 @@ Visit: `http://localhost:5173`
 pnpm check
 ```
 
-### Production Build
+### Production Build (Web / PWA)
 ```bash
 pnpm build
 ```
@@ -210,6 +213,61 @@ pnpm build
 ```bash
 pnpm preview
 ```
+
+---
+
+## 🖥️ Desktop & Mobile (Tauri)
+
+Wochenschau ships a [Tauri v2](https://tauri.app/) wrapper that produces native apps for **Windows**, **macOS**, and **iOS** from the same Svelte/TypeScript codebase.
+
+### Additional Prerequisites for Tauri
+
+| Requirement | Notes |
+|-------------|-------|
+| Rust (stable, ≥ 1.77) | Install via [rustup](https://rustup.rs/) |
+| Tauri v2 system dependencies | See [Tauri prerequisites guide](https://tauri.app/start/prerequisites/) |
+| Xcode 14+ (iOS/macOS) | Required for Apple platform builds |
+| Apple Developer account | Required for signing iOS builds |
+
+### Desktop Development (Windows / macOS / Linux)
+
+```bash
+# Start the Tauri dev window (launches Vite dev server automatically)
+npm run tauri:dev
+```
+
+### Desktop Production Build
+
+```bash
+# Build a native installer (.msi / .dmg / .AppImage …)
+npm run tauri:build
+```
+
+### iOS
+
+```bash
+# One-time: create the Xcode project inside src-tauri/gen/apple
+npm run tauri:ios:init
+
+# Development (opens Simulator or a connected device)
+npm run tauri:ios:dev
+
+# Production build (.ipa)
+npm run tauri:ios:build
+```
+
+> **Note:** Set your Apple Developer Team ID in `src-tauri/tauri.conf.json` under `bundle.iOS.developmentTeam` before building for a physical device.
+
+### Custom App Icons
+
+Replace the placeholder icons in `src-tauri/icons/` with your own artwork by running:
+
+```bash
+# Requires the @tauri-apps/cli icon generator
+npx tauri icon public/icon.png
+```
+
+This auto-generates all required sizes for every platform.
 
 ---
 

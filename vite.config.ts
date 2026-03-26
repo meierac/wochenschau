@@ -2,12 +2,21 @@ import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { VitePWA } from "vite-plugin-pwa";
 
+// When building for Tauri, TAURI_ENV_TARGET_TRIPLE is set by the Tauri CLI.
+// In that case we use a relative base path so the bundled app loads correctly
+// from the filesystem.  For the GitHub Pages web build we keep the repo-scoped
+// base path.
+const isTauri = !!process.env.TAURI_ENV_TARGET_TRIPLE;
+
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/wochenschau/",
+  base: isTauri ? "./" : "/wochenschau/",
   plugins: [
     svelte(),
     VitePWA({
+      // Disable service-worker registration inside the Tauri shell – the app
+      // runs locally and doesn't benefit from a SW (and it can cause issues).
+      disable: isTauri,
       registerType: "autoUpdate",
       injectRegister: "auto",
       includeAssets: [
@@ -87,7 +96,20 @@ export default defineConfig({
       },
     }),
   ],
+  // Vite options tailored for Tauri development and only applied in `tauri dev`
+  // or `tauri build`
+  //
+  // 1. Prevent vite from obscuring Rust errors
+  clearScreen: false,
   server: {
-    host: true,
+    host: isTauri ? "localhost" : true,
+    // Tauri expects a fixed port; fail if it is not available
+    port: 5173,
+    strictPort: isTauri,
   },
+  // Expose Tauri build-time environment variables (TAURI_ENV_TARGET_TRIPLE,
+  // TAURI_ENV_PLATFORM, TAURI_ENV_ARCH, etc.) to the Svelte frontend via
+  // `import.meta.env` so components can adapt behaviour per platform.
+  // These are compile-time constants – no runtime system information is leaked.
+  envPrefix: ["VITE_", "TAURI_ENV_"],
 });
