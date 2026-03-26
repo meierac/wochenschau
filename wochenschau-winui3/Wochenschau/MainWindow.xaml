@@ -1,0 +1,29 @@
+<Window
+    x:Class="Wochenschau.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Wochenschau"
+    xmlns:views="using:Wochenschau.Views"
+    Title="Wochenschau">
+
+    <NavigationView
+        x:Name="NavView"
+        PaneDisplayMode="Left"
+        IsBackButtonVisible="Collapsed"
+        CompactModeThresholdWidth="640"
+        SelectionChanged="NavView_SelectionChanged">
+
+        <NavigationView.MenuItems>
+            <NavigationViewItem
+                Tag="WeekPage"
+                Content="Woche"
+                Icon="CalendarWeek" />
+            <NavigationViewItem
+                Tag="SettingsPage"
+                Content="Einstellungen"
+                Icon="Setting" />
+        </NavigationView.MenuItems>
+
+        <Frame x:Name="ContentFrame" />
+    </NavigationView>
+</Window>

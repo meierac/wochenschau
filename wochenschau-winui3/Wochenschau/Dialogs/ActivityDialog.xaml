@@ -1,0 +1,80 @@
+<ContentDialog
+    x:Class="Wochenschau.Dialogs.ActivityDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    PrimaryButtonText="Speichern"
+    SecondaryButtonText="Löschen"
+    CloseButtonText="Abbrechen"
+    DefaultButton="Primary"
+    IsPrimaryButtonEnabled="{x:Bind IsSaveEnabled, Mode=OneWay}">
+
+    <StackPanel Spacing="12" Width="340">
+
+        <!-- Summary -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Titel *" FontWeight="SemiBold" />
+            <TextBox x:Name="SummaryBox"
+                     PlaceholderText="z. B. Teammeeting"
+                     TextChanged="ValidateForm" />
+        </StackPanel>
+
+        <!-- Description -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Beschreibung" FontWeight="SemiBold" />
+            <TextBox x:Name="DescriptionBox"
+                     PlaceholderText="Optional"
+                     AcceptsReturn="True"
+                     Height="72"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- Day picker -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Tag" FontWeight="SemiBold" />
+            <ComboBox x:Name="DayPicker" HorizontalAlignment="Stretch">
+                <ComboBoxItem Content="Montag" />
+                <ComboBoxItem Content="Dienstag" />
+                <ComboBoxItem Content="Mittwoch" />
+                <ComboBoxItem Content="Donnerstag" />
+                <ComboBoxItem Content="Freitag" />
+                <ComboBoxItem Content="Samstag" />
+                <ComboBoxItem Content="Sonntag" />
+            </ComboBox>
+        </StackPanel>
+
+        <!-- All-day toggle -->
+        <StackPanel Spacing="4">
+            <ToggleSwitch x:Name="AllDayToggle"
+                          Header="Ganztägig"
+                          Toggled="AllDayToggle_Toggled" />
+        </StackPanel>
+
+        <!-- Times (hidden when all-day) -->
+        <Grid x:Name="TimeGrid"
+              ColumnDefinitions="*,Auto,*"
+              Visibility="Visible">
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Von" FontWeight="SemiBold" />
+                <TextBox x:Name="StartTimeBox"
+                         PlaceholderText="08:00"
+                         TextChanged="ValidateForm" />
+            </StackPanel>
+            <TextBlock Grid.Column="1" Text="–"
+                       VerticalAlignment="Bottom" Margin="8,0,8,8" />
+            <StackPanel Grid.Column="2" Spacing="4">
+                <TextBlock Text="Bis" FontWeight="SemiBold" />
+                <TextBox x:Name="EndTimeBox"
+                         PlaceholderText="09:00"
+                         TextChanged="ValidateForm" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Color -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Farbe (optional)" FontWeight="SemiBold" />
+            <TextBox x:Name="ColorBox"
+                     PlaceholderText="#4F46E5" />
+        </StackPanel>
+
+    </StackPanel>
+</ContentDialog>
