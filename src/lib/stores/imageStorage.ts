@@ -63,20 +63,11 @@ class ImageStorage {
     url: string | null = null,
     type: "default" | "custom" | null = null,
   ): Promise<void> {
-    console.log("[ImageStorage] setImageFromBase64 called", {
-      url,
-      type,
-      base64Length: base64?.length,
-    });
     await this.init();
 
     // Convert base64 to Blob
     const response = await fetch(base64);
     const blob = await response.blob();
-    console.log("[ImageStorage] Blob created", {
-      size: blob.size,
-      type: blob.type,
-    });
 
     const imageData: ImageData = {
       key: BACKGROUND_KEY,
@@ -97,11 +88,9 @@ class ImageStorage {
       const request = store.put(imageData);
 
       request.onsuccess = () => {
-        console.log("[ImageStorage] Image stored successfully in IndexedDB");
         resolve();
       };
       request.onerror = () => {
-        console.error("[ImageStorage] Failed to store image");
         reject(new Error("Failed to store image"));
       };
     });
@@ -144,7 +133,6 @@ class ImageStorage {
    * Get the current background image as a base64 data URL
    */
   async getImageAsBase64(): Promise<string | null> {
-    console.log("[ImageStorage] getImageAsBase64 called");
     await this.init();
 
     return new Promise((resolve, reject) => {
@@ -159,12 +147,6 @@ class ImageStorage {
 
       request.onsuccess = () => {
         const result = request.result as ImageData | undefined;
-        console.log("[ImageStorage] Retrieved from IndexedDB", {
-          hasResult: !!result,
-          hasBlob: !!result?.blob,
-          url: result?.url,
-          type: result?.type,
-        });
         if (!result || !result.blob) {
           resolve(null);
           return;
@@ -174,20 +156,15 @@ class ImageStorage {
         const reader = new FileReader();
         reader.onload = () => {
           const base64 = reader.result as string;
-          console.log("[ImageStorage] Converted to base64", {
-            length: base64?.length,
-          });
           resolve(base64);
         };
         reader.onerror = () => {
-          console.error("[ImageStorage] Failed to read blob");
           reject(new Error("Failed to read blob"));
         };
         reader.readAsDataURL(result.blob);
       };
 
       request.onerror = () => {
-        console.error("[ImageStorage] Failed to retrieve image from IndexedDB");
         reject(new Error("Failed to retrieve image"));
       };
     });
@@ -200,7 +177,6 @@ class ImageStorage {
     url: string | null;
     type: "default" | "custom" | null;
   } | null> {
-    console.log("[ImageStorage] getImageMetadata called");
     await this.init();
 
     return new Promise((resolve, reject) => {
@@ -215,11 +191,6 @@ class ImageStorage {
 
       request.onsuccess = () => {
         const result = request.result as ImageData | undefined;
-        console.log("[ImageStorage] Metadata retrieved", {
-          hasResult: !!result,
-          url: result?.url,
-          type: result?.type,
-        });
         if (!result) {
           resolve(null);
           return;
@@ -232,7 +203,6 @@ class ImageStorage {
       };
 
       request.onerror = () => {
-        console.error("[ImageStorage] Failed to retrieve metadata");
         reject(new Error("Failed to retrieve metadata"));
       };
     });

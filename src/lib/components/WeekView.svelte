@@ -47,6 +47,9 @@
         );
 
     $: sortedWeekActivities = sortActivitiesByDisplayOrder(weekActivities);
+    $: activitiesByDay = Array.from({ length: 7 }, (_, dayIndex) =>
+        sortedWeekActivities.filter((activity) => activity.day === dayIndex),
+    );
 
     function handleWeekSelected(
         event: CustomEvent<{ week: number; year: number }>,
@@ -80,12 +83,9 @@
         {#each days as day, dayIndex}
             <div class="h-full flex flex-col">
                 <DayColumn
-                    {isDesktop}
                     {day}
                     {dayIndex}
-                    dayActivities={sortedWeekActivities.filter(
-                        (a) => a.day === dayIndex,
-                    )}
+                    dayActivities={activitiesByDay[dayIndex]}
                     on:requestEditActivity={handleRequestEditActivity}
                 />
             </div>

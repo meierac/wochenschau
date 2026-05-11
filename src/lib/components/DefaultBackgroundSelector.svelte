@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { exportSettings } from "../stores/exportSettings";
     import IconButton from "./IconButton.svelte";
     import { DEFAULT_BACKGROUNDS } from "../stores/defaultBackgrounds";
@@ -9,38 +8,6 @@
     let fileInput: HTMLInputElement;
     let errorMessage: string | null = null;
     let isLoading = false;
-
-    onMount(() => {
-        console.log("[DefaultBackgroundSelector] Component mounted");
-        console.log(
-            "[DefaultBackgroundSelector] Current backgroundImage:",
-            $exportSettings.backgroundImage
-                ? `exists (${$exportSettings.backgroundImage.length} chars)`
-                : "null",
-        );
-        console.log(
-            "[DefaultBackgroundSelector] Current backgroundImageUrl:",
-            $exportSettings.backgroundImageUrl,
-        );
-        console.log(
-            "[DefaultBackgroundSelector] Current backgroundImageType:",
-            $exportSettings.backgroundImageType,
-        );
-    });
-
-    // Reactive statement to track changes
-    $: {
-        console.log(
-            "[DefaultBackgroundSelector] Reactive update - backgroundImage:",
-            $exportSettings.backgroundImage
-                ? `exists (${$exportSettings.backgroundImage.length} chars)`
-                : "null",
-        );
-        console.log(
-            "[DefaultBackgroundSelector] Reactive update - backgroundImageUrl:",
-            $exportSettings.backgroundImageUrl,
-        );
-    }
 
     // Predefined images sourced from DEFAULT_BACKGROUNDS store (webp & other formats)
     // Each background provides id, url, and display name
@@ -75,12 +42,9 @@
         isLoading = true;
         errorMessage = null;
         try {
-            console.log("Loading image from URL:", url);
             const base64 = await loadImageAsBase64(url);
-            console.log("Image loaded, base64 length:", base64.length);
             await exportSettings.setBackgroundImage(base64, id, "default");
             exportSettings.setBackgroundMode("image");
-            console.log("Background image set successfully");
         } catch (error) {
             console.error("Error loading background:", error);
             errorMessage = "Failed to load background image.";

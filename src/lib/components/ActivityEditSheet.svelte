@@ -12,9 +12,6 @@
 
     const dispatch = createEventDispatcher();
 
-    // Debug logging
-    $: console.log("ActivityEditSheet isDesktop:", isDesktop);
-
     let editData = { ...activity };
     let selectedDay = activity.day;
     let hasChanges = false;

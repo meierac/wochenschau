@@ -104,7 +104,6 @@
         ];
 
         if (!validPrefixes.some((prefix) => img.startsWith(prefix))) {
-            console.warn("[Export] Invalid background image data URL format");
             return "";
         }
 
@@ -151,8 +150,6 @@
      */
     async function generateImageBlob(): Promise<Blob | null> {
         try {
-            console.log("[Export] Starting image generation...");
-
             const element = document.getElementById("export-preview");
             if (!element) {
                 throw new Error("Export preview element not found");
@@ -163,7 +160,6 @@
 
             // Ensure all fonts are loaded (defined in CSS via @font-face)
             await document.fonts.ready;
-            console.log("[Export] All fonts ready");
 
             // Wait for background image to be ready if using image mode
             if (
@@ -175,25 +171,17 @@
                 ) as HTMLImageElement;
 
                 if (bgImageElement && !bgImageElement.complete) {
-                    console.log("[Export] Waiting for background image...");
                     await new Promise<void>((resolve, reject) => {
                         const timeout = setTimeout(() => {
-                            console.warn(
-                                "[Export] Background image load timeout",
-                            );
                             resolve(); // Continue anyway
                         }, 5000);
 
                         bgImageElement.onload = () => {
                             clearTimeout(timeout);
-                            console.log("[Export] Background image loaded");
                             resolve();
                         };
                         bgImageElement.onerror = () => {
                             clearTimeout(timeout);
-                            console.error(
-                                "[Export] Background image failed to load",
-                            );
                             reject(
                                 new Error("Background image failed to load"),
                             );
@@ -206,79 +194,48 @@
             await new Promise((r) => requestAnimationFrame(r));
 
             // Determine optimal scale based on device
-            // Adaptive scale heuristic with fallback for iOS:
-            // Attempt higher quality first, then downgrade if the capture fails.
-            // We only modify scale locally inside this function.
-            let scaleAttempts = isIOSSafari ? [3, 2] : [4];
-            let scale = scaleAttempts[0];
+            const scaleAttempts = isIOSSafari ? [3, 2] : [4];
+            let blob: Blob | null = null;
+            let lastError: unknown = null;
 
-            console.log(
-                "[Export] Generating image with modern-screenshot (attempt 1)",
-                {
-                    width: element.offsetWidth,
-                    height: element.offsetHeight,
-                    scale,
-                    isIOSSafari,
-                },
-            );
+            for (const scale of scaleAttempts) {
+                try {
+                    blob = await domToBlob(element, {
+                        scale,
+                        type: "image/png",
+                        quality: 1,
+                        backgroundColor:
+                            $exportSettings.backgroundMode === "color"
+                                ? $exportSettings.backgroundColor
+                                : null,
+                        filter: (node) => {
+                            if (node instanceof Element) {
+                                return !node.classList.contains("no-export");
+                            }
+                            return true;
+                        },
+                    });
 
-            // Wrapper to attempt capture using existing logic below.
-            // We rely on the subsequent modern-screenshot invocation that uses `scale`.
-            async function attemptCapture(attemptIndex = 0) {
-                scale = scaleAttempts[attemptIndex];
-                console.log(
-                    `[Export] Using scale=${scale} (attempt ${attemptIndex + 1}/${scaleAttempts.length})`,
-                );
-
-                // The original capture logic (below this replacement block) uses `scale`.
-                // We return a boolean indicating success so we can fallback if needed.
-                return true; // Success is determined later; this is a placeholder hook.
-            }
-
-            // First attempt already configured (scaleAttempts[0]).
-            let captureSucceeded = await attemptCapture(0);
-
-            // If later code sets an error (exportError) or a thrown exception occurs,
-            // we expect surrounding try/catch to catch it. To integrate fallback,
-            // we check for error after the initial capture logic has run.
-            if (!captureSucceeded && scaleAttempts.length > 1) {
-                console.warn(
-                    "[Export] First export attempt failed. Retrying with fallback scale.",
-                );
-                captureSucceeded = await attemptCapture(1);
-            }
-
-            // Generate blob with modern-screenshot
-            const blob = await domToBlob(element, {
-                scale,
-                type: "image/png",
-                quality: 1,
-                backgroundColor:
-                    $exportSettings.backgroundMode === "color"
-                        ? $exportSettings.backgroundColor
-                        : null,
-                filter: (node) => {
-                    if (node instanceof Element) {
-                        return !node.classList.contains("no-export");
+                    if (blob) {
+                        break;
                     }
-                    return true;
-                },
-            });
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+
+            if (!blob && lastError) {
+                throw lastError;
+            }
 
             if (!blob) {
                 throw new Error("Failed to generate image");
             }
 
-            console.log("[Export] Success", {
-                size: `${(blob.size / 1024).toFixed(0)} KB`,
-                type: blob.type,
-            });
-
             return blob;
         } catch (error) {
             const message =
                 error instanceof Error ? error.message : "Export failed";
-            console.error("[Export] Error:", error);
             exportError = message;
             return null;
         }
@@ -297,9 +254,6 @@
                 $exportSettings.backgroundMode === "image" &&
                 !$exportSettings.backgroundImage
             ) {
-                console.log(
-                    "[Export] Refreshing background image from IndexedDB...",
-                );
                 await exportSettings.refreshImage();
                 await new Promise((r) => setTimeout(r, 500));
             }
@@ -324,7 +278,6 @@
         } catch (error) {
             const message =
                 error instanceof Error ? error.message : "Export failed";
-            console.error("[Export] Error:", error);
             exportError = message;
         } finally {
             isExporting = false;
@@ -355,7 +308,6 @@
                 error instanceof Error
                     ? error.message
                     : "Failed to copy to clipboard";
-            console.error("[Export] Clipboard error:", error);
             exportError = message;
         } finally {
             isExporting = false;
@@ -375,9 +327,6 @@
                 $exportSettings.backgroundMode === "image" &&
                 !$exportSettings.backgroundImage
             ) {
-                console.log(
-                    "[Share] Refreshing background image from IndexedDB...",
-                );
                 await exportSettings.refreshImage();
                 await new Promise((r) => setTimeout(r, 500));
             }
@@ -409,7 +358,6 @@
             if (error.name !== "AbortError") {
                 const message =
                     error instanceof Error ? error.message : "Failed to share";
-                console.error("[Share] Error:", error);
                 exportError = message;
             }
         } finally {
@@ -437,12 +385,15 @@
         );
 
     $: sortedWeekActivities = sortActivitiesByDisplayOrder(weekActivities);
+    $: activitiesByDay = Array.from({ length: 7 }, (_, dayIndex) =>
+        sortedWeekActivities.filter((activity) => activity.day === dayIndex),
+    );
 
     /**
      * Get activities for a specific day
      */
     function getDayActivities(dayIndex: number) {
-        return sortedWeekActivities.filter((a) => a.day === dayIndex);
+        return activitiesByDay[dayIndex] || [];
     }
 
     /**

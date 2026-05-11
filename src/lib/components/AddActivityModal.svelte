@@ -10,6 +10,7 @@
     } from "../types/index";
     import IconButton from "./IconButton.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
+    import { createEntityId } from "../utils/storage";
 
     export let isDesktop = false;
 
@@ -87,7 +88,7 @@
         const dtend = `${startDate}T${endTime.replace(":", "")}00`;
 
         const activity: CalendarItem = {
-            id: `manual-${now}`,
+            id: createEntityId("manual"),
             summary: activityName,
             description: "",
             dtstart,
@@ -108,12 +109,13 @@
         activities.addActivity(activity);
 
         if (saveAsTemplate) {
+            const templateCreatedAt = Date.now();
             const template: ActivityTemplate = {
-                id: `template-${Date.now()}`,
+                id: createEntityId("template"),
                 name: activityName,
                 startTime,
                 endTime,
-                createdAt: Date.now(),
+                createdAt: templateCreatedAt,
             };
             templates.addTemplate(template);
         }

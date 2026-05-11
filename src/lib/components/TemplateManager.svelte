@@ -3,6 +3,7 @@
     import { templates } from "../stores/templates";
     import type { ActivityTemplate } from "../types/index";
     import IconButton from "./IconButton.svelte";
+    import { createEntityId } from "../utils/storage";
 
     export let isDesktop = false;
 
@@ -18,12 +19,13 @@
     function handleAddTemplate() {
         if (!newTemplate.name.trim()) return;
 
+        const createdAt = Date.now();
         const template: ActivityTemplate = {
-            id: `template-${Date.now()}`,
+            id: createEntityId("template"),
             name: newTemplate.name,
             startTime: newTemplate.startTime,
             endTime: newTemplate.endTime,
-            createdAt: Date.now(),
+            createdAt,
         };
 
         templates.addTemplate(template);

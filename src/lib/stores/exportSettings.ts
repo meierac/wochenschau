@@ -72,7 +72,10 @@ const defaultSettings: ExportSettings = {
 };
 
 function createExportSettingsStore() {
-  const stored = localStorage.getItem("exportSettings");
+  const stored =
+    typeof window !== "undefined"
+      ? localStorage.getItem("exportSettings")
+      : null;
   let initial: ExportSettings;
 
   if (stored) {
@@ -116,11 +119,6 @@ function createExportSettingsStore() {
               backgroundImageType: metadata.type,
               backgroundMode: "image" as const, // Set mode to image when loading from IndexedDB
             };
-            console.log("Background image loaded from IndexedDB:", {
-              url: metadata.url,
-              type: metadata.type,
-              hasImage: !!base64,
-            });
             return updated;
           });
           return;
@@ -128,13 +126,13 @@ function createExportSettingsStore() {
       }
 
       // Migration: Check if old localStorage has image data
-      const stored = localStorage.getItem("exportSettings");
+      const stored =
+        typeof window !== "undefined"
+          ? localStorage.getItem("exportSettings")
+          : null;
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.backgroundImage) {
-          console.log(
-            "Migrating background image from localStorage to IndexedDB...",
-          );
           // Migrate to IndexedDB
           await imageStorage.migrateFromLocalStorage(parsed.backgroundImage);
           // Load it back
@@ -155,7 +153,6 @@ function createExportSettingsStore() {
           // Clean up localStorage - remove the large base64 string
           delete parsed.backgroundImage;
           localStorage.setItem("exportSettings", JSON.stringify(parsed));
-          console.log("Migration complete");
         }
       }
     } catch (error) {
@@ -163,11 +160,14 @@ function createExportSettingsStore() {
     }
   };
 
-  // Start loading image immediately
-  initializeImage();
+  // Start loading image immediately in the browser
+  if (typeof window !== "undefined") {
+    initializeImage();
+  }
 
   // Helper to save settings to localStorage (without backgroundImage)
   const saveToLocalStorage = (settings: ExportSettings) => {
+    if (typeof window === "undefined") return;
     const { backgroundImage, ...settingsWithoutImage } = settings;
     localStorage.setItem(
       "exportSettings",
@@ -207,11 +207,9 @@ function createExportSettingsStore() {
         if (imageData) {
           // Store in IndexedDB
           await imageStorage.setImageFromBase64(imageData, url, type);
-          console.log("Image stored in IndexedDB:", { url, type });
         } else {
           // Clear from IndexedDB
           await imageStorage.deleteImage();
-          console.log("Image cleared from IndexedDB");
         }
 
         // Update store with the image data and metadata
@@ -223,11 +221,6 @@ function createExportSettingsStore() {
             backgroundImageType: type,
           };
           saveToLocalStorage(updated);
-          console.log("Store updated with background image:", {
-            hasImage: !!imageData,
-            url,
-            type,
-          });
           return updated;
         });
       } catch (error) {
@@ -244,7 +237,6 @@ function createExportSettingsStore() {
           backgroundMode: mode,
         };
         saveToLocalStorage(updated);
-        console.log("Background mode set to:", mode);
         return updated;
       });
     },

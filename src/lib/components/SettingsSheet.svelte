@@ -25,6 +25,7 @@
     import SyncConflictDialog from "./SyncConflictDialog.svelte";
     import type { SyncConflict, ConflictResolution } from "../types/index";
     import type { SubscriptionDiff } from "../services/icalService";
+    import { createEntityId } from "../utils/storage";
 
     export let isDesktop = false;
 
@@ -213,12 +214,13 @@
     function handleAddTemplate() {
         if (!newTemplate.name.trim()) return;
 
+        const createdAt = Date.now();
         const template: ActivityTemplate = {
-            id: `template-${Date.now()}`,
+            id: createEntityId("template"),
             name: newTemplate.name,
             startTime: newTemplate.startTime,
             endTime: newTemplate.endTime,
-            createdAt: Date.now(),
+            createdAt,
         };
 
         templates.addTemplate(template);
@@ -250,11 +252,12 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
+            const lastFetched = Date.now();
             const subscription: ICalSubscription = {
-                id: `sub-${Date.now()}`,
+                id: createEntityId("sub"),
                 url: newSubscription.url,
                 name: newSubscription.name || "iCal Feed",
-                lastFetched: Date.now(),
+                lastFetched,
                 enabled: true,
             };
 

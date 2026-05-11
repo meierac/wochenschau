@@ -8,16 +8,12 @@
     export let day: Date;
     export let dayIndex: number;
     export let dayActivities: CalendarItem[] = [];
-    export let isDesktop = false;
 
     // Dispatch events upward so App (or a higher-level component) can manage the edit sheet
     const dispatch = createEventDispatcher<{
         requestEditActivity: CalendarItem;
         deleteActivity: string;
     }>();
-
-    // Debug logging
-    $: console.log("DayColumn isDesktop:", isDesktop);
 
     function formatDate(date: Date): string {
         return date.toLocaleDateString("de-DE", {

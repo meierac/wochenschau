@@ -5,6 +5,7 @@
     import type { ICalSubscription } from "../types/index";
     import Button from "./Button.svelte";
     import { refreshService } from "../services/refreshService";
+    import { createEntityId } from "../utils/storage";
 
     export let isDesktop = false;
 
@@ -21,12 +22,13 @@
     function handleAddSubscription() {
         if (!newSubscription.url.trim() || !newSubscription.name.trim()) return;
 
+        const lastFetched = Date.now();
         const subscription: ICalSubscription = {
-            id: `ical-${Date.now()}`,
+            id: createEntityId("ical"),
             url: newSubscription.url,
             name: newSubscription.name,
             enabled: true,
-            lastFetched: Date.now(),
+            lastFetched,
         };
 
         subscriptions.addSubscription(subscription);

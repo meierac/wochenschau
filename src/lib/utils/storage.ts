@@ -20,6 +20,17 @@ function safeJsonParse<T>(value: string | null): T | null {
   }
 }
 
+export function createEntityId(prefix: string): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 // Activities (Calendar Items)
 export function getActivities(): CalendarItem[] {
   if (typeof window === "undefined") return [];
