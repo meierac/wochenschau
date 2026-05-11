@@ -4,11 +4,11 @@
     import { currentWeek, currentYear } from "../stores/week";
     import { exportSettings } from "../stores/exportSettings";
     import { bibleVerse } from "../stores/bibleVerse";
+    import { getDaysOfWeek } from "../utils/date";
     import {
-        getDaysOfWeek,
         isAllDayActivity,
         sortActivitiesByDisplayOrder,
-    } from "../utils/date";
+    } from "../utils/activityDisplay";
     import { WEEKDAYS_DE } from "../types/index";
     import type { ICalSubscription } from "../types/index";
     import { subscriptions } from "../stores/ical";

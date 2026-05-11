@@ -8,7 +8,7 @@ import {
   deleteActivity,
   clearAllActivities,
 } from "../utils/storage.js";
-import { sortActivitiesByDisplayOrder } from "../utils/date.js";
+import { sortActivitiesByDisplayOrder } from "../utils/activityDisplay.js";
 
 function createActivityStore() {
   const { subscribe, set, update } = writable<Activity[]>(getActivities());

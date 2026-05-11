@@ -4,7 +4,8 @@
 
     import { activities } from "../stores/activities";
     import { currentWeek, currentYear } from "../stores/week";
-    import { getDaysOfWeek, sortActivitiesByDisplayOrder } from "../utils/date";
+    import { getDaysOfWeek } from "../utils/date";
+    import { sortActivitiesByDisplayOrder } from "../utils/activityDisplay";
     import { bibleVerse } from "../stores/bibleVerse";
     import { subscriptions } from "../stores/ical";
 

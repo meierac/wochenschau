@@ -4,6 +4,7 @@
     import { WEEKDAYS_DE } from "../types/index";
     import { currentWeek, currentYear } from "../stores/week";
     import { getWeekNumber, getDaysOfWeek } from "../utils/date";
+    import { timeToMinutes } from "../utils/activityDisplay";
     import IconButton from "./IconButton.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
     import ConfirmDialog from "./ConfirmDialog.svelte";
@@ -74,11 +75,6 @@
     function confirmDelete() {
         showDeleteConfirm = false;
         dispatch("delete");
-    }
-
-    function timeToMinutes(time: string): number {
-        const [h, m] = time.split(":").map(Number);
-        return h * 60 + m;
     }
 
     $: duration =

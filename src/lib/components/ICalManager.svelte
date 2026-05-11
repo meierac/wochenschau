@@ -60,11 +60,7 @@
 
             activities.replaceAll(applied);
 
-            const updated: ICalSubscription = {
-                ...subscription,
-                lastFetched: Date.now(),
-            };
-            subscriptions.updateSubscription(updated);
+            subscriptions.markFetched(subscription.id);
         } catch (err) {
             error = err instanceof Error ? err.message : "Unknown error";
         } finally {
@@ -129,13 +125,9 @@
 
             activities.replaceAll(applied);
 
-            const refreshedAt = Date.now();
-            for (const subscription of enabledSubscriptions) {
-                subscriptions.updateSubscription({
-                    ...subscription,
-                    lastFetched: refreshedAt,
-                });
-            }
+            subscriptions.markFetchedMany(
+                enabledSubscriptions.map((subscription) => subscription.id),
+            );
         } catch (err) {
             error = err instanceof Error ? err.message : "Unknown error";
         } finally {

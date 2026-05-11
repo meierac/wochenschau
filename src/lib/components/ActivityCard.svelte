@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { CalendarItem } from "../types/index";
     import { createEventDispatcher } from "svelte";
-    import { isAllDayActivity } from "../utils/date";
+    import { isAllDayActivity } from "../utils/activityDisplay";
     import IconButton from "./IconButton.svelte";
     import ConfirmDialog from "./ConfirmDialog.svelte";
 

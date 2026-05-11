@@ -150,17 +150,9 @@
                 activities.replaceAll(applied);
 
                 // Update lastFetched for all affected subscriptions
-                const affectedIds = new Set(
+                subscriptions.markFetchedMany(
                     pendingDiff.diffs.map((d) => d.subscriptionId),
                 );
-                for (const sub of $subscriptions) {
-                    if (affectedIds.has(sub.id)) {
-                        subscriptions.updateSubscription({
-                            ...sub,
-                            lastFetched: Date.now(),
-                        });
-                    }
-                }
 
                 showConflictDialog = false;
                 pendingConflicts = [];
@@ -196,15 +188,7 @@
             removed,
         });
 
-        const subscription = $subscriptions.find(
-            (s) => s.id === subscriptionId,
-        );
-        if (subscription) {
-            subscriptions.updateSubscription({
-                ...subscription,
-                lastFetched: Date.now(),
-            });
-        }
+        subscriptions.markFetched(subscriptionId);
 
         showConflictDialog = false;
         pendingConflicts = [];
@@ -417,11 +401,7 @@
                 removed,
             });
             // Update subscription metadata
-            const updatedSubscription: ICalSubscription = {
-                ...subscription,
-                lastFetched: Date.now(),
-            };
-            subscriptions.updateSubscription(updatedSubscription);
+            subscriptions.markFetched(subscription.id);
             // Record results
             refreshStatus.recordSubscriptionResult({
                 id: subscription.id,
@@ -550,15 +530,7 @@
             activities.replaceAll(applied);
 
             // Update lastFetched on all affected subscriptions
-            const affectedIds = new Set(diffs.map((d) => d.subscriptionId));
-            for (const sub of $subscriptions) {
-                if (affectedIds.has(sub.id)) {
-                    subscriptions.updateSubscription({
-                        ...sub,
-                        lastFetched: Date.now(),
-                    });
-                }
-            }
+            subscriptions.markFetchedMany(diffs.map((d) => d.subscriptionId));
 
             refreshStatus.finish();
         } catch (e) {
