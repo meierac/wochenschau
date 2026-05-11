@@ -80,56 +80,109 @@
     }
 </script>
 
-<div class="space-y-6">
-    <ExportTypographySettings
-        {fieldIds}
-        {sectionClass}
-        {labelClass}
-        {toggleLabelClass}
-        {colorInputClass}
-        {textInputClass}
-        {monoInputClass}
-        {selectClass}
-        {fontSelectClass}
-    />
+<div class="space-y-4">
+    <div class="rounded-3xl border border-border bg-muted/20 p-4">
+        <div class="space-y-1">
+            <h4 class="text-sm font-semibold text-foreground">
+                Export appearance
+            </h4>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                Adjust how your exported week looks. Start with the header, then
+                fine-tune text, background, and activity card styling.
+            </p>
+        </div>
+    </div>
 
-    <ExportBackgroundSettings
-        fieldIds={{
-            backgroundColor: fieldIds.backgroundColor,
-            backgroundOpacity: fieldIds.backgroundOpacity,
-        }}
-        {sectionClass}
-        {labelClass}
-        {colorInputClass}
-        {monoInputClass}
-    />
+    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+        <div class="mb-4 space-y-1">
+            <h4 class="text-sm font-semibold text-foreground">Header</h4>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                Control the export title and calendar week display.
+            </p>
+        </div>
 
-    <ExportStylingSettings
-        fieldIds={{
-            accentColor: fieldIds.accentColor,
-            borderRadius: fieldIds.borderRadius,
-            showBorders: fieldIds.showBorders,
-        }}
-        {sectionClass}
-        {labelClass}
-        {colorInputClass}
-        {monoInputClass}
-    />
+        <ExportTypographySettings
+            {fieldIds}
+            {sectionClass}
+            {labelClass}
+            {toggleLabelClass}
+            {colorInputClass}
+            {textInputClass}
+            {monoInputClass}
+            {selectClass}
+            {fontSelectClass}
+        />
+    </section>
 
-    <ExportWeekContainerSettings
-        fieldIds={{
-            weekContainerBackgroundColor: fieldIds.weekContainerBackgroundColor,
-            weekContainerBackgroundOpacity:
-                fieldIds.weekContainerBackgroundOpacity,
-        }}
-        {sectionClass}
-        {labelClass}
-        {colorInputClass}
-        {monoInputClass}
-    />
+    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+        <div class="mb-4 space-y-1">
+            <h4 class="text-sm font-semibold text-foreground">Background</h4>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                Choose a solid color or image background for the full export.
+            </p>
+        </div>
 
-    <div class="pt-4 border-t border-border">
-        <Button variant="secondary" on:click={handleReset}>
+        <ExportBackgroundSettings
+            fieldIds={{
+                backgroundColor: fieldIds.backgroundColor,
+                backgroundOpacity: fieldIds.backgroundOpacity,
+            }}
+            {sectionClass}
+            {labelClass}
+            {colorInputClass}
+            {monoInputClass}
+        />
+    </section>
+
+    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+        <div class="mb-4 space-y-1">
+            <h4 class="text-sm font-semibold text-foreground">
+                Activity cards
+            </h4>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                Style borders and corner radius for the activity blocks.
+            </p>
+        </div>
+
+        <ExportStylingSettings
+            fieldIds={{
+                accentColor: fieldIds.accentColor,
+                borderRadius: fieldIds.borderRadius,
+                showBorders: fieldIds.showBorders,
+            }}
+            {sectionClass}
+            {labelClass}
+            {colorInputClass}
+            {monoInputClass}
+        />
+    </section>
+
+    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+        <div class="mb-4 space-y-1">
+            <h4 class="text-sm font-semibold text-foreground">
+                Day column background
+            </h4>
+            <p class="text-xs text-muted-foreground leading-relaxed">
+                Adjust the background behind each day column or list section.
+            </p>
+        </div>
+
+        <ExportWeekContainerSettings
+            fieldIds={{
+                weekContainerBackgroundColor:
+                    fieldIds.weekContainerBackgroundColor,
+                weekContainerBackgroundOpacity:
+                    fieldIds.weekContainerBackgroundOpacity,
+            }}
+            {sectionClass}
+            {labelClass}
+            {colorInputClass}
+            {monoInputClass}
+        />
+    </section>
+
+    <div class="pt-2 border-t border-border flex justify-start">
+        <Button variant="secondary" size="sm" on:click={handleReset}>
             Reset to Defaults
         </Button>
     </div>

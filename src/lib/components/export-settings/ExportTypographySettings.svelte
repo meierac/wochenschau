@@ -30,165 +30,225 @@
         Typography
     </h4>
 
-    <div>
-        <label for={fieldIds.title} class={labelClass}>Title/Headline</label>
-        <input
-            id={fieldIds.title}
-            type="text"
-            bind:value={$exportSettings.title}
-            class={textInputClass}
-            placeholder="Wochenschau"
-        />
-    </div>
+    <div
+        class="space-y-4 rounded-2xl border border-border/70 bg-background/40 p-4"
+    >
+        <div class="space-y-1">
+            <p
+                class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+            >
+                Title
+            </p>
+            <p class="text-[11px] leading-relaxed text-muted-foreground">
+                This title appears at the top of the exported week.
+            </p>
+        </div>
 
-    <div>
-        <SliderField
-            id={fieldIds.titleFontSize}
-            label="Title Font Size"
-            suffix="px"
-            min={24}
-            max={72}
-            step={2}
-            bind:value={$exportSettings.titleFontSize}
-            {labelClass}
-        />
-
-        <SliderField
-            id={fieldIds.titleOpacity}
-            label="Title Opacity"
-            suffix="%"
-            min={10}
-            max={100}
-            step={5}
-            bind:value={$exportSettings.titleOpacity}
-            {labelClass}
-            extraLabelClass="mt-4"
-        />
-
-        <div class="mt-4">
-            <ColorField
-                id={fieldIds.titleColor}
-                label="Title Color"
-                bind:value={$exportSettings.titleColor}
-                placeholder="#000000"
-                {labelClass}
-                {colorInputClass}
-                textInputClass={monoInputClass}
+        <div>
+            <label for={fieldIds.title} class={labelClass}>Header title</label>
+            <input
+                id={fieldIds.title}
+                type="text"
+                bind:value={$exportSettings.title}
+                class={textInputClass}
+                placeholder="Wochenschau"
             />
+        </div>
+
+        <div>
+            <SliderField
+                id={fieldIds.titleFontSize}
+                label="Title Font Size"
+                suffix="px"
+                min={24}
+                max={72}
+                step={2}
+                bind:value={$exportSettings.titleFontSize}
+                {labelClass}
+            />
+
+            <SliderField
+                id={fieldIds.titleOpacity}
+                label="Title Opacity"
+                suffix="%"
+                min={10}
+                max={100}
+                step={5}
+                bind:value={$exportSettings.titleOpacity}
+                {labelClass}
+                extraLabelClass="mt-4"
+            />
+
+            <div class="mt-4">
+                <ColorField
+                    id={fieldIds.titleColor}
+                    label="Title Color"
+                    bind:value={$exportSettings.titleColor}
+                    placeholder="#000000"
+                    {labelClass}
+                    {colorInputClass}
+                    textInputClass={monoInputClass}
+                />
+            </div>
         </div>
     </div>
 
-    <div class="flex items-center justify-between">
-        <label for={fieldIds.showWeekNumber} class={toggleLabelClass}>
-            Show Week Number (KW)
-        </label>
-        <input
-            id={fieldIds.showWeekNumber}
-            type="checkbox"
-            bind:checked={$exportSettings.showWeekNumber}
-            class="w-4 h-4"
-        />
-    </div>
-
-    {#if $exportSettings.showWeekNumber}
-        <div class="flex items-center justify-between">
-            <label
-                for={fieldIds.syncWeekNumberWithTitle}
-                class={toggleLabelClass}
+    <div
+        class="space-y-4 rounded-2xl border border-border/70 bg-background/40 p-4"
+    >
+        <div class="space-y-1">
+            <p
+                class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
             >
-                Sync Week Number with Title
+                Calendar week
+            </p>
+            <p class="text-[11px] leading-relaxed text-muted-foreground">
+                Show the calendar week separately or merge it into the title
+                styling.
+            </p>
+        </div>
+
+        <div class="flex items-center justify-between">
+            <label for={fieldIds.showWeekNumber} class={toggleLabelClass}>
+                Show calendar week
             </label>
             <input
-                id={fieldIds.syncWeekNumberWithTitle}
+                id={fieldIds.showWeekNumber}
                 type="checkbox"
-                bind:checked={$exportSettings.syncWeekNumberWithTitle}
+                bind:checked={$exportSettings.showWeekNumber}
                 class="w-4 h-4"
             />
         </div>
 
-        {#if !$exportSettings.syncWeekNumberWithTitle}
-            <div>
-                <label for={fieldIds.weekNumberLayout} class={labelClass}>
-                    Week Number Position
-                </label>
-                <select
-                    id={fieldIds.weekNumberLayout}
-                    bind:value={$exportSettings.weekNumberLayout}
-                    class={selectClass}
+        {#if $exportSettings.showWeekNumber}
+            <div class="flex items-center justify-between">
+                <label
+                    for={fieldIds.syncWeekNumberWithTitle}
+                    class={toggleLabelClass}
                 >
-                    <option value="separate-line">Separate line</option>
-                    <option value="inline">Inline with title</option>
-                </select>
+                    Sync calendar week with title
+                </label>
+                <input
+                    id={fieldIds.syncWeekNumberWithTitle}
+                    type="checkbox"
+                    bind:checked={$exportSettings.syncWeekNumberWithTitle}
+                    class="w-4 h-4"
+                />
             </div>
 
-            <FontSelectField
-                id={fieldIds.weekNumberFont}
-                label="Week Number Font"
-                bind:value={$exportSettings.weekNumberFontFamily}
-                options={FONT_FAMILIES}
-                {labelClass}
-                selectClass={fontSelectClass}
-            />
+            {#if !$exportSettings.syncWeekNumberWithTitle}
+                <div>
+                    <label for={fieldIds.weekNumberLayout} class={labelClass}>
+                        Week Number Position
+                    </label>
+                    <select
+                        id={fieldIds.weekNumberLayout}
+                        bind:value={$exportSettings.weekNumberLayout}
+                        class={selectClass}
+                    >
+                        <option value="separate-line">Separate line</option>
+                        <option value="inline">Inline with title</option>
+                    </select>
+                </div>
 
-            <SliderField
-                id={fieldIds.weekNumberFontSize}
-                label="Week Number Font Size"
-                suffix="px"
-                min={12}
-                max={48}
-                step={1}
-                bind:value={$exportSettings.weekNumberFontSize}
-                {labelClass}
-            />
+                <FontSelectField
+                    id={fieldIds.weekNumberFont}
+                    label="Week Number Font"
+                    bind:value={$exportSettings.weekNumberFontFamily}
+                    options={FONT_FAMILIES}
+                    {labelClass}
+                    selectClass={fontSelectClass}
+                />
 
-            <ColorField
-                id={fieldIds.weekNumberColor}
-                label="Week Number Color"
-                bind:value={$exportSettings.weekNumberColor}
-                placeholder="#ffffff"
-                {labelClass}
-                {colorInputClass}
-                textInputClass={monoInputClass}
-            />
+                <SliderField
+                    id={fieldIds.weekNumberFontSize}
+                    label="Week Number Font Size"
+                    suffix="px"
+                    min={12}
+                    max={48}
+                    step={1}
+                    bind:value={$exportSettings.weekNumberFontSize}
+                    {labelClass}
+                />
 
-            <SliderField
-                id={fieldIds.weekNumberOpacity}
-                label="Week Number Opacity"
-                suffix="%"
-                min={0}
-                max={100}
-                step={1}
-                bind:value={$exportSettings.weekNumberOpacity}
-                {labelClass}
-            />
+                <ColorField
+                    id={fieldIds.weekNumberColor}
+                    label="Week Number Color"
+                    bind:value={$exportSettings.weekNumberColor}
+                    placeholder="#ffffff"
+                    {labelClass}
+                    {colorInputClass}
+                    textInputClass={monoInputClass}
+                />
+
+                <SliderField
+                    id={fieldIds.weekNumberOpacity}
+                    label="Week Number Opacity"
+                    suffix="%"
+                    min={0}
+                    max={100}
+                    step={1}
+                    bind:value={$exportSettings.weekNumberOpacity}
+                    {labelClass}
+                />
+            {/if}
+
+            {#if $exportSettings.syncWeekNumberWithTitle}
+                <div
+                    class="rounded-2xl border border-border bg-muted/30 px-3 py-2"
+                >
+                    <p
+                        class="text-[11px] leading-relaxed text-muted-foreground"
+                    >
+                        The calendar week inherits the title styling and is
+                        rendered inline as part of the title.
+                    </p>
+                </div>
+            {/if}
         {/if}
-    {/if}
+    </div>
 
-    <FontSelectField
-        id={fieldIds.headerFont}
-        label="Header Font (Wochenschau)"
-        bind:value={$exportSettings.headerFontFamily}
-        options={FONT_FAMILIES}
-        {labelClass}
-        selectClass={fontSelectClass}
-    />
+    <div
+        class="space-y-4 rounded-2xl border border-border/70 bg-background/40 p-4"
+    >
+        <div class="space-y-1">
+            <p
+                class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+            >
+                Fonts & text
+            </p>
+            <p class="text-[11px] leading-relaxed text-muted-foreground">
+                These settings affect the header lettering and the main activity
+                text.
+            </p>
+        </div>
 
-    <FontSelectField
-        id={fieldIds.bodyFont}
-        label="Body Font (Activities)"
-        bind:value={$exportSettings.bodyFontFamily}
-        options={FONT_FAMILIES}
-        {labelClass}
-        selectClass={fontSelectClass}
-    />
+        <FontSelectField
+            id={fieldIds.headerFont}
+            label="Header font"
+            bind:value={$exportSettings.headerFontFamily}
+            options={FONT_FAMILIES}
+            {labelClass}
+            selectClass={fontSelectClass}
+        />
 
-    <ColorField
-        id={fieldIds.textColor}
-        label="Text Color"
-        bind:value={$exportSettings.textColor}
-        placeholder="#000000"
-        {labelClass}
-        {colorInputClass}
-        textInputClass={monoInputClass}
-    />
+        <FontSelectField
+            id={fieldIds.bodyFont}
+            label="Activity text font"
+            bind:value={$exportSettings.bodyFontFamily}
+            options={FONT_FAMILIES}
+            {labelClass}
+            selectClass={fontSelectClass}
+        />
+
+        <ColorField
+            id={fieldIds.textColor}
+            label="Main text color"
+            bind:value={$exportSettings.textColor}
+            placeholder="#000000"
+            {labelClass}
+            {colorInputClass}
+            textInputClass={monoInputClass}
+        />
+    </div>
 </section>
