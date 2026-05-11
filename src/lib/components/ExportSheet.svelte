@@ -613,7 +613,9 @@
                                             {$exportSettings.title}
                                         </h2>
                                         <p
-                                            class="font-semibold"
+                                            class={$exportSettings.syncWeekNumberWithTitle
+                                                ? "font-medium"
+                                                : "font-semibold"}
                                             style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
                                         >
                                             KW{$currentWeek}
@@ -629,7 +631,9 @@
                                     </h2>
                                     {#if $exportSettings.showWeekNumber}
                                         <p
-                                            class="font-semibold"
+                                            class={$exportSettings.syncWeekNumberWithTitle
+                                                ? "font-medium"
+                                                : "font-semibold"}
                                             style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
                                         >
                                             KW{$currentWeek}
