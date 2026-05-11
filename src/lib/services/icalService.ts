@@ -295,11 +295,17 @@ export function diffSubscriptionItems(
       continue;
     }
 
+    const baseSummary = prev.localOverrides?.summary ?? prev.summary;
+    const baseDescription =
+      prev.localOverrides?.description ?? prev.description;
+    const baseDtstart = prev.localOverrides?.dtstart ?? prev.dtstart;
+    const baseDtend = prev.localOverrides?.dtend ?? prev.dtend;
+
     const changed =
-      prev.summary !== item.summary ||
-      prev.description !== item.description ||
-      prev.dtstart !== item.dtstart ||
-      prev.dtend !== item.dtend;
+      baseSummary !== item.summary ||
+      baseDescription !== item.description ||
+      baseDtstart !== item.dtstart ||
+      baseDtend !== item.dtend;
 
     if (changed) {
       // Merge with preserved local overrides & timestamps
