@@ -1355,107 +1355,117 @@
                             showTitles={true}
                         />
                     {:else if selectedSetting === "about"}
-                        <h3 class="text-xl font-semibold text-foreground mb-4">
-                            About Wochenschau
-                        </h3>
+                        <div class="space-y-4">
+                            <SettingsIntroCard
+                                title="About Wochenschau"
+                                description="A simple weekly planning companion with export, sync, and inspiration built in."
+                            />
 
-                        <div class="space-y-6">
-                            <!-- App Info -->
-                            <div
-                                class="p-4 bg-muted rounded-lg border border-border space-y-3"
+                            <SettingsSectionCard
+                                title="App info"
+                                description="Basic information about the app and where it comes from."
                             >
-                                <div>
-                                    <p class="text-xs text-muted-foreground">
-                                        Version
-                                    </p>
-                                    <p
-                                        class="text-sm font-semibold text-foreground"
-                                    >
-                                        {APP_VERSION}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-muted-foreground">
-                                        Created in the heart of
-                                    </p>
-                                    <p
-                                        class="text-sm font-semibold text-foreground"
-                                    >
-                                        Kaiserstuhl 🍇
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Hidden Gems -->
-                            <div>
-                                <p
-                                    class="text-sm font-semibold text-foreground mb-3"
+                                <div
+                                    class="grid grid-cols-1 gap-3 sm:grid-cols-2"
                                 >
-                                    🎁 Hidden Gems
-                                </p>
-                                <div class="space-y-2">
                                     <div
-                                        class="p-3 bg-background rounded border border-border text-sm"
+                                        class="rounded-2xl border border-border/70 bg-background/40 p-4"
+                                    >
+                                        <p
+                                            class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+                                        >
+                                            Version
+                                        </p>
+                                        <p
+                                            class="mt-2 text-sm font-semibold text-foreground"
+                                        >
+                                            {APP_VERSION}
+                                        </p>
+                                    </div>
+                                    <div
+                                        class="rounded-2xl border border-border/70 bg-background/40 p-4"
+                                    >
+                                        <p
+                                            class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+                                        >
+                                            Created in the heart of
+                                        </p>
+                                        <p
+                                            class="mt-2 text-sm font-semibold text-foreground"
+                                        >
+                                            Kaiserstuhl 🍇
+                                        </p>
+                                    </div>
+                                </div>
+                            </SettingsSectionCard>
+
+                            <SettingsSectionCard
+                                title="Hidden gems"
+                                description="A few features worth knowing about."
+                            >
+                                <div class="space-y-3">
+                                    <div
+                                        class="rounded-2xl border border-border/70 bg-background/40 p-4"
                                     >
                                         <p class="text-foreground mb-1">
                                             <span class="font-semibold"
-                                                >Swipe to Navigate</span
+                                                >Swipe to navigate</span
                                             >
                                         </p>
                                         <p
                                             class="text-xs text-muted-foreground"
                                         >
                                             Swipe left or right on your calendar
-                                            to switch weeks
+                                            to switch weeks.
                                         </p>
                                     </div>
                                     <div
-                                        class="p-3 bg-background rounded border border-border text-sm"
+                                        class="rounded-2xl border border-border/70 bg-background/40 p-4"
                                     >
                                         <p class="text-foreground mb-1">
                                             <span class="font-semibold"
-                                                >Export & Share</span
+                                                >Export & share</span
                                             >
                                         </p>
                                         <p
                                             class="text-xs text-muted-foreground"
                                         >
                                             Export your week as a beautiful
-                                            image and share it with friends
+                                            image and share it with friends.
                                         </p>
                                     </div>
                                     <div
-                                        class="p-3 bg-background rounded border border-border text-sm"
+                                        class="rounded-2xl border border-border/70 bg-background/40 p-4"
                                     >
                                         <p class="text-foreground mb-1">
                                             <span class="font-semibold"
-                                                >Calendar Sync</span
+                                                >Calendar sync</span
                                             >
                                         </p>
                                         <p
                                             class="text-xs text-muted-foreground"
                                         >
                                             Subscribe to iCal calendars to
-                                            automatically import events
+                                            automatically import events.
                                         </p>
                                     </div>
                                     <div
-                                        class="p-3 bg-background rounded border border-border text-sm"
+                                        class="rounded-2xl border border-border/70 bg-background/40 p-4"
                                     >
                                         <p class="text-foreground mb-1">
                                             <span class="font-semibold"
-                                                >Daily Inspiration</span
+                                                >Daily inspiration</span
                                             >
                                         </p>
                                         <p
                                             class="text-xs text-muted-foreground"
                                         >
                                             Enable Bible verses of the day for
-                                            daily inspiration
+                                            daily inspiration.
                                         </p>
                                     </div>
                                 </div>
-                            </div>
+                            </SettingsSectionCard>
                         </div>
                     {:else if selectedSetting === "export"}
                         <h3 class="text-xl font-semibold text-foreground mb-4">
@@ -1467,36 +1477,49 @@
                             on:reset={handleResetExportSettings}
                         />
                     {:else if selectedSetting === "bibleVerse"}
-                        <h3 class="text-xl font-semibold text-foreground mb-4">
-                            Bible Verse of the Day
-                        </h3>
-
                         <div class="space-y-4">
-                            <div
-                                class="p-4 bg-muted rounded-lg border border-border space-y-3"
-                            >
-                                <div class="flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        id="enableBibleVerse"
-                                        checked={$bibleVerse.enabled}
-                                        on:change={(e) =>
-                                            bibleVerse.toggleEnabled(
-                                                e.currentTarget.checked,
-                                            )}
-                                        class="w-4 h-4 rounded border-input"
-                                    />
-                                    <label
-                                        for="enableBibleVerse"
-                                        class="text-sm font-medium text-foreground cursor-pointer"
-                                    >
-                                        Show Bible Verse on Export
-                                    </label>
-                                </div>
+                            <SettingsIntroCard
+                                title="Bible Verse of the Day"
+                                description="Add a daily verse to your export for a small moment of inspiration."
+                            />
 
-                                {#if $bibleVerse.enabled}
+                            <SettingsSectionCard
+                                title="Display"
+                                description="Choose whether the verse should be shown in exported images."
+                            >
+                                <div
+                                    class="rounded-2xl border border-border/70 bg-background/40 p-4 space-y-3"
+                                >
                                     <div
-                                        class="mt-4 p-3 bg-background rounded border border-input space-y-2"
+                                        class="flex items-center justify-between gap-3"
+                                    >
+                                        <label
+                                            for="enableBibleVerseDesktop"
+                                            class="text-sm font-medium text-foreground cursor-pointer"
+                                        >
+                                            Show Bible verse on export
+                                        </label>
+                                        <input
+                                            type="checkbox"
+                                            id="enableBibleVerseDesktop"
+                                            checked={$bibleVerse.enabled}
+                                            on:change={(e) =>
+                                                bibleVerse.toggleEnabled(
+                                                    e.currentTarget.checked,
+                                                )}
+                                            class="w-4 h-4 rounded border-input"
+                                        />
+                                    </div>
+                                </div>
+                            </SettingsSectionCard>
+
+                            {#if $bibleVerse.enabled}
+                                <SettingsSectionCard
+                                    title="Current verse"
+                                    description="Preview the verse that will be used in the export."
+                                >
+                                    <div
+                                        class="rounded-2xl border border-border/70 bg-background/40 p-4 space-y-3"
                                     >
                                         <p
                                             class="text-sm italic text-foreground"
@@ -1511,28 +1534,30 @@
                                         </p>
                                     </div>
 
-                                    <Button
-                                        variant="secondary"
-                                        class="w-full"
-                                        on:click={() =>
-                                            bibleVerse.refreshVerse()}
-                                    >
-                                        <svg
-                                            class="w-4 h-4 inline-block mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            ><path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                            /></svg
+                                    <div class="mt-4">
+                                        <Button
+                                            variant="secondary"
+                                            class="w-full sm:w-auto"
+                                            on:click={() =>
+                                                bibleVerse.refreshVerse()}
                                         >
-                                        Get New Verse
-                                    </Button>
-                                {/if}
-                            </div>
+                                            <svg
+                                                class="w-4 h-4 inline-block mr-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                ><path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                /></svg
+                                            >
+                                            Get new verse
+                                        </Button>
+                                    </div>
+                                </SettingsSectionCard>
+                            {/if}
                         </div>
                     {/if}
                 </div>
