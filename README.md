@@ -75,7 +75,7 @@ src/
     │   ├── ActivityEditSheet.svelte
     │   ├── AddActivityModal.svelte
     │   ├── TemplateManager.svelte
-    │   ├── ICalManager.svelte
+    │   ├── SubscriptionManagerPanel.svelte
     │   ├── SyncConflictDialog.svelte
     │   ├── ExportSheet.svelte
     │   ├── SettingsSheet.svelte
