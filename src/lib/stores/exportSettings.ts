@@ -16,7 +16,8 @@ export interface ExportSettings {
   titleOpacity: number; // 0-100 (opacity for headline/title text)
 
   titleColor: string; // Separate color for main title
-  showWeekNumber: boolean; // Show "KW XX" below title
+  showWeekNumber: boolean; // Show "KW XX" in export header
+  weekNumberLayout: "inline" | "separate-line"; // Position week number next to or below title
   syncWeekNumberWithTitle: boolean; // Reuse title font settings for week number
   weekNumberFontFamily: string; // Dedicated week number font when not synced
   weekNumberFontSize: number; // Dedicated week number size when not synced
@@ -57,6 +58,7 @@ const defaultSettings: ExportSettings = {
 
   titleColor: "#000000",
   showWeekNumber: false,
+  weekNumberLayout: "separate-line",
   syncWeekNumberWithTitle: true,
   weekNumberFontFamily: "'Ms Madi'",
   weekNumberFontSize: 24,
@@ -97,6 +99,8 @@ function createExportSettingsStore() {
       ...parsed,
 
       titleColor: parsed.titleColor ?? defaultSettings.titleColor,
+      weekNumberLayout:
+        parsed.weekNumberLayout ?? defaultSettings.weekNumberLayout,
       syncWeekNumberWithTitle:
         parsed.syncWeekNumberWithTitle ??
         defaultSettings.syncWeekNumberWithTitle,

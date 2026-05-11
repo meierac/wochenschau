@@ -123,7 +123,7 @@
         ? $exportSettings.headerFontFamily
         : $exportSettings.weekNumberFontFamily;
     $: weekNumberFontSize = $exportSettings.syncWeekNumberWithTitle
-        ? Math.max(16, Math.round($exportSettings.titleFontSize * 0.4))
+        ? $exportSettings.titleFontSize
         : $exportSettings.weekNumberFontSize;
     $: weekNumberColor = $exportSettings.syncWeekNumberWithTitle
         ? $exportSettings.titleColor
@@ -601,20 +601,40 @@
 
                         <div style="position: relative; z-index: 10;">
                             <div class="space-y-2 pt-7 text-center">
-                                <h2
-                                    class="mb-0 font-medium"
-                                    style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
-                                        100};"
-                                >
-                                    {$exportSettings.title}
-                                </h2>
-                                {#if $exportSettings.showWeekNumber}
-                                    <p
-                                        class="font-semibold"
-                                        style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
+                                {#if $exportSettings.showWeekNumber && $exportSettings.weekNumberLayout === "inline"}
+                                    <div
+                                        class="flex items-baseline justify-center gap-3 flex-wrap"
                                     >
-                                        KW{$currentWeek}
-                                    </p>
+                                        <h2
+                                            class="mb-0 font-medium"
+                                            style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
+                                                100};"
+                                        >
+                                            {$exportSettings.title}
+                                        </h2>
+                                        <p
+                                            class="font-semibold"
+                                            style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
+                                        >
+                                            KW{$currentWeek}
+                                        </p>
+                                    </div>
+                                {:else}
+                                    <h2
+                                        class="mb-0 font-medium"
+                                        style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
+                                            100};"
+                                    >
+                                        {$exportSettings.title}
+                                    </h2>
+                                    {#if $exportSettings.showWeekNumber}
+                                        <p
+                                            class="font-semibold"
+                                            style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
+                                        >
+                                            KW{$currentWeek}
+                                        </p>
+                                    {/if}
                                 {/if}
                             </div>
 

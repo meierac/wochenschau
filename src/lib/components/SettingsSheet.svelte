@@ -1229,17 +1229,40 @@
                                     </div>
 
                                     {#if $exportSettings.showWeekNumber}
+                                        <div>
+                                            <label
+                                                for="week-number-layout-export"
+                                                class="block text-xs font-medium text-muted-foreground mb-2"
+                                            >
+                                                Week Number Position
+                                            </label>
+                                            <select
+                                                id="week-number-layout-export"
+                                                bind:value={
+                                                    $exportSettings.weekNumberLayout
+                                                }
+                                                class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
+                                            >
+                                                <option value="separate-line"
+                                                    >Separate line</option
+                                                >
+                                                <option value="inline"
+                                                    >Inline with title</option
+                                                >
+                                            </select>
+                                        </div>
+
                                         <div
                                             class="flex items-center justify-between"
                                         >
                                             <label
-                                                for="sync-week-number-title-export-desktop"
+                                                for="sync-week-number-title-export"
                                                 class="text-xs font-medium text-muted-foreground"
                                             >
                                                 Sync Week Number with Title
                                             </label>
                                             <input
-                                                id="sync-week-number-title-export-desktop"
+                                                id="sync-week-number-title-export"
                                                 type="checkbox"
                                                 bind:checked={
                                                     $exportSettings.syncWeekNumberWithTitle
@@ -2016,6 +2039,29 @@
                                 </div>
 
                                 {#if $exportSettings.showWeekNumber}
+                                    <div>
+                                        <label
+                                            for="week-number-layout-export-desktop"
+                                            class="block text-xs font-medium text-muted-foreground mb-2"
+                                        >
+                                            Week Number Position
+                                        </label>
+                                        <select
+                                            id="week-number-layout-export-desktop"
+                                            bind:value={
+                                                $exportSettings.weekNumberLayout
+                                            }
+                                            class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
+                                        >
+                                            <option value="separate-line"
+                                                >Separate line</option
+                                            >
+                                            <option value="inline"
+                                                >Inline with title</option
+                                            >
+                                        </select>
+                                    </div>
+
                                     <div
                                         class="flex items-center justify-between"
                                     >
