@@ -601,7 +601,7 @@
 
                         <div style="position: relative; z-index: 10;">
                             <div class="space-y-2 pt-7 text-center">
-                                {#if $exportSettings.showWeekNumber && $exportSettings.weekNumberLayout === "inline"}
+                                {#if $exportSettings.showWeekNumber && ($exportSettings.syncWeekNumberWithTitle || $exportSettings.weekNumberLayout === "inline")}
                                     <div
                                         class="flex items-baseline justify-center gap-3 flex-wrap"
                                     >

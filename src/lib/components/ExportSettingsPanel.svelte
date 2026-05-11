@@ -149,23 +149,6 @@
         </div>
 
         {#if $exportSettings.showWeekNumber}
-            <div>
-                <label
-                    for={fieldIds.weekNumberLayout}
-                    class="block text-xs font-medium text-muted-foreground mb-2"
-                >
-                    Week Number Position
-                </label>
-                <select
-                    id={fieldIds.weekNumberLayout}
-                    bind:value={$exportSettings.weekNumberLayout}
-                    class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
-                >
-                    <option value="separate-line">Separate line</option>
-                    <option value="inline">Inline with title</option>
-                </select>
-            </div>
-
             <div class="flex items-center justify-between">
                 <label
                     for={fieldIds.syncWeekNumberWithTitle}
@@ -182,6 +165,23 @@
             </div>
 
             {#if !$exportSettings.syncWeekNumberWithTitle}
+                <div>
+                    <label
+                        for={fieldIds.weekNumberLayout}
+                        class="block text-xs font-medium text-muted-foreground mb-2"
+                    >
+                        Week Number Position
+                    </label>
+                    <select
+                        id={fieldIds.weekNumberLayout}
+                        bind:value={$exportSettings.weekNumberLayout}
+                        class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
+                    >
+                        <option value="separate-line">Separate line</option>
+                        <option value="inline">Inline with title</option>
+                    </select>
+                </div>
+
                 <div>
                     <label
                         for={fieldIds.weekNumberFont}
@@ -221,46 +221,46 @@
                         bind:value={$exportSettings.weekNumberFontSize}
                     />
                 </div>
-            {/if}
 
-            <div>
-                <label
-                    for={fieldIds.weekNumberColor}
-                    class="block text-xs font-medium text-muted-foreground mb-2"
-                >
-                    Week Number Color
-                </label>
-                <div class="flex gap-2">
-                    <input
-                        id={fieldIds.weekNumberColor}
-                        type="color"
-                        bind:value={$exportSettings.weekNumberColor}
-                        class="w-12 h-10 rounded border border-input cursor-pointer"
-                    />
-                    <input
-                        type="text"
-                        bind:value={$exportSettings.weekNumberColor}
-                        class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
-                        placeholder="#ffffff"
+                <div>
+                    <label
+                        for={fieldIds.weekNumberColor}
+                        class="block text-xs font-medium text-muted-foreground mb-2"
+                    >
+                        Week Number Color
+                    </label>
+                    <div class="flex gap-2">
+                        <input
+                            id={fieldIds.weekNumberColor}
+                            type="color"
+                            bind:value={$exportSettings.weekNumberColor}
+                            class="w-12 h-10 rounded border border-input cursor-pointer"
+                        />
+                        <input
+                            type="text"
+                            bind:value={$exportSettings.weekNumberColor}
+                            class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
+                            placeholder="#ffffff"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label
+                        for={fieldIds.weekNumberOpacity}
+                        class="block text-xs font-medium text-muted-foreground mb-2"
+                    >
+                        Week Number Opacity: {$exportSettings.weekNumberOpacity}%
+                    </label>
+                    <RangeSlider
+                        id={fieldIds.weekNumberOpacity}
+                        min={0}
+                        max={100}
+                        step={1}
+                        bind:value={$exportSettings.weekNumberOpacity}
                     />
                 </div>
-            </div>
-
-            <div>
-                <label
-                    for={fieldIds.weekNumberOpacity}
-                    class="block text-xs font-medium text-muted-foreground mb-2"
-                >
-                    Week Number Opacity: {$exportSettings.weekNumberOpacity}%
-                </label>
-                <RangeSlider
-                    id={fieldIds.weekNumberOpacity}
-                    min={0}
-                    max={100}
-                    step={1}
-                    bind:value={$exportSettings.weekNumberOpacity}
-                />
-            </div>
+            {/if}
         {/if}
 
         <div>
@@ -277,7 +277,10 @@
                 style="font-family: {$exportSettings.headerFontFamily};"
             >
                 {#each FONT_FAMILIES as font}
-                    <option value={font.value} style="font-family: {font.value};">
+                    <option
+                        value={font.value}
+                        style="font-family: {font.value};"
+                    >
                         {font.name}
                     </option>
                 {/each}
@@ -298,7 +301,10 @@
                 style="font-family: {$exportSettings.bodyFontFamily};"
             >
                 {#each FONT_FAMILIES as font}
-                    <option value={font.value} style="font-family: {font.value};">
+                    <option
+                        value={font.value}
+                        style="font-family: {font.value};"
+                    >
                         {font.name}
                     </option>
                 {/each}
