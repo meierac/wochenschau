@@ -3,6 +3,7 @@
     import { templates } from "../stores/templates";
     import type { ActivityTemplate } from "../types/index";
     import IconButton from "./IconButton.svelte";
+    import ConfirmDialog from "./ConfirmDialog.svelte";
     import { createEntityId } from "../utils/storage";
 
     export let isDesktop = false;
@@ -10,6 +11,7 @@
     const dispatch = createEventDispatcher();
 
     let showNewTemplate = false;
+    let pendingDeleteTemplateId: string | null = null;
     let newTemplate = {
         name: "",
         startTime: "09:00",
@@ -34,8 +36,13 @@
     }
 
     function handleDeleteTemplate(id: string) {
-        if (confirm("Delete this template?")) {
-            templates.removeTemplate(id);
+        pendingDeleteTemplateId = id;
+    }
+
+    function confirmDeleteTemplate() {
+        if (pendingDeleteTemplateId) {
+            templates.removeTemplate(pendingDeleteTemplateId);
+            pendingDeleteTemplateId = null;
         }
     }
 
@@ -209,3 +216,15 @@
         </div>
     </div>
 </div>
+
+<ConfirmDialog
+    isOpen={pendingDeleteTemplateId !== null}
+    {isDesktop}
+    title="Delete Template"
+    message="Delete this template?"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="destructive"
+    on:confirm={confirmDeleteTemplate}
+    on:close={() => (pendingDeleteTemplateId = null)}
+/>

@@ -3,6 +3,7 @@
     import { createEventDispatcher } from "svelte";
     import { isAllDayActivity } from "../utils/date";
     import IconButton from "./IconButton.svelte";
+    import ConfirmDialog from "./ConfirmDialog.svelte";
 
     export let activity: CalendarItem;
 
@@ -15,6 +16,7 @@
     let isDragging = false;
     let isDesktop = false;
     let isHovering = false;
+    let showDeleteConfirm = false;
 
     function handleResize() {
         isDesktop = window.innerWidth >= 768;
@@ -76,9 +78,12 @@
     }
 
     function handleDelete() {
-        if (confirm(`Delete activity "${activity.summary}"?`)) {
-            dispatch("delete");
-        }
+        showDeleteConfirm = true;
+    }
+
+    function confirmDelete() {
+        showDeleteConfirm = false;
+        dispatch("delete");
     }
 
     function isAllDayEvent(): boolean {
@@ -196,3 +201,15 @@
         </div>
     </div>
 </div>
+
+<ConfirmDialog
+    isOpen={showDeleteConfirm}
+    {isDesktop}
+    title="Delete Activity"
+    message={`Delete activity "${activity.summary}"?`}
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="destructive"
+    on:confirm={confirmDelete}
+    on:close={() => (showDeleteConfirm = false)}
+/>

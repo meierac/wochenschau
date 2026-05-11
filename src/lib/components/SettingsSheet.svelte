@@ -23,6 +23,7 @@
         refreshSummary,
     } from "../stores/refreshStatus";
     import SyncConflictDialog from "./SyncConflictDialog.svelte";
+    import ConfirmDialog from "./ConfirmDialog.svelte";
     import type { SyncConflict, ConflictResolution } from "../types/index";
     import type { SubscriptionDiff } from "../services/icalService";
     import { createEntityId } from "../utils/storage";
@@ -118,6 +119,13 @@
     let showConflictDialog = false;
     let pendingConflicts: SyncConflict[] = [];
     let pendingDiff: PendingRefreshState | null = null;
+
+    type PendingConfirmAction =
+        | { kind: "reset-export" }
+        | { kind: "delete-template"; id: string }
+        | { kind: "delete-subscription"; id: string };
+
+    let pendingConfirmAction: PendingConfirmAction | null = null;
     // Abort controller for bulk refresh (quick win to allow cancellation parity with App)
     let refreshAbortController: AbortController | null = null;
 
@@ -205,9 +213,7 @@
     }
 
     function handleResetExportSettings() {
-        if (confirm("Reset all export settings to default?")) {
-            exportSettings.reset();
-        }
+        pendingConfirmAction = { kind: "reset-export" };
     }
 
     // Template operations
@@ -229,9 +235,7 @@
     }
 
     function handleDeleteTemplate(id: string) {
-        if (confirm("Delete this template?")) {
-            templates.removeTemplate(id);
-        }
+        pendingConfirmAction = { kind: "delete-template", id };
     }
 
     function handleCancelNewTemplate() {
@@ -449,15 +453,28 @@
     }
 
     function handleDeleteSubscription(id: string) {
-        if (confirm("Delete this subscription?")) {
+        pendingConfirmAction = { kind: "delete-subscription", id };
+    }
+
+    function handleConfirmAction() {
+        const action = pendingConfirmAction;
+        if (!action) return;
+
+        if (action.kind === "reset-export") {
+            exportSettings.reset();
+        } else if (action.kind === "delete-template") {
+            templates.removeTemplate(action.id);
+        } else if (action.kind === "delete-subscription") {
             const itemsToRemove = $activities.filter(
-                (a) => a.sourceId === id && a.source === "ical",
+                (a) => a.sourceId === action.id && a.source === "ical",
             );
             for (const item of itemsToRemove) {
                 activities.removeActivity(item.id);
             }
-            subscriptions.removeSubscription(id);
+            subscriptions.removeSubscription(action.id);
         }
+
+        pendingConfirmAction = null;
     }
 
     async function handleRefreshAll() {
@@ -680,6 +697,29 @@
                 }}
             />
         {/if}
+        <ConfirmDialog
+            isOpen={pendingConfirmAction !== null}
+            {isDesktop}
+            title={pendingConfirmAction?.kind === "reset-export"
+                ? "Reset Export Settings"
+                : pendingConfirmAction?.kind === "delete-template"
+                  ? "Delete Template"
+                  : "Delete Subscription"}
+            message={pendingConfirmAction?.kind === "reset-export"
+                ? "Reset all export settings to default?"
+                : pendingConfirmAction?.kind === "delete-template"
+                  ? "Delete this template?"
+                  : "Delete this subscription and its imported events?"}
+            confirmLabel={pendingConfirmAction?.kind === "reset-export"
+                ? "Reset"
+                : "Delete"}
+            cancelLabel="Cancel"
+            variant={pendingConfirmAction?.kind === "reset-export"
+                ? "default"
+                : "destructive"}
+            on:confirm={handleConfirmAction}
+            on:close={() => (pendingConfirmAction = null)}
+        />
         <!-- Header (Always on top) -->
         <div
             class={`${isDesktop ? "border-b border-border min-h-[70px]" : ""} px-3 py-3 flex items-center justify-center relative shrink-0`}

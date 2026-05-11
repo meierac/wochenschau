@@ -4,6 +4,7 @@
     import { activities } from "../stores/activities";
     import type { ICalSubscription } from "../types/index";
     import Button from "./Button.svelte";
+    import ConfirmDialog from "./ConfirmDialog.svelte";
     import { refreshService } from "../services/refreshService";
     import { createEntityId } from "../utils/storage";
 
@@ -18,6 +19,7 @@
     };
     let isLoading = false;
     let error: string | null = null;
+    let pendingDeleteSubscriptionId: string | null = null;
 
     function handleAddSubscription() {
         if (!newSubscription.url.trim() || !newSubscription.name.trim()) return;
@@ -81,16 +83,22 @@
     }
 
     function handleDeleteSubscription(id: string) {
-        if (confirm("Delete this subscription?")) {
-            // Remove associated calendar items
-            const itemsToRemove = $activities.filter(
-                (a) => a.sourceId === id && a.source === "ical",
-            );
-            for (const item of itemsToRemove) {
-                activities.removeActivity(item.id);
-            }
-            subscriptions.removeSubscription(id);
+        pendingDeleteSubscriptionId = id;
+    }
+
+    function confirmDeleteSubscription() {
+        if (!pendingDeleteSubscriptionId) return;
+
+        const itemsToRemove = $activities.filter(
+            (a) =>
+                a.sourceId === pendingDeleteSubscriptionId &&
+                a.source === "ical",
+        );
+        for (const item of itemsToRemove) {
+            activities.removeActivity(item.id);
         }
+        subscriptions.removeSubscription(pendingDeleteSubscriptionId);
+        pendingDeleteSubscriptionId = null;
     }
 
     async function handleRefreshAll() {
@@ -359,3 +367,15 @@
         </div>
     </div>
 </div>
+
+<ConfirmDialog
+    isOpen={pendingDeleteSubscriptionId !== null}
+    {isDesktop}
+    title="Delete Subscription"
+    message="Delete this subscription and its imported events?"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="destructive"
+    on:confirm={confirmDeleteSubscription}
+    on:close={() => (pendingDeleteSubscriptionId = null)}
+/>
