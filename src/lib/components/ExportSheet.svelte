@@ -600,9 +600,9 @@
                         {/if}
 
                         <div style="position: relative; z-index: 10;">
-                            <div class="space-y-4 pt-7 text-center">
+                            <div class="space-y-2 pt-7 text-center">
                                 <h2
-                                    class="mb-2 font-medium"
+                                    class="mb-0 font-medium"
                                     style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
                                         100};"
                                 >
