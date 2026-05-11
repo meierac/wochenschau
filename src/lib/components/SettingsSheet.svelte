@@ -24,6 +24,7 @@
     } from "../stores/refreshStatus";
     import SyncConflictDialog from "./SyncConflictDialog.svelte";
     import type { SyncConflict, ConflictResolution } from "../types/index";
+    import type { SubscriptionDiff } from "../services/icalService";
 
     export let isDesktop = false;
 
@@ -95,60 +96,53 @@
     let showGlobalLoader = false;
     $: showGlobalLoader = isLoading;
 
-    // Conflict dialog state
-    let showConflictDialog = false;
-    let pendingConflicts: SyncConflict[] = [];
-    let pendingDiff: {
+    type PendingSingleDiff = {
+        kind: "single";
         added: CalendarItem[];
         updated: CalendarItem[];
         removed: CalendarItem[];
         conflicts: CalendarItem[];
         subscriptionId: string;
         subscriptionName: string;
-    } | null = null;
+    };
+
+    type PendingAggregatedDiffs = {
+        kind: "aggregated";
+        diffs: SubscriptionDiff[];
+    };
+
+    type PendingRefreshState = PendingSingleDiff | PendingAggregatedDiffs;
+
+    // Conflict dialog state
+    let showConflictDialog = false;
+    let pendingConflicts: SyncConflict[] = [];
+    let pendingDiff: PendingRefreshState | null = null;
     // Abort controller for bulk refresh (quick win to allow cancellation parity with App)
     let refreshAbortController: AbortController | null = null;
 
     function handleConflictResolution(event: CustomEvent<ConflictResolution>) {
         const resolution = event.detail;
 
-        // Aggregated diff path: when refreshAll collected multiple subscription diffs
-        // We store them inside pendingDiff.diffs (array of SubscriptionDiff from refreshService)
-        if (pendingDiff && (pendingDiff as any).diffs) {
-            const diffContainer = pendingDiff as any;
-            const diffs = diffContainer.diffs;
-
+        if (pendingDiff?.kind === "aggregated") {
             // Dynamic import to avoid top-level edit (tooling constraints)
             (async () => {
-                const { refreshService } = await import(
-                    "../services/refreshService"
-                );
+                const { refreshService } =
+                    await import("../services/refreshService");
                 const strategy =
                     resolution === "use-synced" ? "use-synced" : "keep-local";
 
                 // Apply all diffs using chosen strategy
                 const applied = refreshService.applyAllDiffs(
                     $activities,
-                    diffs,
+                    pendingDiff.diffs,
                     { strategy },
                 );
 
-                // Persist in bulk (single localStorage write)
-                localStorage.setItem(
-                    "wochenschau_activities",
-                    JSON.stringify(applied),
-                );
-
-                // Replace activities store content atomically
-                // (clear then add each to preserve existing derived logic)
-                activities.clearAll();
-                for (const a of applied) {
-                    activities.addActivity(a);
-                }
+                activities.replaceAll(applied);
 
                 // Update lastFetched for all affected subscriptions
                 const affectedIds = new Set(
-                    diffs.map((d: any) => d.subscriptionId),
+                    pendingDiff.diffs.map((d) => d.subscriptionId),
                 );
                 for (const sub of $subscriptions) {
                     if (affectedIds.has(sub.id)) {
@@ -170,6 +164,11 @@
 
         // Legacy single-subscription path (fallback)
         if (!pendingDiff) {
+            showConflictDialog = false;
+            return;
+        }
+
+        if (pendingDiff.kind !== "single") {
             showConflictDialog = false;
             return;
         }
@@ -388,6 +387,7 @@
                 });
 
                 pendingDiff = {
+                    kind: "single",
                     added,
                     updated,
                     removed,
@@ -475,9 +475,8 @@
             );
 
             // Dynamic import refreshService (avoid top-level import edit)
-            const { refreshService } = await import(
-                "../services/refreshService"
-            );
+            const { refreshService } =
+                await import("../services/refreshService");
 
             // Make bulk refresh abortable (quick win)
             refreshAbortController = new AbortController();
@@ -515,8 +514,9 @@
                 // Store aggregated conflicts and diffs for single dialog resolution
                 pendingConflicts = aggregatedConflicts;
                 pendingDiff = {
+                    kind: "aggregated",
                     diffs,
-                } as any;
+                };
                 showConflictDialog = true;
                 refreshStatus.setPhase("conflict-check");
                 return;
@@ -527,13 +527,7 @@
                 strategy: "use-synced",
             });
 
-            // Persist bulk
-            localStorage.setItem(
-                "wochenschau_activities",
-                JSON.stringify(applied),
-            );
-            activities.clearAll();
-            for (const a of applied) activities.addActivity(a);
+            activities.replaceAll(applied);
 
             // Update lastFetched on all affected subscriptions
             const affectedIds = new Set(diffs.map((d) => d.subscriptionId));

@@ -2,9 +2,9 @@
     import { createEventDispatcher } from "svelte";
     import { subscriptions } from "../stores/ical";
     import { activities } from "../stores/activities";
-    import type { ICalSubscription, CalendarItem } from "../types/index";
+    import type { ICalSubscription } from "../types/index";
     import Button from "./Button.svelte";
-    import { icalService } from "../services/icalService";
+    import { refreshService } from "../services/refreshService";
 
     export let isDesktop = false;
 
@@ -41,27 +41,21 @@
             const subscription = $subscriptions.find((s) => s.id === id);
             if (!subscription) return;
 
-            // Fetch iCal data
-            const response = await fetch(subscription.url);
-            if (!response.ok) throw new Error("Failed to fetch iCal");
-
-            const text = await response.text();
-            const calendarItems = parseICalToCalendarItems(text, id);
-
-            // Remove old items from this subscription
-            const oldActivities = $activities.filter(
+            const existing = $activities.filter(
                 (a) => a.sourceId === id && a.source === "ical",
             );
-            for (const oldActivity of oldActivities) {
-                activities.removeActivity(oldActivity.id);
-            }
+            const { diffs } = await refreshService.fetchAndDiffAll(
+                [subscription],
+                new Map([[subscription.id, existing]]),
+                { parallel: false },
+            );
 
-            // Add new calendar items
-            for (const item of calendarItems) {
-                activities.addActivity(item);
-            }
+            const applied = refreshService.applyAllDiffs($activities, diffs, {
+                strategy: "keep-local",
+            });
 
-            // Update subscription metadata
+            activities.replaceAll(applied);
+
             const updated: ICalSubscription = {
                 ...subscription,
                 lastFetched: Date.now(),
@@ -73,17 +67,6 @@
             isLoading = false;
         }
     }
-
-    function parseICalToCalendarItems(
-        iCalText: string,
-        subscriptionId: string,
-    ): CalendarItem[] {
-        // Delegate to unified icalService implementation
-        return icalService.parseICalToCalendarItems(iCalText, subscriptionId);
-    }
-
-    // Obsolete helper functions removed.
-    // Parsing & item construction now delegated to icalService.parseICalToCalendarItems.
 
     function handleToggleSubscription(id: string) {
         const subscription = $subscriptions.find((s) => s.id === id);
@@ -108,12 +91,46 @@
         }
     }
 
-    function handleRefreshAll() {
-        $subscriptions.forEach((sub) => {
-            if (sub.enabled) {
-                handleRefresh(sub.id);
+    async function handleRefreshAll() {
+        isLoading = true;
+        error = null;
+        try {
+            const enabledSubscriptions = $subscriptions.filter(
+                (sub) => sub.enabled,
+            );
+            const existingBySubscription = new Map(
+                enabledSubscriptions.map((sub) => [
+                    sub.id,
+                    $activities.filter(
+                        (a) => a.sourceId === sub.id && a.source === "ical",
+                    ),
+                ]),
+            );
+
+            const { diffs } = await refreshService.fetchAndDiffAll(
+                enabledSubscriptions,
+                existingBySubscription,
+                { parallel: true },
+            );
+
+            const applied = refreshService.applyAllDiffs($activities, diffs, {
+                strategy: "keep-local",
+            });
+
+            activities.replaceAll(applied);
+
+            const refreshedAt = Date.now();
+            for (const subscription of enabledSubscriptions) {
+                subscriptions.updateSubscription({
+                    ...subscription,
+                    lastFetched: refreshedAt,
+                });
             }
-        });
+        } catch (err) {
+            error = err instanceof Error ? err.message : "Unknown error";
+        } finally {
+            isLoading = false;
+        }
     }
 
     function handleClose() {
