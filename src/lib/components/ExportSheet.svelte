@@ -131,6 +131,11 @@
     $: weekNumberOpacity = $exportSettings.syncWeekNumberWithTitle
         ? $exportSettings.titleOpacity / 100
         : $exportSettings.weekNumberOpacity / 100;
+    $: syncedTitle =
+        $exportSettings.showWeekNumber &&
+        $exportSettings.syncWeekNumberWithTitle
+            ? `${$exportSettings.title} KW${$currentWeek}`
+            : $exportSettings.title;
 
     /**
      * Get week container background style with opacity
@@ -601,7 +606,15 @@
 
                         <div style="position: relative; z-index: 10;">
                             <div class="space-y-2 pt-7 text-center">
-                                {#if $exportSettings.showWeekNumber && ($exportSettings.syncWeekNumberWithTitle || $exportSettings.weekNumberLayout === "inline")}
+                                {#if $exportSettings.syncWeekNumberWithTitle}
+                                    <h2
+                                        class="mb-0 font-medium"
+                                        style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
+                                            100};"
+                                    >
+                                        {syncedTitle}
+                                    </h2>
+                                {:else if $exportSettings.showWeekNumber && $exportSettings.weekNumberLayout === "inline"}
                                     <div
                                         class="flex items-baseline justify-center gap-3 flex-wrap"
                                     >
@@ -613,9 +626,7 @@
                                             {$exportSettings.title}
                                         </h2>
                                         <p
-                                            class={$exportSettings.syncWeekNumberWithTitle
-                                                ? "font-medium"
-                                                : "font-semibold"}
+                                            class="font-semibold"
                                             style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
                                         >
                                             KW{$currentWeek}
@@ -631,9 +642,7 @@
                                     </h2>
                                     {#if $exportSettings.showWeekNumber}
                                         <p
-                                            class={$exportSettings.syncWeekNumberWithTitle
-                                                ? "font-medium"
-                                                : "font-semibold"}
+                                            class="font-semibold"
                                             style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
                                         >
                                             KW{$currentWeek}
