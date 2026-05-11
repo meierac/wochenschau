@@ -4,7 +4,11 @@
     import { currentWeek, currentYear } from "../stores/week";
     import { exportSettings } from "../stores/exportSettings";
     import { bibleVerse } from "../stores/bibleVerse";
-    import { getDaysOfWeek } from "../utils/date";
+    import {
+        getDaysOfWeek,
+        isAllDayActivity,
+        sortActivitiesByDisplayOrder,
+    } from "../utils/date";
     import { WEEKDAYS_DE } from "../types/index";
     import type { ICalSubscription } from "../types/index";
     import { subscriptions } from "../stores/ical";
@@ -432,11 +436,13 @@
                 (a.sourceId && enabledSubscriptions.has(a.sourceId)),
         );
 
+    $: sortedWeekActivities = sortActivitiesByDisplayOrder(weekActivities);
+
     /**
      * Get activities for a specific day
      */
     function getDayActivities(dayIndex: number) {
-        return weekActivities.filter((a) => a.day === dayIndex);
+        return sortedWeekActivities.filter((a) => a.day === dayIndex);
     }
 
     /**
@@ -453,11 +459,7 @@
      * Check if an activity is an all-day event
      */
     function isAllDayEvent(activity: any): boolean {
-        if (activity.isAllDay) return true;
-        if (activity.startTime === activity.endTime) return true;
-        if (activity.startTime === "00:00" && activity.endTime === "23:59")
-            return true;
-        return false;
+        return isAllDayActivity(activity);
     }
 </script>
 

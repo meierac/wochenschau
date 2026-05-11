@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { CalendarItem } from "../types/index";
     import { createEventDispatcher } from "svelte";
+    import { isAllDayActivity } from "../utils/date";
     import IconButton from "./IconButton.svelte";
 
     export let activity: CalendarItem;
@@ -81,17 +82,7 @@
     }
 
     function isAllDayEvent(): boolean {
-        // Check if explicitly marked as all-day
-        if (activity.isAllDay) return true;
-
-        // Check if start time equals end time
-        if (activity.startTime === activity.endTime) return true;
-
-        // Check if spans entire day (00:00 to 23:59)
-        if (activity.startTime === "00:00" && activity.endTime === "23:59")
-            return true;
-
-        return false;
+        return isAllDayActivity(activity);
     }
 
     $: if (typeof window !== "undefined") {

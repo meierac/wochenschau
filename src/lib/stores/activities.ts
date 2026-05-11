@@ -8,6 +8,7 @@ import {
   deleteActivity,
   clearAllActivities,
 } from "../utils/storage.js";
+import { sortActivitiesByDisplayOrder } from "../utils/date.js";
 
 function createActivityStore() {
   const { subscribe, set, update } = writable<Activity[]>(getActivities());
@@ -193,7 +194,9 @@ export const activitiesByWeek = derived(
 
   ([$activities]) =>
     ($week: number, $year: number) =>
-      $activities.filter((a) => a.week === $week && a.year === $year),
+      sortActivitiesByDisplayOrder(
+        $activities.filter((a) => a.week === $week && a.year === $year),
+      ),
 );
 
 export const activitiesByDay = derived(
@@ -201,7 +204,9 @@ export const activitiesByDay = derived(
 
   ([$activities]) =>
     ($week: number, $year: number, $day: number) =>
-      $activities.filter(
-        (a) => a.week === $week && a.year === $year && a.day === $day,
+      sortActivitiesByDisplayOrder(
+        $activities.filter(
+          (a) => a.week === $week && a.year === $year && a.day === $day,
+        ),
       ),
 );

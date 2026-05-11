@@ -4,7 +4,7 @@
 
     import { activities } from "../stores/activities";
     import { currentWeek, currentYear } from "../stores/week";
-    import { getDaysOfWeek } from "../utils/date";
+    import { getDaysOfWeek, sortActivitiesByDisplayOrder } from "../utils/date";
     import { bibleVerse } from "../stores/bibleVerse";
     import { subscriptions } from "../stores/ical";
 
@@ -46,6 +46,8 @@
                 (a.sourceId && $enabledSubscriptions.has(a.sourceId)),
         );
 
+    $: sortedWeekActivities = sortActivitiesByDisplayOrder(weekActivities);
+
     function handleWeekSelected(
         event: CustomEvent<{ week: number; year: number }>,
     ) {
@@ -81,7 +83,7 @@
                     {isDesktop}
                     {day}
                     {dayIndex}
-                    dayActivities={weekActivities.filter(
+                    dayActivities={sortedWeekActivities.filter(
                         (a) => a.day === dayIndex,
                     )}
                     on:requestEditActivity={handleRequestEditActivity}
