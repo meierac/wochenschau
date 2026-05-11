@@ -125,6 +125,12 @@
     $: weekNumberFontSize = $exportSettings.syncWeekNumberWithTitle
         ? Math.max(16, Math.round($exportSettings.titleFontSize * 0.4))
         : $exportSettings.weekNumberFontSize;
+    $: weekNumberColor = $exportSettings.syncWeekNumberWithTitle
+        ? $exportSettings.titleColor
+        : $exportSettings.weekNumberColor;
+    $: weekNumberOpacity = $exportSettings.syncWeekNumberWithTitle
+        ? $exportSettings.titleOpacity / 100
+        : $exportSettings.weekNumberOpacity / 100;
 
     /**
      * Get week container background style with opacity
@@ -605,8 +611,7 @@
                                 {#if $exportSettings.showWeekNumber}
                                     <p
                                         class="font-semibold"
-                                        style="font-family: {weekNumberFontFamily}; color: {$exportSettings.weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {$exportSettings.weekNumberOpacity /
-                                            100};"
+                                        style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
                                     >
                                         KW{$currentWeek}
                                     </p>
