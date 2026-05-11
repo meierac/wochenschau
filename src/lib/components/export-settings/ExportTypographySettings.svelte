@@ -56,16 +56,27 @@
         </div>
 
         <div>
-            <SliderField
-                id={fieldIds.titleFontSize}
-                label="Title Font Size"
-                suffix="px"
-                min={24}
-                max={72}
-                step={2}
-                bind:value={$exportSettings.titleFontSize}
+            <FontSelectField
+                id={fieldIds.headerFont}
+                label="Header font"
+                bind:value={$exportSettings.headerFontFamily}
+                options={FONT_FAMILIES}
                 {labelClass}
+                selectClass={fontSelectClass}
             />
+
+            <div class="mt-4">
+                <SliderField
+                    id={fieldIds.titleFontSize}
+                    label="Title Font Size"
+                    suffix="px"
+                    min={24}
+                    max={72}
+                    step={2}
+                    bind:value={$exportSettings.titleFontSize}
+                    {labelClass}
+                />
+            </div>
 
             <SliderField
                 id={fieldIds.titleOpacity}
@@ -222,15 +233,6 @@
                 text.
             </p>
         </div>
-
-        <FontSelectField
-            id={fieldIds.headerFont}
-            label="Header font"
-            bind:value={$exportSettings.headerFontFamily}
-            options={FONT_FAMILIES}
-            {labelClass}
-            selectClass={fontSelectClass}
-        />
 
         <FontSelectField
             id={fieldIds.bodyFont}
