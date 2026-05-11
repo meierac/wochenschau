@@ -1228,6 +1228,117 @@
                                         />
                                     </div>
 
+                                    {#if $exportSettings.showWeekNumber}
+                                        <div
+                                            class="flex items-center justify-between"
+                                        >
+                                            <label
+                                                for="sync-week-number-title-export-desktop"
+                                                class="text-xs font-medium text-muted-foreground"
+                                            >
+                                                Sync Week Number with Title
+                                            </label>
+                                            <input
+                                                id="sync-week-number-title-export-desktop"
+                                                type="checkbox"
+                                                bind:checked={
+                                                    $exportSettings.syncWeekNumberWithTitle
+                                                }
+                                                class="w-4 h-4"
+                                            />
+                                        </div>
+
+                                        {#if !$exportSettings.syncWeekNumberWithTitle}
+                                            <div>
+                                                <label
+                                                    for="week-number-font-export-desktop"
+                                                    class="block text-xs font-medium text-muted-foreground mb-2"
+                                                >
+                                                    Week Number Font
+                                                </label>
+                                                <select
+                                                    id="week-number-font-export-desktop"
+                                                    bind:value={
+                                                        $exportSettings.weekNumberFontFamily
+                                                    }
+                                                    class="flex-1 w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
+                                                    style="font-family: {$exportSettings.weekNumberFontFamily};"
+                                                >
+                                                    {#each FONT_FAMILIES as font}
+                                                        <option
+                                                            value={font.value}
+                                                            style="font-family: {font.value};"
+                                                            >{font.name}</option
+                                                        >
+                                                    {/each}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label
+                                                    for="week-number-font-size-export-desktop"
+                                                    class="block text-xs font-medium text-muted-foreground mb-2"
+                                                >
+                                                    Week Number Font Size: {$exportSettings.weekNumberFontSize}px
+                                                </label>
+                                                <RangeSlider
+                                                    id="week-number-font-size-export-desktop"
+                                                    min={12}
+                                                    max={48}
+                                                    step={1}
+                                                    bind:value={
+                                                        $exportSettings.weekNumberFontSize
+                                                    }
+                                                />
+                                            </div>
+                                        {/if}
+
+                                        <div>
+                                            <label
+                                                for="week-number-color-export-desktop"
+                                                class="block text-xs font-medium text-muted-foreground mb-2"
+                                            >
+                                                Week Number Color
+                                            </label>
+                                            <div class="flex gap-2">
+                                                <input
+                                                    id="week-number-color-export-desktop"
+                                                    type="color"
+                                                    bind:value={
+                                                        $exportSettings.weekNumberColor
+                                                    }
+                                                    class="w-12 h-10 rounded border border-input cursor-pointer"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    bind:value={
+                                                        $exportSettings.weekNumberColor
+                                                    }
+                                                    class="flex-1 px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm font-mono"
+                                                    placeholder="#ffffff"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label
+                                                for="week-number-opacity-export-desktop"
+                                                class="block text-xs font-medium text-muted-foreground mb-2"
+                                            >
+                                                Week Number Opacity: {$exportSettings.weekNumberOpacity}%
+                                            </label>
+                                            <RangeSlider
+                                                id="week-number-opacity-export-desktop"
+                                                min={0}
+                                                max={100}
+                                                step={1}
+                                                bind:value={
+                                                    $exportSettings.weekNumberOpacity
+                                                }
+                                            />
+                                        </div>
+                                    {/if}
+
                                     <!-- Header Font Family -->
                                     <div>
                                         <label

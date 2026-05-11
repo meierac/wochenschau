@@ -17,6 +17,11 @@ export interface ExportSettings {
 
   titleColor: string; // Separate color for main title
   showWeekNumber: boolean; // Show "KW XX" below title
+  syncWeekNumberWithTitle: boolean; // Reuse title font settings for week number
+  weekNumberFontFamily: string; // Dedicated week number font when not synced
+  weekNumberFontSize: number; // Dedicated week number size when not synced
+  weekNumberColor: string; // Dedicated week number color
+  weekNumberOpacity: number; // 0-100 opacity for week number
 
   // Background
   backgroundMode: "color" | "image"; // Which background to use
@@ -52,6 +57,11 @@ const defaultSettings: ExportSettings = {
 
   titleColor: "#000000",
   showWeekNumber: false,
+  syncWeekNumberWithTitle: true,
+  weekNumberFontFamily: "'Ms Madi'",
+  weekNumberFontSize: 24,
+  weekNumberColor: "#ffffff",
+  weekNumberOpacity: 80,
 
   // Background
   backgroundMode: "color",
@@ -87,6 +97,17 @@ function createExportSettingsStore() {
       ...parsed,
 
       titleColor: parsed.titleColor ?? defaultSettings.titleColor,
+      syncWeekNumberWithTitle:
+        parsed.syncWeekNumberWithTitle ??
+        defaultSettings.syncWeekNumberWithTitle,
+      weekNumberFontFamily:
+        parsed.weekNumberFontFamily ?? defaultSettings.weekNumberFontFamily,
+      weekNumberFontSize:
+        parsed.weekNumberFontSize ?? defaultSettings.weekNumberFontSize,
+      weekNumberColor:
+        parsed.weekNumberColor ?? defaultSettings.weekNumberColor,
+      weekNumberOpacity:
+        parsed.weekNumberOpacity ?? defaultSettings.weekNumberOpacity,
       backgroundMode: parsed.backgroundMode ?? "color",
 
       backgroundImageUrl: parsed.backgroundImageUrl ?? null,

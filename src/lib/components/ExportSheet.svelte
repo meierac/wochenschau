@@ -119,6 +119,13 @@
         dispatch("close");
     }
 
+    $: weekNumberFontFamily = $exportSettings.syncWeekNumberWithTitle
+        ? $exportSettings.headerFontFamily
+        : $exportSettings.weekNumberFontFamily;
+    $: weekNumberFontSize = $exportSettings.syncWeekNumberWithTitle
+        ? Math.max(16, Math.round($exportSettings.titleFontSize * 0.4))
+        : $exportSettings.weekNumberFontSize;
+
     /**
      * Get week container background style with opacity
      */
@@ -597,8 +604,9 @@
                                 </h2>
                                 {#if $exportSettings.showWeekNumber}
                                     <p
-                                        class="text-lg font-semibold"
-                                        style="color: {$exportSettings.textColor}; opacity: 0.8;"
+                                        class="font-semibold"
+                                        style="font-family: {weekNumberFontFamily}; color: {$exportSettings.weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {$exportSettings.weekNumberOpacity /
+                                            100};"
                                     >
                                         KW{$currentWeek}
                                     </p>
