@@ -16,6 +16,7 @@
     import SwipeableSheet from "./SwipeableSheet.svelte";
     import SettingIcon from "./SettingIcon.svelte";
     import RangeSlider from "./RangeSlider.svelte";
+    import SubscriptionManagerPanel from "./SubscriptionManagerPanel.svelte";
     import { icalService } from "../services/icalService";
     import {
         refreshStatus,
@@ -906,172 +907,31 @@
                             {/if}
                         {:else if selectedSetting === "ical"}
                             <!-- iCal Details -->
-                            {#if $subscriptions.length === 0 && !showNewSubscription}
-                                <div class="text-center py-8">
-                                    <p class="text-muted-foreground text-sm">
-                                        No iCal subscriptions yet
-                                    </p>
-                                    <p
-                                        class="text-muted-foreground text-xs mt-1"
-                                    >
-                                        Add a calendar feed by entering an iCal
-                                        URL
-                                    </p>
-                                </div>
-                            {:else if !showNewSubscription}
-                                <div class="space-y-2">
-                                    {#each $subscriptions as subscription}
-                                        <div
-                                            class="p-3 bg-muted rounded-lg border border-border space-y-2"
-                                        >
-                                            <div
-                                                class="flex items-center justify-between"
-                                            >
-                                                <div class="flex-1">
-                                                    <div
-                                                        class="font-semibold text-foreground text-sm"
-                                                    >
-                                                        {subscription.name}
-                                                    </div>
-                                                    <div
-                                                        class="text-xs text-muted-foreground truncate"
-                                                    >
-                                                        {subscription.url}
-                                                    </div>
-                                                </div>
-                                                <label
-                                                    class="flex items-center gap-2 cursor-pointer shrink-0"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={subscription.enabled}
-                                                        on:change={(e) =>
-                                                            handleToggleSubscription(
-                                                                subscription.id,
-                                                                e.currentTarget
-                                                                    .checked,
-                                                            )}
-                                                        class="rounded border-input"
-                                                    />
-                                                </label>
-                                            </div>
-
-                                            {#if subscription.lastFetched}
-                                                <div
-                                                    class="text-xs text-muted-foreground"
-                                                >
-                                                    Last fetched: {new Date(
-                                                        subscription.lastFetched,
-                                                    ).toLocaleString()}
-                                                </div>
-                                            {/if}
-
-                                            {#if itemCount(subscription.id) > 0}
-                                                <div
-                                                    class="text-xs text-muted-foreground"
-                                                >
-                                                    {itemCount(subscription.id)}
-                                                    event{itemCount(
-                                                        subscription.id,
-                                                    ) !== 1
-                                                        ? "s"
-                                                        : ""}
-                                                </div>
-                                            {/if}
-
-                                            <div class="flex gap-2">
-                                                <button
-                                                    on:click={() =>
-                                                        handleRefresh(
-                                                            subscription.id,
-                                                        )}
-                                                    disabled={isLoading}
-                                                    class="flex-1 px-3 py-1 text-xs font-semibold text-foreground hover:bg-background rounded transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                                                >
-                                                    Refresh
-                                                </button>
-                                                <button
-                                                    on:click={() =>
-                                                        handleDeleteSubscription(
-                                                            subscription.id,
-                                                        )}
-                                                    class="px-3 py-1 text-xs font-semibold text-destructive hover:bg-destructive/10 rounded transition-colors"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    {/each}
-                                </div>
-                            {/if}
-
-                            <!-- Add Subscription Form -->
-                            {#if showNewSubscription}
-                                <div
-                                    class="p-3 bg-muted rounded-lg border border-border space-y-3"
-                                >
-                                    <input
-                                        type="url"
-                                        bind:value={newSubscription.url}
-                                        placeholder="iCal URL"
-                                        class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
-                                    />
-                                    <input
-                                        type="text"
-                                        bind:value={newSubscription.name}
-                                        placeholder="Calendar name (optional)"
-                                        class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
-                                    />
-                                    <div class="flex gap-2">
-                                        <Button
-                                            variant="default"
-                                            class="flex-1"
-                                            disabled={!newSubscription.url.trim() ||
-                                                isLoading}
-                                            on:click={handleAddSubscription}
-                                        >
-                                            {isLoading ? "Adding..." : "Add"}
-                                        </Button>
-                                        <Button
-                                            variant="secondary"
-                                            class="flex-1"
-                                            on:click={() => {
-                                                showNewSubscription = false;
-                                                newSubscription = {
-                                                    url: "",
-                                                    name: "",
-                                                };
-                                                error = "";
-                                            }}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </div>
-                                </div>
-                            {:else}
-                                <Button
-                                    variant="secondary"
-                                    class="w-full mt-4"
-                                    on:click={() =>
-                                        (showNewSubscription = true)}
-                                >
-                                    + Add Subscription
-                                </Button>
-                            {/if}
-
-                            <!-- Refresh All Button -->
-                            {#if $subscriptions.length > 0 && !showNewSubscription}
-                                <Button
-                                    variant="secondary"
-                                    class="w-full mt-4"
-                                    disabled={isLoading}
-                                    on:click={handleRefreshAll}
-                                >
-                                    {isLoading
-                                        ? "Refreshing..."
-                                        : "Refresh All"}
-                                </Button>
-                            {/if}
+                            <SubscriptionManagerPanel
+                                subscriptions={$subscriptions}
+                                {isLoading}
+                                {showNewSubscription}
+                                {newSubscription}
+                                {itemCount}
+                                onToggleSubscription={(id, enabled) =>
+                                    handleToggleSubscription(id, enabled)}
+                                onRefreshSubscription={handleRefresh}
+                                onDeleteSubscription={handleDeleteSubscription}
+                                onAddSubscription={handleAddSubscription}
+                                onCancelNewSubscription={() => {
+                                    showNewSubscription = false;
+                                    newSubscription = {
+                                        url: "",
+                                        name: "",
+                                    };
+                                    error = "";
+                                }}
+                                onShowNewSubscription={() =>
+                                    (showNewSubscription = true)}
+                                onRefreshAll={handleRefreshAll}
+                                compact={true}
+                                showTitles={false}
+                            />
                         {:else if selectedSetting === "bibleVerse"}
                             <!-- Bible Verse Settings -->
                             <div class="space-y-4">
@@ -1806,168 +1666,31 @@
                             Calendar Subscriptions
                         </h3>
 
-                        {#if $subscriptions.length === 0 && !showNewSubscription}
-                            <div class="text-center py-8">
-                                <p class="text-muted-foreground text-sm">
-                                    No iCal subscriptions yet
-                                </p>
-                                <p class="text-muted-foreground text-xs mt-1">
-                                    Add a calendar feed by entering an iCal URL
-                                </p>
-                            </div>
-                        {:else if !showNewSubscription}
-                            <div class="space-y-2 mb-4">
-                                {#each $subscriptions as subscription}
-                                    <div
-                                        class="p-3 bg-muted rounded-lg border border-border space-y-2"
-                                    >
-                                        <div
-                                            class="flex items-center justify-between"
-                                        >
-                                            <div class="flex-1">
-                                                <div
-                                                    class="font-semibold text-foreground text-sm"
-                                                >
-                                                    {subscription.name}
-                                                </div>
-                                                <div
-                                                    class="text-xs text-muted-foreground truncate"
-                                                >
-                                                    {subscription.url}
-                                                </div>
-                                            </div>
-                                            <label
-                                                class="flex items-center gap-2 cursor-pointer shrink-0"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={subscription.enabled}
-                                                    on:change={(e) =>
-                                                        handleToggleSubscription(
-                                                            subscription.id,
-                                                            e.currentTarget
-                                                                .checked,
-                                                        )}
-                                                    class="rounded border-input"
-                                                />
-                                            </label>
-                                        </div>
-
-                                        {#if subscription.lastFetched}
-                                            <div
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                Last fetched: {new Date(
-                                                    subscription.lastFetched,
-                                                ).toLocaleString()}
-                                            </div>
-                                        {/if}
-
-                                        {#if itemCount(subscription.id) > 0}
-                                            <div
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                {itemCount(subscription.id)}
-                                                event{itemCount(
-                                                    subscription.id,
-                                                ) !== 1
-                                                    ? "s"
-                                                    : ""}
-                                            </div>
-                                        {/if}
-
-                                        <div class="flex gap-2">
-                                            <button
-                                                on:click={() =>
-                                                    handleRefresh(
-                                                        subscription.id,
-                                                    )}
-                                                disabled={isLoading}
-                                                class="flex-1 px-3 py-1 text-xs font-semibold text-foreground hover:bg-background rounded transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                                            >
-                                                Refresh
-                                            </button>
-                                            <button
-                                                on:click={() =>
-                                                    handleDeleteSubscription(
-                                                        subscription.id,
-                                                    )}
-                                                class="px-3 py-1 text-xs font-semibold text-destructive hover:bg-destructive/10 rounded transition-colors"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-                                {/each}
-                            </div>
-                        {/if}
-
-                        <!-- Add Subscription Form -->
-                        {#if showNewSubscription}
-                            <div
-                                class="p-4 bg-muted rounded-lg border border-border space-y-3 max-w-md"
-                            >
-                                <h4 class="font-semibold text-sm">
-                                    Add New Subscription
-                                </h4>
-                                <input
-                                    type="url"
-                                    bind:value={newSubscription.url}
-                                    placeholder="iCal URL"
-                                    class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
-                                />
-                                <input
-                                    type="text"
-                                    bind:value={newSubscription.name}
-                                    placeholder="Calendar name (optional)"
-                                    class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
-                                />
-                                <div class="flex gap-2">
-                                    <Button
-                                        variant="default"
-                                        class="flex-1"
-                                        disabled={!newSubscription.url.trim() ||
-                                            isLoading}
-                                        on:click={handleAddSubscription}
-                                    >
-                                        {isLoading ? "Adding..." : "Add"}
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        class="flex-1"
-                                        on:click={() => {
-                                            showNewSubscription = false;
-                                            newSubscription = {
-                                                url: "",
-                                                name: "",
-                                            };
-                                            error = "";
-                                        }}
-                                    >
-                                        Cancel
-                                    </Button>
-                                </div>
-                            </div>
-                        {:else}
-                            <Button
-                                variant="secondary"
-                                class="mb-4"
-                                on:click={() => (showNewSubscription = true)}
-                            >
-                                + Add Subscription
-                            </Button>
-                        {/if}
-
-                        <!-- Refresh All Button -->
-                        {#if $subscriptions.length > 0 && !showNewSubscription}
-                            <Button
-                                variant="secondary"
-                                on:click={handleRefreshAll}
-                                disabled={isLoading}
-                            >
-                                {isLoading ? "Refreshing..." : "Refresh All"}
-                            </Button>
-                        {/if}
+                        <SubscriptionManagerPanel
+                            subscriptions={$subscriptions}
+                            {isLoading}
+                            {showNewSubscription}
+                            {newSubscription}
+                            {itemCount}
+                            onToggleSubscription={(id, enabled) =>
+                                handleToggleSubscription(id, enabled)}
+                            onRefreshSubscription={handleRefresh}
+                            onDeleteSubscription={handleDeleteSubscription}
+                            onAddSubscription={handleAddSubscription}
+                            onCancelNewSubscription={() => {
+                                showNewSubscription = false;
+                                newSubscription = {
+                                    url: "",
+                                    name: "",
+                                };
+                                error = "";
+                            }}
+                            onShowNewSubscription={() =>
+                                (showNewSubscription = true)}
+                            onRefreshAll={handleRefreshAll}
+                            compact={false}
+                            showTitles={true}
+                        />
                     {:else if selectedSetting === "about"}
                         <h3 class="text-xl font-semibold text-foreground mb-4">
                             About Wochenschau
