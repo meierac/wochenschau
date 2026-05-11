@@ -16,6 +16,8 @@
     import SettingIcon from "./SettingIcon.svelte";
     import SubscriptionManagerPanel from "./SubscriptionManagerPanel.svelte";
     import ExportSettingsPanel from "./ExportSettingsPanel.svelte";
+    import SettingsIntroCard from "./settings/SettingsIntroCard.svelte";
+    import SettingsSectionCard from "./settings/SettingsSectionCard.svelte";
     import { icalService } from "../services/icalService";
     import {
         refreshStatus,
@@ -811,99 +813,129 @@
                         {/if}
 
                         {#if selectedSetting === "templates"}
-                            <!-- Templates Details -->
-                            {#if $templates.length === 0 && !showNewTemplate}
-                                <div class="text-center py-8">
-                                    <p class="text-muted-foreground text-sm">
-                                        No templates yet
-                                    </p>
-                                    <p
-                                        class="text-muted-foreground text-xs mt-1"
-                                    >
-                                        Create one by adding an activity with
-                                        "Save as template"
-                                    </p>
-                                </div>
-                            {:else if !showNewTemplate}
-                                <div class="space-y-2">
-                                    {#each $templates as template}
-                                        <div
-                                            class="p-3 bg-muted rounded-lg border border-border flex items-center justify-between gap-2"
-                                        >
-                                            <div class="flex-1 min-w-0">
-                                                <div
-                                                    class="font-semibold text-foreground text-sm truncate"
-                                                >
-                                                    {template.name}
-                                                </div>
-                                                <div
-                                                    class="text-xs text-muted-foreground"
-                                                >
-                                                    {template.startTime} -
-                                                    {template.endTime}
-                                                </div>
-                                            </div>
-                                            <button
-                                                on:click={() =>
-                                                    handleDeleteTemplate(
-                                                        template.id,
-                                                    )}
-                                                class="text-destructive hover:bg-destructive/10 px-2 py-1 rounded transition-colors text-sm shrink-0"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    {/each}
-                                </div>
-                            {/if}
+                            <div class="space-y-4">
+                                <SettingsIntroCard
+                                    title="Activity Templates"
+                                    description="Save common activity setups so you can reuse them quickly when planning your week."
+                                />
 
-                            <!-- Add Template Form -->
-                            {#if showNewTemplate}
-                                <div
-                                    class="p-3 bg-muted w-full rounded-3xl border border-border space-y-3"
+                                <SettingsSectionCard
+                                    title="Saved templates"
+                                    description="Reuse your most common activity time slots and names."
                                 >
-                                    <input
-                                        type="text"
-                                        bind:value={newTemplate.name}
-                                        placeholder="Template name"
-                                        class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
-                                    />
-                                    <div class="grid grid-cols-2 gap-1">
-                                        <input
-                                            type="time"
-                                            bind:value={newTemplate.startTime}
-                                            class="px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
-                                        />
-                                        <input
-                                            type="time"
-                                            bind:value={newTemplate.endTime}
-                                            class="px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
-                                        />
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button
-                                            on:click={handleAddTemplate}
-                                            disabled={!newTemplate.name.trim()}
-                                            class="flex-1 px-4 py-2 text-sm font-semibold text-primary-foreground bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none rounded-lg transition-colors"
+                                    {#if $templates.length === 0}
+                                        <div
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4 text-center"
                                         >
-                                            Save
-                                        </button>
-                                        <button
-                                            on:click={handleCancelNewTemplate}
-                                            class="flex-1 px-4 py-2 text-sm font-semibold text-foreground hover:bg-background rounded-lg transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            {:else}
-                                <button
-                                    on:click={() => (showNewTemplate = true)}
-                                    class="w-full mt-4 px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted rounded-lg transition-colors border border-input"
+                                            <p
+                                                class="text-sm text-muted-foreground"
+                                            >
+                                                No templates yet
+                                            </p>
+                                            <p
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                Create one by adding an activity
+                                                with "Save as template".
+                                            </p>
+                                        </div>
+                                    {:else}
+                                        <div class="space-y-3">
+                                            {#each $templates as template}
+                                                <div
+                                                    class="rounded-2xl border border-border/70 bg-background/40 p-4 flex items-center justify-between gap-3"
+                                                >
+                                                    <div class="flex-1 min-w-0">
+                                                        <div
+                                                            class="font-semibold text-foreground text-sm truncate"
+                                                        >
+                                                            {template.name}
+                                                        </div>
+                                                        <div
+                                                            class="text-xs text-muted-foreground"
+                                                        >
+                                                            {template.startTime}
+                                                            -
+                                                            {template.endTime}
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        class="text-destructive hover:bg-destructive/10 shrink-0"
+                                                        on:click={() =>
+                                                            handleDeleteTemplate(
+                                                                template.id,
+                                                            )}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    {/if}
+                                </SettingsSectionCard>
+
+                                <SettingsSectionCard
+                                    title="Add template"
+                                    description="Create a reusable template with a name and time range."
                                 >
-                                    + New Template
-                                </button>
-                            {/if}
+                                    {#if showNewTemplate}
+                                        <div
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4 space-y-3"
+                                        >
+                                            <input
+                                                type="text"
+                                                bind:value={newTemplate.name}
+                                                placeholder="Template name"
+                                                class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
+                                            />
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <input
+                                                    type="time"
+                                                    bind:value={
+                                                        newTemplate.startTime
+                                                    }
+                                                    class="px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
+                                                />
+                                                <input
+                                                    type="time"
+                                                    bind:value={
+                                                        newTemplate.endTime
+                                                    }
+                                                    class="px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
+                                                />
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <Button
+                                                    variant="default"
+                                                    class="flex-1"
+                                                    disabled={!newTemplate.name.trim()}
+                                                    on:click={handleAddTemplate}
+                                                >
+                                                    Save template
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    class="flex-1"
+                                                    on:click={handleCancelNewTemplate}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    {:else}
+                                        <Button
+                                            variant="secondary"
+                                            class="w-full sm:w-auto"
+                                            on:click={() =>
+                                                (showNewTemplate = true)}
+                                        >
+                                            Add template
+                                        </Button>
+                                    {/if}
+                                </SettingsSectionCard>
+                            </div>
                         {:else if selectedSetting === "ical"}
                             <!-- iCal Details -->
                             <SubscriptionManagerPanel
@@ -932,39 +964,49 @@
                                 showTitles={false}
                             />
                         {:else if selectedSetting === "bibleVerse"}
-                            <!-- Bible Verse Settings -->
                             <div class="space-y-4">
-                                <h3
-                                    class="text-lg font-semibold text-foreground mb-4"
-                                >
-                                    Bible Verse of the Day
-                                </h3>
+                                <SettingsIntroCard
+                                    title="Bible Verse of the Day"
+                                    description="Add a daily verse to your export for a small moment of inspiration."
+                                />
 
-                                <div
-                                    class="p-4 bg-muted rounded-lg border border-border space-y-3"
+                                <SettingsSectionCard
+                                    title="Display"
+                                    description="Choose whether the verse should be shown in exported images."
                                 >
-                                    <div class="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            id="enableBibleVerse"
-                                            checked={$bibleVerse.enabled}
-                                            on:change={(e) =>
-                                                bibleVerse.toggleEnabled(
-                                                    e.currentTarget.checked,
-                                                )}
-                                            class="w-4 h-4 rounded border-input"
-                                        />
-                                        <label
-                                            for="enableBibleVerse"
-                                            class="text-sm font-medium text-foreground cursor-pointer"
-                                        >
-                                            Show Bible Verse on Export
-                                        </label>
-                                    </div>
-
-                                    {#if $bibleVerse.enabled}
+                                    <div
+                                        class="rounded-2xl border border-border/70 bg-background/40 p-4 space-y-3"
+                                    >
                                         <div
-                                            class="mt-4 p-3 bg-background rounded border border-input space-y-2"
+                                            class="flex items-center justify-between gap-3"
+                                        >
+                                            <label
+                                                for="enableBibleVerse"
+                                                class="text-sm font-medium text-foreground cursor-pointer"
+                                            >
+                                                Show Bible verse on export
+                                            </label>
+                                            <input
+                                                type="checkbox"
+                                                id="enableBibleVerse"
+                                                checked={$bibleVerse.enabled}
+                                                on:change={(e) =>
+                                                    bibleVerse.toggleEnabled(
+                                                        e.currentTarget.checked,
+                                                    )}
+                                                class="w-4 h-4 rounded border-input"
+                                            />
+                                        </div>
+                                    </div>
+                                </SettingsSectionCard>
+
+                                {#if $bibleVerse.enabled}
+                                    <SettingsSectionCard
+                                        title="Current verse"
+                                        description="Preview the verse that will be used in the export."
+                                    >
+                                        <div
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4 space-y-3"
                                         >
                                             <p
                                                 class="text-sm italic text-foreground"
@@ -980,138 +1022,143 @@
                                             </p>
                                         </div>
 
-                                        <Button
-                                            variant="secondary"
-                                            class="w-full"
-                                            on:click={() =>
-                                                bibleVerse.refreshVerse()}
-                                        >
-                                            <svg
-                                                class="w-4 h-4 inline-block mr-1"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                                ><path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                                /></svg
+                                        <div class="mt-4">
+                                            <Button
+                                                variant="secondary"
+                                                class="w-full sm:w-auto"
+                                                on:click={() =>
+                                                    bibleVerse.refreshVerse()}
                                             >
-                                            Get New Verse
-                                        </Button>
-                                    {/if}
-                                </div>
+                                                <svg
+                                                    class="w-4 h-4 inline-block mr-1"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    ><path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                    /></svg
+                                                >
+                                                Get new verse
+                                            </Button>
+                                        </div>
+                                    </SettingsSectionCard>
+                                {/if}
                             </div>
                         {:else if selectedSetting === "about"}
-                            <!-- About Section -->
-                            <div class="space-y-6">
-                                <h3
-                                    class="text-lg font-semibold text-foreground mb-4"
-                                >
-                                    About Wochenschau
-                                </h3>
+                            <div class="space-y-4">
+                                <SettingsIntroCard
+                                    title="About Wochenschau"
+                                    description="A simple weekly planning companion with export, sync, and inspiration built in."
+                                />
 
-                                <!-- App Info -->
-                                <div
-                                    class="p-4 bg-muted rounded-lg border border-border space-y-3"
+                                <SettingsSectionCard
+                                    title="App info"
+                                    description="Basic information about the app and where it comes from."
                                 >
-                                    <div>
-                                        <p
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            Version
-                                        </p>
-                                        <p
-                                            class="text-sm font-semibold text-foreground"
-                                        >
-                                            {APP_VERSION}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p
-                                            class="text-xs text-muted-foreground"
-                                        >
-                                            Created in the heart of
-                                        </p>
-                                        <p
-                                            class="text-sm font-semibold text-foreground"
-                                        >
-                                            Kaiserstuhl 🍇
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Hidden Gems -->
-                                <div>
-                                    <p
-                                        class="text-sm font-semibold text-foreground mb-3"
+                                    <div
+                                        class="grid grid-cols-1 gap-3 sm:grid-cols-2"
                                     >
-                                        🎁 Hidden Gems
-                                    </p>
-                                    <div class="space-y-2">
                                         <div
-                                            class="p-3 bg-background rounded border border-border text-sm"
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4"
+                                        >
+                                            <p
+                                                class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+                                            >
+                                                Version
+                                            </p>
+                                            <p
+                                                class="mt-2 text-sm font-semibold text-foreground"
+                                            >
+                                                {APP_VERSION}
+                                            </p>
+                                        </div>
+                                        <div
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4"
+                                        >
+                                            <p
+                                                class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
+                                            >
+                                                Created in the heart of
+                                            </p>
+                                            <p
+                                                class="mt-2 text-sm font-semibold text-foreground"
+                                            >
+                                                Kaiserstuhl 🍇
+                                            </p>
+                                        </div>
+                                    </div>
+                                </SettingsSectionCard>
+
+                                <SettingsSectionCard
+                                    title="Hidden gems"
+                                    description="A few features worth knowing about."
+                                >
+                                    <div class="space-y-3">
+                                        <div
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4"
                                         >
                                             <p class="text-foreground mb-1">
                                                 <span class="font-semibold"
-                                                    >Swipe to Navigate</span
+                                                    >Swipe to navigate</span
                                                 >
                                             </p>
                                             <p
                                                 class="text-xs text-muted-foreground"
                                             >
                                                 Swipe left or right on your
-                                                calendar to switch weeks
+                                                calendar to switch weeks.
                                             </p>
                                         </div>
                                         <div
-                                            class="p-3 bg-background rounded border border-border text-sm"
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4"
                                         >
                                             <p class="text-foreground mb-1">
                                                 <span class="font-semibold"
-                                                    >Export & Share</span
+                                                    >Export & share</span
                                                 >
                                             </p>
                                             <p
                                                 class="text-xs text-muted-foreground"
                                             >
                                                 Export your week as a beautiful
-                                                image and share it with friends
+                                                image and share it with friends.
                                             </p>
                                         </div>
                                         <div
-                                            class="p-3 bg-background rounded border border-border text-sm"
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4"
                                         >
                                             <p class="text-foreground mb-1">
                                                 <span class="font-semibold"
-                                                    >Calendar Sync</span
+                                                    >Calendar sync</span
                                                 >
                                             </p>
                                             <p
                                                 class="text-xs text-muted-foreground"
                                             >
                                                 Subscribe to iCal calendars to
-                                                automatically import events
+                                                automatically import events.
                                             </p>
                                         </div>
                                         <div
-                                            class="p-3 bg-background rounded border border-border text-sm"
+                                            class="rounded-2xl border border-border/70 bg-background/40 p-4"
                                         >
                                             <p class="text-foreground mb-1">
                                                 <span class="font-semibold"
-                                                    >Daily Inspiration</span
+                                                    >Daily inspiration</span
                                                 >
                                             </p>
                                             <p
                                                 class="text-xs text-muted-foreground"
                                             >
                                                 Enable Bible verses of the day
-                                                for daily inspiration
+                                                for daily inspiration.
                                             </p>
                                         </div>
                                     </div>
-                                </div>
+                                </SettingsSectionCard>
                             </div>
                         {:else if selectedSetting === "export"}
                             <h3
