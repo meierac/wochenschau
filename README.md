@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/icon.svg" alt="Wochenschau Logo" width="120" height="120">
+  <img src="public/icon-rounded.svg" alt="Wochenschau Logo" width="120" height="120">
 </p>
 
 <h1 align="center">Wochenschau</h1>
