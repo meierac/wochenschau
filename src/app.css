@@ -4,13 +4,13 @@
 
 @layer base {
     :root {
-        --background: 240, 100%, 99%;
+        --background: 240 100% 99%;
         --foreground: 0 0% 3.9%;
         --card: 0 0% 100%;
         --card-foreground: 0 0% 3.9%;
-        --primary: 229.29936, 63%, 51%;
+        --primary: 229.29936 63% 51%;
         --primary-foreground: 0 0% 98%;
-        --secondary: 228, 35%, 92%;
+        --secondary: 228 35% 92%;
         --secondary-foreground: 222.2 47.4% 11.2%;
         --muted: 210 40% 96.1%;
         --muted-background: 0 0% 95%;
@@ -27,13 +27,13 @@
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --background: 218.4, 35%, 14%;
+            --background: 218.4 35% 14%;
             --foreground: 0 0% 98%;
-            --card: 211.2, 100%, 5%;
+            --card: 211.2 100% 5%;
             --card-foreground: 0 0% 98%;
-            --primary: 229.29936, 63%, 51%;
+            --primary: 229.29936 63% 51%;
             --primary-foreground: 0 0% 98%;
-            --secondary: 219.23077, 20%, 25%;
+            --secondary: 219.23077 20% 25%;
             --secondary-foreground: 0 0% 98%;
             --muted: 217.2 32.6% 17.5%;
             --muted-background: 217.2 32.6% 17.5%;
@@ -74,21 +74,17 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Hide scrollbars in PWA mode */
     @media (display-mode: standalone) {
-        /* For Webkit browsers (Safari, Chrome) */
         *::-webkit-scrollbar {
             display: none;
             width: 0;
             height: 0;
         }
 
-        /* For Firefox */
         * {
             scrollbar-width: none;
         }
 
-        /* For IE and Edge */
         * {
             -ms-overflow-style: none;
         }
@@ -96,7 +92,6 @@
 }
 
 @layer utilities {
-    /* Safe area inset utilities - use with env(safe-area-inset-*) */
     .safe-top {
         padding-top: env(safe-area-inset-top);
     }

@@ -3,7 +3,7 @@
     export let description = "";
 </script>
 
-<section class="rounded-3xl border border-border bg-card/60 p-4">
+<section class="rounded-3xl border border-border bg-card/30 p-4">
     <div class="mb-4 space-y-1">
         <h4 class="text-sm font-semibold text-foreground">{title}</h4>
         {#if description}

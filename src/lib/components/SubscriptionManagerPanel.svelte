@@ -43,7 +43,7 @@
         </div>
     </div>
 
-    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+    <section class="rounded-3xl border border-border bg-card/30 p-4 sm:p-5">
         <div class="mb-4 space-y-1">
             <h4 class="text-sm font-semibold text-foreground">Overview</h4>
             <p class="text-xs text-muted-foreground leading-relaxed">
@@ -102,7 +102,7 @@
         {/if}
     </section>
 
-    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+    <section class="rounded-3xl border border-border bg-card/30 p-4 sm:p-5">
         <div class="mb-4 space-y-1">
             <h4 class="text-sm font-semibold text-foreground">
                 Connected calendars
@@ -218,7 +218,7 @@
         {/if}
     </section>
 
-    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+    <section class="rounded-3xl border border-border bg-card/30 p-4 sm:p-5">
         <div class="mb-4 space-y-1">
             <h4 class="text-sm font-semibold text-foreground">
                 Add subscription

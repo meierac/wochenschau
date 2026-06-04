@@ -28,10 +28,6 @@
             weekNumberFontSize: "week-number-font-size-export",
             weekNumberColor: "week-number-color-export",
             weekNumberOpacity: "week-number-opacity-export",
-            weekNumberDropShadowEnabled: "week-number-drop-shadow-enabled-export",
-            weekNumberDropShadowColor: "week-number-drop-shadow-color-export",
-            weekNumberDropShadowOffsetX: "week-number-drop-shadow-offset-x-export",
-            weekNumberDropShadowOffsetY: "week-number-drop-shadow-offset-y-export",
             headerFont: "header-font-export",
             bodyFont: "body-font-export",
             textColor: "text-color-export",
@@ -59,10 +55,6 @@
             weekNumberFontSize: "week-number-font-size-export-desktop",
             weekNumberColor: "week-number-color-export-desktop",
             weekNumberOpacity: "week-number-opacity-export-desktop",
-            weekNumberDropShadowEnabled: "week-number-drop-shadow-enabled-export-desktop",
-            weekNumberDropShadowColor: "week-number-drop-shadow-color-export-desktop",
-            weekNumberDropShadowOffsetX: "week-number-drop-shadow-offset-x-export-desktop",
-            weekNumberDropShadowOffsetY: "week-number-drop-shadow-offset-y-export-desktop",
             headerFont: "header-font-list",
             bodyFont: "body-font-list",
             textColor: "text-color-list",
@@ -109,7 +101,7 @@
         </div>
     </div>
 
-    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+    <section class="rounded-3xl border border-border bg-card/30 p-4 sm:p-5">
         <div class="mb-4 space-y-1">
             <h4 class="text-sm font-semibold text-foreground">Header</h4>
             <p class="text-xs text-muted-foreground leading-relaxed">
@@ -130,7 +122,7 @@
         />
     </section>
 
-    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+    <section class="rounded-3xl border border-border bg-card/30 p-4 sm:p-5">
         <div class="mb-4 space-y-1">
             <h4 class="text-sm font-semibold text-foreground">Background</h4>
             <p class="text-xs text-muted-foreground leading-relaxed">
@@ -150,7 +142,7 @@
         />
     </section>
 
-    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+    <section class="rounded-3xl border border-border bg-card/30 p-4 sm:p-5">
         <div class="mb-4 space-y-1">
             <h4 class="text-sm font-semibold text-foreground">
                 Activity cards
@@ -173,7 +165,7 @@
         />
     </section>
 
-    <section class="rounded-3xl border border-border bg-card/60 p-4 sm:p-5">
+    <section class="rounded-3xl border border-border bg-card/30 p-4 sm:p-5">
         <div class="mb-4 space-y-1">
             <h4 class="text-sm font-semibold text-foreground">
                 Day column background
