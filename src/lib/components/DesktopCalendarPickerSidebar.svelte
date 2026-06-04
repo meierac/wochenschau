@@ -1,0 +1,38 @@
+<script lang="ts">
+    import { createEventDispatcher } from "svelte";
+    import CalendarDatePicker from "./CalendarDatePicker.svelte";
+    import SubscriptionToggleList from "./SubscriptionToggleList.svelte";
+
+    export let currentWeek: number;
+    export let currentYear: number;
+    export let desktopViewMode: "week" | "month" = "week";
+    export let selectedMonthDate: Date = new Date();
+
+    const dispatch = createEventDispatcher<{
+        weekSelected: { week: number; year: number };
+        monthSelected: { date: Date };
+    }>();
+</script>
+
+<aside
+    class="flex h-full w-[28rem] shrink-0 flex-col overflow-hidden rounded-3xl border border-border bg-card backdrop-blur-xl"
+>
+    <div class="flex-1 overflow-y-auto">
+        <div class="space-y-6 p-4">
+            <CalendarDatePicker
+                viewMode={desktopViewMode}
+                {currentWeek}
+                {currentYear}
+                {selectedMonthDate}
+                on:weekSelected={(event) =>
+                    dispatch("weekSelected", event.detail)}
+                on:monthSelected={(event) =>
+                    dispatch("monthSelected", event.detail)}
+            />
+
+            <div class="border-t border-border pt-6">
+                <SubscriptionToggleList />
+            </div>
+        </div>
+    </div>
+</aside>

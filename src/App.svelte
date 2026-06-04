@@ -12,6 +12,7 @@
 
     import FloatingNav from "./lib/components/FloatingNav.svelte";
     import DesktopSidebar from "./lib/components/DesktopSidebar.svelte";
+    import DesktopCalendarPickerSidebar from "./lib/components/DesktopCalendarPickerSidebar.svelte";
     import ComingSoonPage from "./lib/components/ComingSoonPage.svelte";
 
     import AddActivityModal from "./lib/components/AddActivityModal.svelte";
@@ -23,17 +24,18 @@
     import SyncConflictDialog from "./lib/components/SyncConflictDialog.svelte";
     import ConfirmDialog from "./lib/components/ConfirmDialog.svelte";
 
-    import { currentWeek, currentYear } from "./lib/stores/week";
-
     import { subscriptions } from "./lib/stores/ical";
 
     import { activities } from "./lib/stores/activities";
 
+    import { currentWeek, currentYear } from "./lib/stores/week";
+
     import {
         getCalendarToday,
         getCurrentWeek,
-        getNextWeek,
-        getPreviousWeek,
+        formatDateRange,
+        getWeekNumber,
+        getMondayOfWeek,
     } from "./lib/utils/date";
 
     import WeekPicker from "./lib/components/WeekPicker.svelte";
@@ -64,7 +66,24 @@
     let editingActivity: CalendarItem | null = null;
     let showDeleteConfirm = false;
     let desktopCalendarView: "week" | "month" = "week";
-    let desktopMonthDate = getCalendarToday();
+
+    // Unified selection state: all selection is date-based
+    let selectedDate = getCalendarToday();
+
+    // Synchronize stores with selectedDate
+    $: {
+        const week = getWeekNumber(selectedDate);
+        const year = selectedDate.getFullYear();
+        currentWeek.set(week);
+        currentYear.set(year);
+    }
+
+    // Derived state for month view
+    $: desktopMonthDate = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+    );
     // legacy isSyncing flag removed
 
     $: syncingPhase = $refreshStatus.phase;
@@ -147,14 +166,15 @@
     function handleWeekSelected(
         event: CustomEvent<{ week: number; year: number }>,
     ) {
-        currentWeek.set(event.detail.week);
-        currentYear.set(event.detail.year);
+        // Convert week selection to a date (use Monday of the week)
+        selectedDate = getMondayOfWeek(event.detail.week, event.detail.year);
         desktopCalendarView = "week";
         showWeekPicker = false;
     }
 
     function handleMonthSelected(event: CustomEvent<{ date: Date }>) {
-        desktopMonthDate = event.detail.date;
+        // Month selection sets the selected date directly
+        selectedDate = event.detail.date;
         desktopCalendarView = "month";
         showWeekPicker = false;
     }
@@ -164,28 +184,22 @@
     }
 
     function handleJumpToToday() {
-        const today = getCalendarToday();
-        const { week, year } = getCurrentWeek();
-        currentWeek.set(week);
-        currentYear.set(year);
-        desktopMonthDate = today;
+        selectedDate = getCalendarToday();
     }
 
     function handleNavigateDesktopPeriod(direction: -1 | 1) {
         if (desktopCalendarView === "month") {
-            const nextDate = new Date(desktopMonthDate);
-            nextDate.setMonth(nextDate.getMonth() + direction, 1);
-            desktopMonthDate = nextDate;
+            // Navigate to the same day in next/previous month
+            const nextDate = new Date(selectedDate);
+            nextDate.setMonth(nextDate.getMonth() + direction);
+            selectedDate = nextDate;
             return;
         }
 
-        const nextWeekInfo =
-            direction > 0
-                ? getNextWeek($currentWeek, $currentYear)
-                : getPreviousWeek($currentWeek, $currentYear);
-
-        currentWeek.set(nextWeekInfo.week);
-        currentYear.set(nextWeekInfo.year);
+        // Navigate by week - move to same weekday in next/previous week
+        const nextDate = new Date(selectedDate);
+        nextDate.setDate(nextDate.getDate() + direction * 7);
+        selectedDate = nextDate;
     }
 
     // Activity editing handlers (global sheet)
@@ -486,6 +500,7 @@
         month: "long",
         year: "numeric",
     });
+    $: currentWeekDateRange = formatDateRange($currentWeek, $currentYear);
 
     onMount(() => {
         // Auto-refresh subscriptions on app start if they're outdated
@@ -518,18 +533,51 @@
                     {#if currentPage === "calendar"}
                         <!-- Desktop Header -->
                         <div
-                            class="mb-4 flex items-start justify-between gap-4"
+                            class="mb-6 mx-4 mt-2 flex items-start justify-between gap-4"
                         >
                             <div
                                 class="flex min-w-0 flex-wrap items-center gap-4"
                             >
                                 <div
-                                    class="flex items-center gap-0 rounded-xl bg-secondary p-0.5"
+                                    class="flex items-center gap-1 rounded-3xl bg-secondary p-1"
+                                >
+                                    <button
+                                        on:click={() =>
+                                            (desktopCalendarView = "week")}
+                                        class={`rounded-3xl px-4 py-2 text-sm font-semibold transition-colors ${
+                                            desktopCalendarView === "week"
+                                                ? "bg-primary text-primary-foreground"
+                                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                        }`}
+                                        aria-label="Show week view"
+                                        title="Week view"
+                                        type="button"
+                                    >
+                                        Week
+                                    </button>
+                                    <button
+                                        on:click={() =>
+                                            (desktopCalendarView = "month")}
+                                        class={`rounded-3xl px-4 py-2 text-sm font-semibold transition-colors ${
+                                            desktopCalendarView === "month"
+                                                ? "bg-primary text-primary-foreground"
+                                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                        }`}
+                                        aria-label="Show month view"
+                                        title="Month view"
+                                        type="button"
+                                    >
+                                        Month
+                                    </button>
+                                </div>
+
+                                <div
+                                    class="flex items-center gap-0 rounded-3xl bg-secondary py-0.5 px-1"
                                 >
                                     <button
                                         on:click={() =>
                                             handleNavigateDesktopPeriod(-1)}
-                                        class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                                        class="flex h-9 w-9 items-center justify-center rounded-3xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                                         aria-label={desktopCalendarView ===
                                         "month"
                                             ? "Previous month"
@@ -539,7 +587,7 @@
                                             : "Previous week"}
                                     >
                                         <svg
-                                            class="w-5 h-5"
+                                            class="w-6 h-6"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -553,25 +601,14 @@
                                         </svg>
                                     </button>
 
-                                    <button
-                                        on:click={() => (showWeekPicker = true)}
-                                        class="flex {desktopCalendarView ===
-                                        'month'
-                                            ? 'w-40'
-                                            : 'w-32'} items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground text-center"
-                                        aria-label={desktopCalendarView ===
-                                        "month"
-                                            ? "Pick month"
-                                            : "Pick week"}
-                                        title={desktopCalendarView === "month"
-                                            ? "Pick month"
-                                            : "Pick week"}
+                                    <div
+                                        class="flex items-center justify-center gap-2 px-3 py-2 rounded-3xl text-muted-foreground text-center"
                                     >
                                         <span
-                                            class="flex h-5 w-5 shrink-0 items-center justify-center"
+                                            class="flex h-6 w-6 shrink-0 items-center justify-center"
                                         >
                                             <svg
-                                                class="w-5 h-5"
+                                                class="w-6 h-6"
                                                 fill="none"
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"
@@ -585,7 +622,7 @@
                                             </svg>
                                         </span>
                                         <span
-                                            class="text-sm font-semibold leading-none whitespace-nowrap capitalize"
+                                            class="text-md font-semibold leading-none whitespace-nowrap capitalize"
                                         >
                                             {#if desktopCalendarView === "month"}
                                                 {desktopMonthLabel}
@@ -593,12 +630,19 @@
                                                 W{$currentWeek}
                                             {/if}
                                         </span>
-                                    </button>
+                                        {#if desktopCalendarView === "week"}
+                                            <span
+                                                class="block text-md leading-none text-muted-foreground whitespace-nowrap"
+                                            >
+                                                {currentWeekDateRange}
+                                            </span>
+                                        {/if}
+                                    </div>
 
                                     <button
                                         on:click={() =>
                                             handleNavigateDesktopPeriod(1)}
-                                        class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                                        class="flex h-9 w-9 items-center justify-center rounded-3xl hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                                         aria-label={desktopCalendarView ===
                                         "month"
                                             ? "Next month"
@@ -608,7 +652,7 @@
                                             : "Next week"}
                                     >
                                         <svg
-                                            class="w-5 h-5"
+                                            class="w-6 h-6"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -755,18 +799,28 @@
                         </div>
 
                         <!-- Desktop Calendar View -->
-                        <div class="flex-1 overflow-hidden">
-                            {#if desktopCalendarView === "month"}
-                                <MonthView
-                                    referenceDate={desktopMonthDate}
-                                    on:requestEditActivity={handleRequestEditActivity}
-                                />
-                            {:else}
-                                <WeekView
-                                    {isDesktop}
-                                    on:requestEditActivity={handleRequestEditActivity}
-                                />
-                            {/if}
+                        <div class="flex flex-1 gap-4 overflow-hidden">
+                            <DesktopCalendarPickerSidebar
+                                currentWeek={$currentWeek}
+                                currentYear={$currentYear}
+                                desktopViewMode={desktopCalendarView}
+                                selectedMonthDate={desktopMonthDate}
+                                on:weekSelected={handleWeekSelected}
+                                on:monthSelected={handleMonthSelected}
+                            />
+                            <div class="min-w-0 flex-1 overflow-hidden">
+                                {#if desktopCalendarView === "month"}
+                                    <MonthView
+                                        referenceDate={desktopMonthDate}
+                                        on:requestEditActivity={handleRequestEditActivity}
+                                    />
+                                {:else}
+                                    <WeekView
+                                        {isDesktop}
+                                        on:requestEditActivity={handleRequestEditActivity}
+                                    />
+                                {/if}
+                            </div>
                         </div>
                     {:else}
                         <div
@@ -798,38 +852,63 @@
         <div class="h-screen flex flex-col pb-0 relative overflow-hidden">
             <!-- Mobile Header -->
             <div
-                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/100 to-transparent px-4 pb-3 backdrop-blur-lg pointer-events-none"
+                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/100 to-transparent px-2 pb-9 backdrop-blur-lg pointer-events-none"
                 style="padding-top: calc(0rem + env(safe-area-inset-top)); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
             >
-                <div class="flex items-center justify-between gap-3">
-                    <h1 class="min-w-0 text-2xl font-bold pointer-events-auto">
-                        {getPageTitle(currentPage)}
-                    </h1>
-
-                    <div class="pointer-events-auto flex items-center gap-1">
-                        {#if currentPage === "calendar"}
+                <div class="flex items-center justify-between gap-0.5">
+                    {#if currentPage === "calendar"}
+                        <div
+                            class="pointer-events-auto flex items-center border-muted bg-secondary rounded-3xl p-0.5"
+                        >
                             <button
                                 on:click={() => (showWeekPicker = true)}
-                                class="flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-colors active:bg-muted hover:bg-muted"
-                                aria-label="Open week picker"
-                                title="Pick week"
+                                class="pointer-events-auto flex items-center justify-center gap-2 rounded-3xl px-3 py-2 text-center text-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                aria-label="Pick week"
+                                title={`Pick week · ${currentWeekDateRange}`}
                                 type="button"
                             >
-                                <svg
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                <span
+                                    class="flex h-6 w-6 shrink-0 items-center justify-center"
                                 >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                    />
-                                </svg>
-                                <span>W{$currentWeek}</span>
+                                    <svg
+                                        class="w-6 h-6"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                        />
+                                    </svg>
+                                </span>
+
+                                <span
+                                    class="block text-md font-semibold leading-none whitespace-nowrap"
+                                >
+                                    W{$currentWeek}
+                                </span>
+                                <span
+                                    class="block text-md leading-none text-muted-foreground whitespace-nowrap"
+                                >
+                                    {currentWeekDateRange}
+                                </span>
                             </button>
+                        </div>
+                    {:else}
+                        <h1
+                            class="min-w-0 text-2xl font-bold pointer-events-auto"
+                        >
+                            {getPageTitle(currentPage)}
+                        </h1>
+                    {/if}
+
+                    <div
+                        class="pointer-events-auto flex items-center border-muted bg-secondary rounded-3xl p-0.5"
+                    >
+                        {#if currentPage === "calendar"}
                             <button
                                 on:click={handleRefreshSubscriptions}
                                 disabled={syncingActive}
@@ -990,12 +1069,12 @@
     />
 {/if}
 
-{#if showWeekPicker}
+{#if showWeekPicker && !isDesktop}
     <WeekPicker
-        {isDesktop}
+        isDesktop={false}
         currentWeek={$currentWeek}
         currentYear={$currentYear}
-        desktopViewMode={isDesktop ? desktopCalendarView : "week"}
+        desktopViewMode="week"
         selectedMonthDate={desktopMonthDate}
         on:weekSelected={handleWeekSelected}
         on:monthSelected={handleMonthSelected}
