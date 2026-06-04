@@ -48,4 +48,21 @@
             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
     </svg>
+{:else if icon === "user"}
+    <svg class={size} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M16 14a4 4 0 10-8 0m8 0a4 4 0 01-8 0m8 0v1a3 3 0 01-3 3H11a3 3 0 01-3-3v-1m8 0H8"
+        />
+        <circle
+            cx="12"
+            cy="8"
+            r="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+        />
+    </svg>
 {/if}

@@ -2,6 +2,7 @@ import type {
   CalendarItem,
   ActivityTemplate,
   ICalSubscription,
+  UserProfile,
 } from "../types/index.js";
 
 const STORAGE_KEYS = {
@@ -9,6 +10,7 @@ const STORAGE_KEYS = {
   TEMPLATES: "wochenschau_templates",
   ICAL_SUBSCRIPTIONS: "wochenschau_ical_subscriptions",
   ICAL_EVENTS: "wochenschau_ical_events",
+  USER_PROFILE: "wochenschau_user_profile",
 } as const;
 
 function safeJsonParse<T>(value: string | null): T | null {
@@ -121,4 +123,22 @@ export function deleteSubscription(id: string): void {
     STORAGE_KEYS.ICAL_SUBSCRIPTIONS,
     JSON.stringify(subscriptions),
   );
+}
+
+export function getUserProfile(fallbackProfile: UserProfile): UserProfile {
+  if (typeof window === "undefined") return fallbackProfile;
+  const data = safeJsonParse<UserProfile>(
+    localStorage.getItem(STORAGE_KEYS.USER_PROFILE),
+  );
+  return data
+    ? {
+        ...fallbackProfile,
+        ...data,
+      }
+    : fallbackProfile;
+}
+
+export function saveUserProfile(profile: UserProfile): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
 }

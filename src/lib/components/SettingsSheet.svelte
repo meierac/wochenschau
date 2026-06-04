@@ -19,6 +19,7 @@
     import TemplatesSettingsContent from "./settings/content/TemplatesSettingsContent.svelte";
     import BibleVerseSettingsContent from "./settings/content/BibleVerseSettingsContent.svelte";
     import AboutSettingsContent from "./settings/content/AboutSettingsContent.svelte";
+    import ProfileSettingsContent from "./settings/content/ProfileSettingsContent.svelte";
     import { icalService } from "../services/icalService";
     import {
         refreshStatus,
@@ -32,11 +33,18 @@
     import { createEntityId } from "../utils/storage";
 
     export let isDesktop = false;
+    export let initialSetting: SettingType | null = null;
 
     const dispatch = createEventDispatcher();
     const APP_VERSION = "1.0.0";
 
-    type SettingType = "templates" | "ical" | "export" | "bibleVerse" | "about";
+    type SettingType =
+        | "profile"
+        | "templates"
+        | "ical"
+        | "export"
+        | "bibleVerse"
+        | "about";
 
     interface SettingItem {
         id: SettingType;
@@ -46,6 +54,12 @@
     }
 
     const settingItems: SettingItem[] = [
+        {
+            id: "profile",
+            label: "Profile",
+            icon: "user",
+            description: "Manage your personal profile",
+        },
         {
             id: "templates",
             label: "Activity Templates",
@@ -79,7 +93,9 @@
     ];
 
     // Mobile: currently selected setting (null = showing list)
-    let selectedSetting: SettingType | null = isDesktop ? "export" : null;
+    let selectedSetting: SettingType | null = isDesktop
+        ? (initialSetting ?? "export")
+        : initialSetting;
 
     // Template state
     let showNewTemplate = false;
@@ -590,9 +606,9 @@
     }
 
     // Reactive: Update setting items descriptions
-    $: settingItems[0].description = `${$templates.length} template${$templates.length !== 1 ? "s" : ""}`;
-    $: settingItems[1].description = `${$subscriptions.length} subscription${$subscriptions.length !== 1 ? "s" : ""}`;
-    $: settingItems[3].description = $bibleVerse.enabled
+    $: settingItems[1].description = `${$templates.length} template${$templates.length !== 1 ? "s" : ""}`;
+    $: settingItems[2].description = `${$subscriptions.length} subscription${$subscriptions.length !== 1 ? "s" : ""}`;
+    $: settingItems[4].description = $bibleVerse.enabled
         ? "Enabled"
         : "Disabled";
 </script>
@@ -813,7 +829,9 @@
                             </div>
                         {/if}
 
-                        {#if selectedSetting === "templates"}
+                        {#if selectedSetting === "profile"}
+                            <ProfileSettingsContent />
+                        {:else if selectedSetting === "templates"}
                             <TemplatesSettingsContent
                                 templates={$templates}
                                 {showNewTemplate}
@@ -923,7 +941,9 @@
                         </div>
                     {/if}
 
-                    {#if selectedSetting === "templates"}
+                    {#if selectedSetting === "profile"}
+                        <ProfileSettingsContent />
+                    {:else if selectedSetting === "templates"}
                         <TemplatesSettingsContent
                             templates={$templates}
                             {showNewTemplate}

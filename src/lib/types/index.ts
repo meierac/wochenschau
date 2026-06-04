@@ -86,6 +86,17 @@ export interface SyncConflictDialogOptions {
   onResolve: (resolution: ConflictResolution) => void;
 }
 
+export interface UserProfile {
+  role: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  profileImage: string;
+  shortBio: string;
+}
+
 export const WEEKDAYS = [
   "Monday",
   "Tuesday",
