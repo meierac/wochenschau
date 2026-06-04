@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
 
     import WeekView from "./lib/components/WeekView.svelte";
+    import MonthView from "./lib/components/MonthView.svelte";
 
     import {
         refreshStatus,
@@ -28,6 +29,7 @@
 
     import {
         formatDateRange,
+        getCalendarToday,
         getCurrentWeek,
         getNextWeek,
         getPreviousWeek,
@@ -55,6 +57,8 @@
 
     let editingActivity: CalendarItem | null = null;
     let showDeleteConfirm = false;
+    let desktopCalendarView: "week" | "month" = "week";
+    let desktopMonthDate = getCalendarToday();
     // legacy isSyncing flag removed
 
     $: syncingPhase = $refreshStatus.phase;
@@ -104,9 +108,14 @@
         event: CustomEvent<{ week: number; year: number }>,
     ) {
         currentWeek.set(event.detail.week);
-
         currentYear.set(event.detail.year);
+        desktopCalendarView = "week";
+        showWeekPicker = false;
+    }
 
+    function handleMonthSelected(event: CustomEvent<{ date: Date }>) {
+        desktopMonthDate = event.detail.date;
+        desktopCalendarView = "month";
         showWeekPicker = false;
     }
 
@@ -115,12 +124,21 @@
     }
 
     function handleJumpToToday() {
+        const today = getCalendarToday();
         const { week, year } = getCurrentWeek();
         currentWeek.set(week);
         currentYear.set(year);
+        desktopMonthDate = today;
     }
 
-    function handleNavigateWeek(direction: -1 | 1) {
+    function handleNavigateDesktopPeriod(direction: -1 | 1) {
+        if (desktopCalendarView === "month") {
+            const nextDate = new Date(desktopMonthDate);
+            nextDate.setMonth(nextDate.getMonth() + direction, 1);
+            desktopMonthDate = nextDate;
+            return;
+        }
+
         const nextWeekInfo =
             direction > 0
                 ? getNextWeek($currentWeek, $currentYear)
@@ -417,6 +435,17 @@
     $: isViewingCurrentWeek =
         $currentWeek === actualCurrentWeekInfo.week &&
         $currentYear === actualCurrentWeekInfo.year;
+    $: isViewingCurrentMonth =
+        desktopMonthDate.getMonth() === getCalendarToday().getMonth() &&
+        desktopMonthDate.getFullYear() === getCalendarToday().getFullYear();
+    $: isViewingCurrentDesktopPeriod =
+        desktopCalendarView === "month"
+            ? isViewingCurrentMonth
+            : isViewingCurrentWeek;
+    $: desktopMonthLabel = desktopMonthDate.toLocaleDateString("de-DE", {
+        month: "long",
+        year: "numeric",
+    });
 
     onMount(() => {
         // Auto-refresh subscriptions on app start if they're outdated
@@ -444,14 +473,19 @@
                         />
                         Wochenschau
                     </h1>
+
                     <div
-                        class="flex items-center gap-0 bg-secondary rounded-xl p-0.5"
+                        class="flex items-center gap-0 rounded-xl bg-secondary p-0.5"
                     >
                         <button
-                            on:click={() => handleNavigateWeek(-1)}
+                            on:click={() => handleNavigateDesktopPeriod(-1)}
                             class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                            aria-label="Previous week"
-                            title="Previous week"
+                            aria-label={desktopCalendarView === "month"
+                                ? "Previous month"
+                                : "Previous week"}
+                            title={desktopCalendarView === "month"
+                                ? "Previous month"
+                                : "Previous week"}
                         >
                             <svg
                                 class="w-5 h-5"
@@ -467,11 +501,16 @@
                                 />
                             </svg>
                         </button>
+
                         <button
                             on:click={() => (showWeekPicker = true)}
-                            class="flex w-60 items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground text-center"
-                            aria-label="Pick week"
-                            title="Pick week"
+                            class="flex w-64 items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground text-center"
+                            aria-label={desktopCalendarView === "month"
+                                ? "Pick month"
+                                : "Pick week"}
+                            title={desktopCalendarView === "month"
+                                ? "Pick month"
+                                : "Pick week"}
                         >
                             <span
                                 class="flex h-5 w-5 shrink-0 items-center justify-center"
@@ -491,19 +530,43 @@
                                 </svg>
                             </span>
                             <span
-                                class="text-sm font-semibold leading-none whitespace-nowrap"
+                                class="text-sm font-semibold leading-none whitespace-nowrap capitalize"
                             >
-                                W{$currentWeek} • {formatDateRange(
-                                    $currentWeek,
-                                    $currentYear,
-                                )}
+                                {#if desktopCalendarView === "month"}
+                                    {desktopMonthLabel}
+                                {:else}
+                                    W{$currentWeek} • {formatDateRange(
+                                        $currentWeek,
+                                        $currentYear,
+                                    )}
+                                {/if}
                             </span>
                         </button>
+
+                        {#if !isViewingCurrentDesktopPeriod}
+                            <button
+                                on:click={handleJumpToToday}
+                                class="inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-semibold hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                                aria-label={desktopCalendarView === "month"
+                                    ? "Go to current month"
+                                    : "Go to current week"}
+                                title={desktopCalendarView === "month"
+                                    ? "Go to current month"
+                                    : "Go to current week"}
+                            >
+                                Today
+                            </button>
+                        {/if}
+
                         <button
-                            on:click={() => handleNavigateWeek(1)}
+                            on:click={() => handleNavigateDesktopPeriod(1)}
                             class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                            aria-label="Next week"
-                            title="Next week"
+                            aria-label={desktopCalendarView === "month"
+                                ? "Next month"
+                                : "Next week"}
+                            title={desktopCalendarView === "month"
+                                ? "Next month"
+                                : "Next week"}
                         >
                             <svg
                                 class="w-5 h-5"
@@ -519,16 +582,6 @@
                                 />
                             </svg>
                         </button>
-                        {#if !isViewingCurrentWeek}
-                            <button
-                                on:click={handleJumpToToday}
-                                class="inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-semibold hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                                aria-label="Go to current week"
-                                title="Go to current week"
-                            >
-                                Today
-                            </button>
-                        {/if}
                     </div>
                     {#if syncingActive}
                         {#if canCancel}
@@ -676,12 +729,19 @@
                 </div>
             </div>
 
-            <!-- Week View -->
+            <!-- Desktop Calendar View -->
             <div class="flex-1 overflow-hidden">
-                <WeekView
-                    {isDesktop}
-                    on:requestEditActivity={handleRequestEditActivity}
-                />
+                {#if desktopCalendarView === "month"}
+                    <MonthView
+                        referenceDate={desktopMonthDate}
+                        on:requestEditActivity={handleRequestEditActivity}
+                    />
+                {:else}
+                    <WeekView
+                        {isDesktop}
+                        on:requestEditActivity={handleRequestEditActivity}
+                    />
+                {/if}
             </div>
         </div>
     {:else}
@@ -718,17 +778,18 @@
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="7"
                                     stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                 />
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 11v5m0 0l-2-2m2 2l2-2"
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="2.5"
+                                    fill="currentColor"
+                                    stroke="none"
                                 />
                             </svg>
                         </button>
@@ -837,7 +898,10 @@
         {isDesktop}
         currentWeek={$currentWeek}
         currentYear={$currentYear}
+        desktopViewMode={isDesktop ? desktopCalendarView : "week"}
+        selectedMonthDate={desktopMonthDate}
         on:weekSelected={handleWeekSelected}
+        on:monthSelected={handleMonthSelected}
         on:close={() => (showWeekPicker = false)}
     />
 {/if}
