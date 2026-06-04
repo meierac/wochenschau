@@ -13,9 +13,11 @@ export default defineConfig({
       includeAssets: [
         "favicon.svg",
         "favicon.ico",
+        "icon.svg",
+        "icon-pwa.svg",
+        "icon-rounded.svg",
         "apple-touch-icon.png",
         "apple-touch-icon-monochrome.svg",
-        "icon-rounded.svg",
         "web-app-manifest-192x192.png",
         "web-app-manifest-512x512.png",
       ],
@@ -48,7 +50,7 @@ export default defineConfig({
             purpose: "any maskable",
           },
           {
-            src: "icon-rounded.svg",
+            src: "icon-pwa.svg",
             sizes: "any",
             type: "image/svg+xml",
             purpose: "any",
