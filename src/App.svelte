@@ -608,7 +608,7 @@
             <!-- Mobile Header -->
             <div
                 class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/100 to-transparent px-4 pb-3 flex items-center justify-between pointer-events-none backdrop-blur-lg"
-                style="padding-top: calc(0.75rem + env(safe-area-inset-top)); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
+                style="padding-top: calc(0rem + env(safe-area-inset-top)); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
             >
                 <h1
                     class="text-2xl font-bold pointer-events-auto flex items-center gap-2"
