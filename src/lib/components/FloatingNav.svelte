@@ -20,11 +20,19 @@
     }
 </script>
 
+<!-- Bottom Blur/Fade Backdrop -->
+<div
+    class="pointer-events-none fixed bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-background/0 to-transparent backdrop-blur-sm"
+    style="height: calc(5rem + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
+></div>
+
 <!-- Floating Bottom Bar Container -->
-<div class="fixed bottom-3 left-3 right-3 flex gap-3 items-center px-[10px] pb-[10px]">
+<div
+    class="fixed bottom-3 left-3 right-3 z-20 flex gap-3 items-center px-[10px] pb-[10px]"
+>
     <!-- Floating Navigation Bar -->
     <div
-        class="flex-1 bg-background/40 backdrop-blur-xl"
+        class="flex-1 bg-card/40 backdrop-blur-xl"
         style="border-radius: 100px; box-shadow: 0 0px 2px rgba(255, 255, 255, 0.2) inset,
         0 0px 10px rgba(255, 255, 255, 0.05) inset,
         rgba(0, 0, 0, 0.16) 0px 10px 36px 0px,
@@ -100,7 +108,7 @@
 
     <!-- Floating Action Button (on same level) -->
     <div
-        class="bg-background/40 backdrop-blur-xl p-1.5"
+        class="bg-card/40 backdrop-blur-xl p-1.5"
         style="border-radius: 100px; box-shadow:0 0px 2px rgba(255, 255, 255, 0.2) inset,
         0 0px 10px rgba(255, 255, 255, 0.05) inset,
         rgba(0, 0, 0, 0.16) 0px 10px 36px 0px,
