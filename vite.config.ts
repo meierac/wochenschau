@@ -22,8 +22,8 @@ export default defineConfig({
         short_name: "Wochenschau",
         id: "/wochenschau/",
         description: "Your weekly overview",
-        theme_color: "#F8FAFC", // Match light background; dark mode handled by dynamic meta theme-color
-        background_color: "#F8FAFC", // Soft light background matching app CSS variable feel
+        theme_color: "#3450d1", // Match logo blue color
+        background_color: "#3450d1", // Match logo blue color
         display: "standalone",
         orientation: "portrait",
         scope: "/wochenschau/",
