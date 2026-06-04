@@ -28,7 +28,6 @@
     import { activities } from "./lib/stores/activities";
 
     import {
-        formatDateRange,
         getCalendarToday,
         getCurrentWeek,
         getNextWeek,
