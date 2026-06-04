@@ -745,7 +745,9 @@
     isOpen={showDeleteConfirm}
     {isDesktop}
     title="Delete Activity"
-    message={editingActivity ? `Delete activity "${editingActivity.summary}"?` : "Delete this activity?"}
+    message={editingActivity
+        ? `Delete activity "${editingActivity.summary}"?`
+        : "Delete this activity?"}
     confirmLabel="Delete"
     cancelLabel="Cancel"
     variant="destructive"

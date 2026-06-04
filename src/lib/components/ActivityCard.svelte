@@ -109,7 +109,7 @@
     <!-- Delete action (right swipe reveal) - mobile only -->
     {#if !isDesktop}
         <div
-            class="absolute inset-y-0 rounded-md left-0 w-24 bg-destructive/90 flex items-center justify-center text-white font-semibold"
+            class="absolute m-0.5 inset-y-0 rounded-lg left-0 w-24 bg-destructive/90 flex items-center justify-center text-white font-semibold"
         >
             Delete
         </div>
@@ -118,7 +118,7 @@
     <!-- Edit action (left swipe reveal) - mobile only -->
     {#if !isDesktop}
         <div
-            class="absolute inset-y-0 rounded-md right-0 w-24 bg-primary/90 flex items-center justify-center text-white font-semibold"
+            class="absolute m-0.5 inset-y-0 rounded-lg right-0 w-24 bg-primary flex items-center justify-center text-primary-foreground font-semibold"
         >
             Edit
         </div>
@@ -126,7 +126,7 @@
 
     <!-- Main card -->
     <div
-        class="bg-secondary p-3 rounded-md transition-transform relative"
+        class="bg-secondary p-3 rounded-2xl transition-transform relative"
         style="transform: translateX({swipeOffset}px); {isDragging
             ? 'transition: none;'
             : ''}"
@@ -151,7 +151,7 @@
 
             <!-- Mobile: Always visible buttons -->
             <div
-                class="bg-muted flex gap-0 shrink-0 absolute right-1 top-1 {isHovering &&
+                class="bg-secondary flex gap-0 shrink-0 absolute right-1 top-1 {isHovering &&
                 isDesktop
                     ? 'opacity-100'
                     : 'opacity-0 pointer-events-none'}"

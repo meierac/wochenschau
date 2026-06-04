@@ -34,14 +34,14 @@
 </script>
 
 <div
-    class="flex flex-col h-full bg-card rounded-xl border border-border p-2 md:p-3 {dayIndex ===
+    class="flex flex-col h-full bg-card rounded-3xl border border-border p-2 md:p-3 {dayIndex ===
     0
         ? 'md:mt-0 mt-14'
         : ''}"
 >
     <!-- Day Header -->
     <div class="mb-2 md:mb-3 pb-2 md:pb-3 border-b border-border shrink-0">
-        <div class="text-xs md:text-sm font-semibold text-foreground">
+        <div class="text-xs ml-3 md:text-sm font-semibold text-foreground">
             {WEEKDAYS[dayIndex]} • {formatDate(day)}
         </div>
     </div>
