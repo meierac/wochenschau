@@ -60,7 +60,9 @@
     }
 
     function formatActivityMeta(activity: CalendarItem): string {
-        return activity.isAllDay ? "All-day" : `${activity.startTime}–${activity.endTime}`;
+        return activity.isAllDay
+            ? "All-day"
+            : `${activity.startTime}–${activity.endTime}`;
     }
 
     function handleEditActivity(activity: CalendarItem) {
@@ -77,19 +79,17 @@
             .filter(
                 (activity) =>
                     activity.source !== "ical" ||
-                    (activity.sourceId && $enabledSubscriptions.has(activity.sourceId)),
+                    (activity.sourceId &&
+                        $enabledSubscriptions.has(activity.sourceId)),
             ),
     );
 
-    $: activitiesByDate = visibleActivities.reduce(
-        (map, activity) => {
-            const list = map.get(activity.startDate) ?? [];
-            list.push(activity);
-            map.set(activity.startDate, list);
-            return map;
-        },
-        new Map<string, CalendarItem[]>(),
-    );
+    $: activitiesByDate = visibleActivities.reduce((map, activity) => {
+        const list = map.get(activity.startDate) ?? [];
+        list.push(activity);
+        map.set(activity.startDate, list);
+        return map;
+    }, new Map<string, CalendarItem[]>());
 
     $: monthCells = monthGridDates.map((date): MonthCell => {
         const dateKey = toDateKey(date);
@@ -103,54 +103,68 @@
     });
 </script>
 
-<div class="flex h-full min-h-0 flex-col rounded-3xl border border-border bg-card p-4">
-    <div class="grid grid-cols-7 gap-2 pb-3">
+<div
+    class="flex h-full min-h-0 flex-col rounded-t-3xl rounded-b-xl border border-border bg-card p-0.5 overflow-hidden"
+>
+    <div class="grid grid-cols-7 gap-2 py-3">
         {#each weekdayLabels as weekday}
-            <div class="px-2 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div
+                class="px-2 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            >
                 {weekday}
             </div>
         {/each}
     </div>
 
-    <div class="grid flex-1 auto-rows-fr grid-cols-7 gap-2 overflow-y-auto">
+    <div class="grid flex-1 auto-rows-fr grid-cols-7 gap-0.5 overflow-y-auto">
         {#each monthCells as cell}
             <div
-                class={`flex min-h-[130px] flex-col rounded-2xl border p-2 ${cell.inCurrentMonth
-                    ? "border-border bg-background/60"
-                    : "border-border/60 bg-muted/20 text-muted-foreground"}`}
+                class={`flex min-h-[130px] flex-col rounded-lg border p-1 ${
+                    cell.inCurrentMonth
+                        ? "border-border bg-background"
+                        : "border-border/60 bg-card text-muted-foreground"
+                }`}
             >
-                <div class="mb-2 flex items-center justify-between gap-2">
+                <div class="mb-1 flex items-center justify-between gap-2">
                     <span
-                        class={`inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-sm font-semibold ${cell.isToday
-                            ? "bg-primary text-primary-foreground"
-                            : cell.inCurrentMonth
-                              ? "text-foreground"
-                              : "text-muted-foreground"}`}
+                        class={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-2 text-sm font-semibold ${
+                            cell.isToday
+                                ? "bg-primary text-primary-foreground"
+                                : cell.inCurrentMonth
+                                  ? "text-foreground"
+                                  : "text-muted-foreground"
+                        }`}
                     >
                         {cell.date.getDate()}
                     </span>
                 </div>
 
-                <div class="space-y-1 overflow-hidden">
-                    {#each cell.activities.slice(0, 4) as activity}
+                <div class=" overflow-y-scroll">
+                    {#each cell.activities.slice(0, 3) as activity}
                         <button
                             type="button"
                             on:click={() => handleEditActivity(activity)}
-                            class="w-full rounded-lg border-l-4 bg-secondary/70 px-2 py-1 text-left transition-colors hover:bg-secondary"
+                            class="w-full rounded-md bg-secondary/70 px-2 py-1 text-left transition-colors hover:bg-secondary"
                             style={`border-left-color: ${activity.color ?? "var(--primary)"};`}
                         >
-                            <div class="truncate text-xs font-semibold text-foreground">
+                            <div
+                                class="truncate text-xs font-semibold text-foreground"
+                            >
                                 {activity.summary}
                             </div>
-                            <div class="truncate text-[10px] text-muted-foreground">
+                            <div
+                                class="truncate text-[10px] text-muted-foreground"
+                            >
                                 {formatActivityMeta(activity)}
                             </div>
                         </button>
                     {/each}
 
-                    {#if cell.activities.length > 4}
-                        <div class="px-1 text-[10px] font-medium text-muted-foreground">
-                            +{cell.activities.length - 4} more
+                    {#if cell.activities.length > 3}
+                        <div
+                            class="px-1 text-[10px] font-medium text-muted-foreground"
+                        >
+                            +{cell.activities.length - 3} more
                         </div>
                     {/if}
                 </div>

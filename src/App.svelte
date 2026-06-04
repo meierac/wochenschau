@@ -504,7 +504,9 @@
 
                         <button
                             on:click={() => (showWeekPicker = true)}
-                            class="flex w-64 items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground text-center"
+                            class="flex {desktopCalendarView === 'month'
+                                ? 'w-40'
+                                : 'w-32'} items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground text-center"
                             aria-label={desktopCalendarView === "month"
                                 ? "Pick month"
                                 : "Pick week"}
@@ -535,28 +537,10 @@
                                 {#if desktopCalendarView === "month"}
                                     {desktopMonthLabel}
                                 {:else}
-                                    W{$currentWeek} • {formatDateRange(
-                                        $currentWeek,
-                                        $currentYear,
-                                    )}
+                                    W{$currentWeek}
                                 {/if}
                             </span>
                         </button>
-
-                        {#if !isViewingCurrentDesktopPeriod}
-                            <button
-                                on:click={handleJumpToToday}
-                                class="inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-semibold hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                                aria-label={desktopCalendarView === "month"
-                                    ? "Go to current month"
-                                    : "Go to current week"}
-                                title={desktopCalendarView === "month"
-                                    ? "Go to current month"
-                                    : "Go to current week"}
-                            >
-                                Today
-                            </button>
-                        {/if}
 
                         <button
                             on:click={() => handleNavigateDesktopPeriod(1)}
@@ -583,6 +567,20 @@
                             </svg>
                         </button>
                     </div>
+                    {#if !isViewingCurrentDesktopPeriod}
+                        <button
+                            on:click={handleJumpToToday}
+                            class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                            aria-label={desktopCalendarView === "month"
+                                ? "Go to current month"
+                                : "Go to current week"}
+                            title={desktopCalendarView === "month"
+                                ? "Go to current month"
+                                : "Go to current week"}
+                        >
+                            Today
+                        </button>
+                    {/if}
                     {#if syncingActive}
                         {#if canCancel}
                             <button
