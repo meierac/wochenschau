@@ -16,6 +16,10 @@ export interface ExportSettings {
   titleOpacity: number; // 0-100 (opacity for headline/title text)
 
   titleColor: string; // Separate color for main title
+  titleDropShadowEnabled: boolean; // Enable drop shadow for title text
+  titleDropShadowColor: string; // Color of the drop shadow
+  titleDropShadowOffsetX: number; // X offset in pixels
+  titleDropShadowOffsetY: number; // Y offset in pixels
   showWeekNumber: boolean; // Show "KW XX" in export header
   weekNumberLayout: "inline" | "separate-line"; // Position week number next to or below title
   syncWeekNumberWithTitle: boolean; // Reuse title font settings for week number
@@ -57,6 +61,10 @@ const defaultSettings: ExportSettings = {
   titleOpacity: 100,
 
   titleColor: "#000000",
+  titleDropShadowEnabled: false,
+  titleDropShadowColor: "#000000",
+  titleDropShadowOffsetX: 2,
+  titleDropShadowOffsetY: 2,
   showWeekNumber: false,
   weekNumberLayout: "separate-line",
   syncWeekNumberWithTitle: true,
@@ -99,6 +107,14 @@ function createExportSettingsStore() {
       ...parsed,
 
       titleColor: parsed.titleColor ?? defaultSettings.titleColor,
+      titleDropShadowEnabled:
+        parsed.titleDropShadowEnabled ?? defaultSettings.titleDropShadowEnabled,
+      titleDropShadowColor:
+        parsed.titleDropShadowColor ?? defaultSettings.titleDropShadowColor,
+      titleDropShadowOffsetX:
+        parsed.titleDropShadowOffsetX ?? defaultSettings.titleDropShadowOffsetX,
+      titleDropShadowOffsetY:
+        parsed.titleDropShadowOffsetY ?? defaultSettings.titleDropShadowOffsetY,
       weekNumberLayout:
         parsed.weekNumberLayout ?? defaultSettings.weekNumberLayout,
       syncWeekNumberWithTitle:

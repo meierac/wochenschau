@@ -21,7 +21,7 @@
 </script>
 
 <!-- Floating Bottom Bar Container -->
-<div class="fixed bottom-0 left-4 right-4 flex gap-3 items-center safe-bottom">
+<div class="fixed bottom-3 left-3 right-3 flex gap-3 items-center px-[10px] pb-[10px]">
     <!-- Floating Navigation Bar -->
     <div
         class="flex-1 bg-background/40 backdrop-blur-xl"
@@ -31,14 +31,14 @@
         rgba(0, 0, 0, 0.06) 0px 0px 0px 1px;;"
     >
         <!-- Navigation Items -->
-        <div class="flex items-center justify-around p-2 gap-0">
+        <div class="flex items-center justify-around p-1.5 gap-0">
             <button
                 on:click={() => (showWeekPicker = true)}
                 class="flex-1 flex items-center justify-center p-3 rounded-2xl active:bg-muted transition-colors"
                 aria-label="Pick week"
             >
                 <svg
-                    class="w-6 h-6"
+                    class="w- h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -100,7 +100,7 @@
 
     <!-- Floating Action Button (on same level) -->
     <div
-        class="bg-background/40 backdrop-blur-xl p-2"
+        class="bg-background/40 backdrop-blur-xl p-1.5"
         style="border-radius: 100px; box-shadow:0 0px 2px rgba(255, 255, 255, 0.2) inset,
         0 0px 10px rgba(255, 255, 255, 0.05) inset,
         rgba(0, 0, 0, 0.16) 0px 10px 36px 0px,
@@ -116,19 +116,13 @@
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                aria-label="Edit"
+                aria-label="Add"
             >
                 <path
-                    d="M4 20l1.05-4.2a2 2 0 0 1 .53-.95L15.3 5.13a2.5 2.5 0 0 1 3.54 0l.03.03a2.5 2.5 0 0 1 0 3.54L9.15 18.42a2 2 0 0 1-.95.53L4 20Z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linejoin="round"
-                />
-                <path
-                    d="M13.5 7.5l3 3"
-                    stroke="currentColor"
-                    stroke-width="2"
                     stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
                 />
             </svg>
         </button>

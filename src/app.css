@@ -94,6 +94,7 @@
 }
 
 @layer utilities {
+    /* Safe area inset utilities - use with env(safe-area-inset-*) */
     .safe-top {
         padding-top: env(safe-area-inset-top);
     }

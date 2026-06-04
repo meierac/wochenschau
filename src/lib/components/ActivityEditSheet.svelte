@@ -7,7 +7,6 @@
     import { timeToMinutes } from "../utils/activityDisplay";
     import IconButton from "./IconButton.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
-    import ConfirmDialog from "./ConfirmDialog.svelte";
 
     export let activity: CalendarItem;
     export let isDesktop = false;
@@ -17,7 +16,6 @@
     let editData = { ...activity };
     let selectedDay = activity.day;
     let hasChanges = false;
-    let showDeleteConfirm = false;
 
     $: days = getDaysOfWeek($currentWeek, $currentYear);
 
@@ -69,12 +67,7 @@
     }
 
     function handleDelete() {
-        showDeleteConfirm = true;
-    }
-
-    function confirmDelete() {
-        showDeleteConfirm = false;
-        dispatch("delete");
+        dispatch("requestDelete");
     }
 
     $: duration =
@@ -269,15 +262,3 @@
         </button>
     </div>
 </SwipeableSheet>
-
-<ConfirmDialog
-    isOpen={showDeleteConfirm}
-    {isDesktop}
-    title="Delete Activity"
-    message={`Delete activity "${activity.summary}"?`}
-    confirmLabel="Delete"
-    cancelLabel="Cancel"
-    variant="destructive"
-    on:confirm={confirmDelete}
-    on:close={() => (showDeleteConfirm = false)}
-/>

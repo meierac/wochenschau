@@ -138,6 +138,18 @@
             : $exportSettings.title;
 
     /**
+     * Generate text-shadow CSS for title drop shadow
+     */
+    function getTitleTextShadow(): string {
+        if (!$exportSettings.titleDropShadowEnabled) {
+            return "none";
+        }
+        return `${$exportSettings.titleDropShadowOffsetX}px ${$exportSettings.titleDropShadowOffsetY}px 0 ${$exportSettings.titleDropShadowColor}`;
+    }
+
+    $: titleTextShadow = getTitleTextShadow();
+
+    /**
      * Get week container background style with opacity
      */
     function getWeekContainerBackgroundStyle(): string {
@@ -610,7 +622,7 @@
                                     <h2
                                         class="mb-0 font-medium"
                                         style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
-                                            100};"
+                                            100}; text-shadow: {titleTextShadow};"
                                     >
                                         {syncedTitle}
                                     </h2>
@@ -621,7 +633,7 @@
                                         <h2
                                             class="mb-0 font-medium"
                                             style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
-                                                100};"
+                                                100}; text-shadow: {titleTextShadow};"
                                         >
                                             {$exportSettings.title}
                                         </h2>
@@ -636,7 +648,7 @@
                                     <h2
                                         class="mb-0 font-medium"
                                         style="font-family: {$exportSettings.headerFontFamily}; color: {$exportSettings.titleColor}; font-size: {$exportSettings.titleFontSize}px; opacity: {$exportSettings.titleOpacity /
-                                            100};"
+                                            100}; text-shadow: {titleTextShadow};"
                                     >
                                         {$exportSettings.title}
                                     </h2>

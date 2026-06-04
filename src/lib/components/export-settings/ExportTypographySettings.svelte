@@ -102,6 +102,57 @@
                 />
             </div>
         </div>
+
+        <!-- Drop Shadow Settings -->
+        <div class="space-y-4 pt-4 border-t border-border/50">
+            <div class="flex items-center justify-between">
+                <label for={fieldIds.titleDropShadowEnabled} class={toggleLabelClass}>
+                    Enable drop shadow
+                </label>
+                <input
+                    id={fieldIds.titleDropShadowEnabled}
+                    type="checkbox"
+                    bind:checked={$exportSettings.titleDropShadowEnabled}
+                    class="w-4 h-4"
+                />
+            </div>
+
+            {#if $exportSettings.titleDropShadowEnabled}
+                <div>
+                    <ColorField
+                        id={fieldIds.titleDropShadowColor}
+                        label="Drop shadow color"
+                        bind:value={$exportSettings.titleDropShadowColor}
+                        placeholder="#000000"
+                        {labelClass}
+                        {colorInputClass}
+                        textInputClass={monoInputClass}
+                    />
+                </div>
+
+                <SliderField
+                    id={fieldIds.titleDropShadowOffsetX}
+                    label="Shadow X offset"
+                    suffix="px"
+                    min={-10}
+                    max={10}
+                    step={1}
+                    bind:value={$exportSettings.titleDropShadowOffsetX}
+                    {labelClass}
+                />
+
+                <SliderField
+                    id={fieldIds.titleDropShadowOffsetY}
+                    label="Shadow Y offset"
+                    suffix="px"
+                    min={-10}
+                    max={10}
+                    step={1}
+                    bind:value={$exportSettings.titleDropShadowOffsetY}
+                    {labelClass}
+                />
+            {/if}
+        </div>
     </div>
 
     <div

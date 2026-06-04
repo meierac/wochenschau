@@ -18,6 +18,7 @@
     import ExportSheet from "./lib/components/ExportSheet.svelte";
 
     import SyncConflictDialog from "./lib/components/SyncConflictDialog.svelte";
+    import ConfirmDialog from "./lib/components/ConfirmDialog.svelte";
 
     import { currentWeek, currentYear } from "./lib/stores/week";
 
@@ -48,6 +49,7 @@
     let showExport = false;
 
     let editingActivity: CalendarItem | null = null;
+    let showDeleteConfirm = false;
     // legacy isSyncing flag removed
 
     $: syncingPhase = $refreshStatus.phase;
@@ -117,6 +119,19 @@
     function handleSaveActivity(event: CustomEvent<CalendarItem>) {
         activities.updateActivity(event.detail);
         editingActivity = null;
+    }
+    function handleRequestDelete() {
+        showDeleteConfirm = true;
+    }
+    function handleConfirmDelete() {
+        if (editingActivity) {
+            activities.removeActivity(editingActivity.id);
+        }
+        showDeleteConfirm = false;
+        editingActivity = null;
+    }
+    function handleCancelDelete() {
+        showDeleteConfirm = false;
     }
 
     // Delegated iCal parsing (consolidated in service)
@@ -592,8 +607,8 @@
         <div class="h-screen flex flex-col pb-0 relative overflow-hidden">
             <!-- Mobile Header -->
             <div
-                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/100 to-transparent px-4 py-3 flex items-center justify-between pointer-events-none backdrop-blur-lg"
-                style="mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
+                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/100 to-transparent px-4 pb-3 flex items-center justify-between pointer-events-none backdrop-blur-lg"
+                style="padding-top: calc(0.75rem + env(safe-area-inset-top)); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
             >
                 <h1
                     class="text-2xl font-bold pointer-events-auto flex items-center gap-2"
@@ -720,15 +735,24 @@
         {isDesktop}
         activity={editingActivity}
         on:save={handleSaveActivity}
-        on:delete={() => {
-            if (editingActivity) {
-                activities.removeActivity(editingActivity.id);
-            }
-            editingActivity = null;
-        }}
+        on:requestDelete={handleRequestDelete}
         on:close={handleCloseEditActivity}
     />
 {/if}
+
+<!-- Delete Activity Confirmation Dialog -->
+<ConfirmDialog
+    isOpen={showDeleteConfirm}
+    {isDesktop}
+    title="Delete Activity"
+    message={editingActivity ? `Delete activity "${editingActivity.summary}"?` : "Delete this activity?"}
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    variant="destructive"
+    on:confirm={handleConfirmDelete}
+    on:cancel={handleCancelDelete}
+    on:close={handleCancelDelete}
+/>
 
 <!-- Sync Conflict Dialog -->
 {#if showConflictDialog}
