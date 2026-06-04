@@ -1,6 +1,12 @@
-# Wochenschau 📅
+<p align="center">
+  <img src="public/icon.svg" alt="Wochenschau Logo" width="120" height="120">
+</p>
 
-> Your weekly overview at a glance. A beautiful, intuitive calendar app for planning your week.
+<h1 align="center">Wochenschau</h1>
+
+<p align="center">
+  <em>Your weekly overview at a glance. A beautiful, intuitive calendar app for planning your week.</em>
+</p>
 
 **Wochenschau** (German for "weekly review") is a modern Progressive Web App built with Svelte 5, TypeScript, Tailwind CSS and Vite. It blends iOS-inspired design patterns with fast, private, offline-first functionality.
 
