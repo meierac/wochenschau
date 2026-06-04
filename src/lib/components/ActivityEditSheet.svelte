@@ -3,7 +3,7 @@
     import type { CalendarItem } from "../types/index";
     import { WEEKDAYS_DE } from "../types/index";
     import { currentWeek, currentYear } from "../stores/week";
-    import { getWeekNumber, getDaysOfWeek } from "../utils/date";
+    import { getDaysOfWeek, getNextWeek, getPreviousWeek } from "../utils/date";
     import { timeToMinutes } from "../utils/activityDisplay";
     import IconButton from "./IconButton.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
@@ -11,13 +11,198 @@
     export let activity: CalendarItem;
     export let isDesktop = false;
 
+    type MoveDayOption = {
+        weekOffset: number;
+        week: number;
+        year: number;
+        dayIndex: number;
+        date: Date;
+        id: string;
+    };
+
+    type MoveWeekOption = {
+        weekOffset: number;
+        week: number;
+        year: number;
+        days: MoveDayOption[];
+    };
+
     const dispatch = createEventDispatcher();
 
     let editData = { ...activity };
-    let selectedDay = activity.day;
     let hasChanges = false;
+    let dayOptions: MoveDayOption[] = [];
+    let weekOptions: MoveWeekOption[] = [];
+    let selectedDayOptionId = "";
+    let visibleWeekOffset = 0;
+    let visibleWeek: MoveWeekOption | undefined;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let isWeekSwipeActive = false;
 
-    $: days = getDaysOfWeek($currentWeek, $currentYear);
+    const MIN_WEEK_OFFSET = -10;
+    const MAX_WEEK_OFFSET = 10;
+    const MIN_SWIPE_DISTANCE = 50;
+
+    function toOptionId(week: number, year: number, dayIndex: number): string {
+        return `${year}-${week}-${dayIndex}`;
+    }
+
+    function shiftWeek(
+        baseWeek: number,
+        baseYear: number,
+        offset: number,
+    ): { week: number; year: number } {
+        let week = baseWeek;
+        let year = baseYear;
+
+        if (offset > 0) {
+            for (let i = 0; i < offset; i++) {
+                const next = getNextWeek(week, year);
+                week = next.week;
+                year = next.year;
+            }
+        } else if (offset < 0) {
+            for (let i = 0; i < Math.abs(offset); i++) {
+                const previous = getPreviousWeek(week, year);
+                week = previous.week;
+                year = previous.year;
+            }
+        }
+
+        return { week, year };
+    }
+
+    function createWeekDayOptions(
+        week: number,
+        year: number,
+        weekOffset: number,
+    ): MoveDayOption[] {
+        const days = getDaysOfWeek(week, year);
+        return days.map((date, dayIndex) => ({
+            weekOffset,
+            week,
+            year,
+            dayIndex,
+            date,
+            id: toOptionId(week, year, dayIndex),
+        }));
+    }
+
+    function formatWeekRange(days: MoveDayOption[]): string {
+        if (days.length === 0) return "";
+        return `${formatDateForDisplay(days[0].date)} – ${formatDateForDisplay(days[days.length - 1].date)}`;
+    }
+
+    function getWeekLabel(offset: number): string {
+        if (offset === 0) return "Current week";
+        if (offset === -1) return "Last week";
+        if (offset === 1) return "Next week";
+        if (offset < 0) return `${Math.abs(offset)} weeks ago`;
+        return `In ${offset} weeks`;
+    }
+
+    function setVisibleWeekOffset(offset: number) {
+        visibleWeekOffset = Math.min(
+            MAX_WEEK_OFFSET,
+            Math.max(MIN_WEEK_OFFSET, offset),
+        );
+    }
+
+    function navigateWeek(direction: -1 | 1) {
+        setVisibleWeekOffset(visibleWeekOffset + direction);
+    }
+
+    function handleWeekTouchStart(e: TouchEvent) {
+        const touch = e.changedTouches[0];
+        if (!touch) return;
+
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchEndX = touch.clientX;
+        isWeekSwipeActive = false;
+    }
+
+    function handleWeekTouchMove(e: TouchEvent) {
+        const touch = e.changedTouches[0];
+        if (!touch) return;
+
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = Math.abs(touch.clientY - touchStartY);
+
+        if (Math.abs(deltaX) > 15 && Math.abs(deltaX) > deltaY * 1.5) {
+            isWeekSwipeActive = true;
+            touchEndX = touch.clientX;
+            e.preventDefault();
+        }
+    }
+
+    function handleWeekTouchEnd(e?: TouchEvent) {
+        if (e?.changedTouches?.[0]) {
+            touchEndX = e.changedTouches[0].clientX;
+        }
+
+        if (!isWeekSwipeActive) return;
+
+        const deltaX = touchEndX - touchStartX;
+        if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE) {
+            isWeekSwipeActive = false;
+            return;
+        }
+
+        if (deltaX < 0) {
+            navigateWeek(1);
+        } else {
+            navigateWeek(-1);
+        }
+
+        isWeekSwipeActive = false;
+    }
+
+    $: weekOptions = Array.from(
+        { length: MAX_WEEK_OFFSET - MIN_WEEK_OFFSET + 1 },
+        (_, index) => {
+            const weekOffset = MIN_WEEK_OFFSET + index;
+            const { week, year } = shiftWeek(
+                $currentWeek,
+                $currentYear,
+                weekOffset,
+            );
+            const days = createWeekDayOptions(week, year, weekOffset);
+
+            return {
+                weekOffset,
+                week,
+                year,
+                days,
+            };
+        },
+    );
+    $: dayOptions = weekOptions.flatMap((option) => option.days);
+
+    $: {
+        const selectedOptionStillExists = dayOptions.some(
+            (option) => option.id === selectedDayOptionId,
+        );
+
+        if (!selectedOptionStillExists) {
+            const matchingOption = dayOptions.find(
+                (option) =>
+                    option.week === activity.week &&
+                    option.year === activity.year &&
+                    option.dayIndex === activity.day,
+            );
+
+            selectedDayOptionId = matchingOption
+                ? matchingOption.id
+                : toOptionId(activity.week, activity.year, activity.day);
+        }
+    }
+
+    $: selectedDayOption = dayOptions.find(
+        (option) => option.id === selectedDayOptionId,
+    );
 
     $: {
         hasChanges =
@@ -25,7 +210,9 @@
             editData.startTime !== activity.startTime ||
             editData.endTime !== activity.endTime ||
             editData.description !== activity.description ||
-            selectedDay !== activity.day;
+            selectedDayOption?.week !== activity.week ||
+            selectedDayOption?.year !== activity.year ||
+            selectedDayOption?.dayIndex !== activity.day;
     }
 
     function formatDateToICalDate(date: Date): string {
@@ -42,10 +229,19 @@
         });
     }
 
+    $: visibleWeek = weekOptions.find(
+        (option) => option.weekOffset === visibleWeekOffset,
+    );
+
     function handleSave() {
         // If day changed, update all date-related fields
-        if (selectedDay !== activity.day) {
-            const newDate = days[selectedDay];
+        if (
+            selectedDayOption &&
+            (selectedDayOption.dayIndex !== activity.day ||
+                selectedDayOption.week !== activity.week ||
+                selectedDayOption.year !== activity.year)
+        ) {
+            const newDate = selectedDayOption.date;
             const startDate = formatDateToICalDate(newDate);
             const dtstart = `${startDate}T${editData.startTime.replace(":", "")}00`;
             const dtend = `${startDate}T${editData.endTime.replace(":", "")}00`;
@@ -54,9 +250,9 @@
             editData.dtend = dtend;
             editData.startDate = startDate;
             editData.endDate = startDate;
-            editData.day = selectedDay;
-            editData.week = getWeekNumber(newDate);
-            editData.year = newDate.getFullYear();
+            editData.day = selectedDayOption.dayIndex;
+            editData.week = selectedDayOption.week;
+            editData.year = selectedDayOption.year;
         }
 
         dispatch("save", editData);
@@ -156,23 +352,98 @@
             >
                 Day
             </label>
-            <div class="grid grid-cols-2 gap-2">
-                {#each WEEKDAYS_DE as day, index}
-                    {@const dayDate = days[index]}
+
+            <div class="space-y-3">
+                <div class="flex items-center justify-between gap-2">
                     <button
                         type="button"
-                        on:click={() => (selectedDay = index)}
-                        class="p-2 rounded-lg text-xs font-semibold transition-colors {selectedDay ===
-                        index
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted hover:bg-muted/80'}"
+                        aria-label="Show previous week"
+                        disabled={visibleWeekOffset <= MIN_WEEK_OFFSET}
+                        on:click={() => navigateWeek(-1)}
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:pointer-events-none disabled:opacity-50"
                     >
-                        <div>{day}</div>
-                        <div class="text-[10px] opacity-70 mt-0.5">
-                            {formatDateForDisplay(dayDate)}
-                        </div>
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15 19l-7-7 7-7"
+                            />
+                        </svg>
                     </button>
-                {/each}
+
+                    <div class="flex-1 text-center min-w-0">
+                        <div class="text-xs font-semibold text-foreground">
+                            {visibleWeek
+                                ? getWeekLabel(visibleWeek.weekOffset)
+                                : "Current week"}
+                        </div>
+                        <div class="text-[11px] text-muted-foreground mt-0.5">
+                            {visibleWeek
+                                ? formatWeekRange(visibleWeek.days)
+                                : ""}
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        aria-label="Show next week"
+                        disabled={visibleWeekOffset >= MAX_WEEK_OFFSET}
+                        on:click={() => navigateWeek(1)}
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:pointer-events-none disabled:opacity-50"
+                    >
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 5l7 7-7 7"
+                            />
+                        </svg>
+                    </button>
+                </div>
+
+                <div
+                    class="space-y-2"
+                    style="touch-action: pan-y;"
+                    on:touchstart={handleWeekTouchStart}
+                    on:touchmove={handleWeekTouchMove}
+                    on:touchend={handleWeekTouchEnd}
+                    on:touchcancel={handleWeekTouchEnd}
+                >
+                    <div class="grid grid-cols-2 gap-2">
+                        {#if visibleWeek}
+                            {#each visibleWeek.days as option}
+                                <button
+                                    type="button"
+                                    on:click={() => {
+                                        selectedDayOptionId = option.id;
+                                        setVisibleWeekOffset(option.weekOffset);
+                                    }}
+                                    class="p-2 rounded-lg text-xs font-semibold transition-colors {selectedDayOptionId ===
+                                    option.id
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted hover:bg-muted/80'}"
+                                >
+                                    <div>{WEEKDAYS_DE[option.dayIndex]}</div>
+                                    <div class="text-[10px] opacity-70 mt-0.5">
+                                        {formatDateForDisplay(option.date)}
+                                    </div>
+                                </button>
+                            {/each}
+                        {/if}
+                    </div>
+                </div>
             </div>
         </div>
 

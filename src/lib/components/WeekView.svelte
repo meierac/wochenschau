@@ -4,7 +4,7 @@
 
     import { activities } from "../stores/activities";
     import { currentWeek, currentYear } from "../stores/week";
-    import { getDaysOfWeek } from "../utils/date";
+    import { getDaysOfWeek, getNextWeek, getPreviousWeek } from "../utils/date";
     import { sortActivitiesByDisplayOrder } from "../utils/activityDisplay";
     import { bibleVerse } from "../stores/bibleVerse";
     import { subscriptions } from "../stores/ical";
@@ -18,6 +18,13 @@
     export let isDesktop = false;
 
     let showWeekPicker = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let isWeekSwipeActive = false;
+    let isWeekSwipeBlocked = false;
+
+    const MIN_WEEK_SWIPE_DISTANCE = 60;
 
     const dispatch = createEventDispatcher<{
         requestEditActivity: CalendarItem;
@@ -64,6 +71,81 @@
         // Reserved for future responsive adjustments
     }
 
+    function navigateWeek(direction: -1 | 1) {
+        const nextWeekInfo =
+            direction > 0
+                ? getNextWeek($currentWeek, $currentYear)
+                : getPreviousWeek($currentWeek, $currentYear);
+
+        currentWeek.set(nextWeekInfo.week);
+        currentYear.set(nextWeekInfo.year);
+    }
+
+    function handleWeekSwipeStart(event: TouchEvent) {
+        const touch = event.changedTouches[0];
+        if (!touch) return;
+
+        const target = event.target as HTMLElement | null;
+        isWeekSwipeBlocked = !!target?.closest(
+            ".activity-card-swipe, button, input, textarea, select, a, [role='button']",
+        );
+
+        if (isWeekSwipeBlocked) {
+            isWeekSwipeActive = false;
+            return;
+        }
+
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchEndX = touch.clientX;
+        isWeekSwipeActive = false;
+    }
+
+    function handleWeekSwipeMove(event: TouchEvent) {
+        if (isWeekSwipeBlocked) return;
+
+        const touch = event.changedTouches[0];
+        if (!touch) return;
+
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = Math.abs(touch.clientY - touchStartY);
+
+        if (Math.abs(deltaX) > 15 && Math.abs(deltaX) > deltaY * 1.5) {
+            isWeekSwipeActive = true;
+            touchEndX = touch.clientX;
+            event.preventDefault();
+        }
+    }
+
+    function handleWeekSwipeEnd(event?: TouchEvent) {
+        if (event?.changedTouches?.[0]) {
+            touchEndX = event.changedTouches[0].clientX;
+        }
+
+        if (isWeekSwipeBlocked) {
+            isWeekSwipeBlocked = false;
+            isWeekSwipeActive = false;
+            return;
+        }
+
+        if (!isWeekSwipeActive) {
+            isWeekSwipeBlocked = false;
+            return;
+        }
+
+        const deltaX = touchEndX - touchStartX;
+        if (Math.abs(deltaX) >= MIN_WEEK_SWIPE_DISTANCE) {
+            if (deltaX < 0) {
+                navigateWeek(1);
+            } else {
+                navigateWeek(-1);
+            }
+        }
+
+        isWeekSwipeActive = false;
+        isWeekSwipeBlocked = false;
+    }
+
     export function openWeekPicker() {
         showWeekPicker = true;
     }
@@ -79,7 +161,13 @@
     <!-- Days grid -->
     <div
         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 flex-1 overflow-y-auto md:pb-0 pt-16 md:pt-0"
-        style="padding-bottom: {isDesktop ? '20px' : '200px'}"
+        style="padding-bottom: {isDesktop
+            ? '20px'
+            : '200px'}; touch-action: pan-y;"
+        on:touchstart={handleWeekSwipeStart}
+        on:touchmove={handleWeekSwipeMove}
+        on:touchend={handleWeekSwipeEnd}
+        on:touchcancel={handleWeekSwipeEnd}
     >
         {#each days as day, dayIndex}
             <div class="h-full flex flex-col">

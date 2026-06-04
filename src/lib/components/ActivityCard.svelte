@@ -98,7 +98,7 @@
 <svelte:window on:resize={handleResize} />
 
 <div
-    class="relative overflow-hidden rounded-md group"
+    class="activity-card-swipe relative overflow-hidden rounded-md group"
     role="presentation"
     on:touchstart={handleTouchStart}
     on:touchmove={handleTouchMove}

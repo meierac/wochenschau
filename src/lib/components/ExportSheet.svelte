@@ -4,7 +4,7 @@
     import { currentWeek, currentYear } from "../stores/week";
     import { exportSettings } from "../stores/exportSettings";
     import { bibleVerse } from "../stores/bibleVerse";
-    import { getDaysOfWeek } from "../utils/date";
+    import { getDaysOfWeek, getNextWeek, getPreviousWeek } from "../utils/date";
     import {
         isAllDayActivity,
         sortActivitiesByDisplayOrder,
@@ -18,44 +18,114 @@
 
     export let isDesktop = false;
 
+    type LayoutMode = "grid" | "list" | "compact";
+    type ExportRangeMode = "this-week" | "weekend" | "custom";
+    type ExportWindowWeekKey = "previous" | "current" | "next";
+    type ExportWindowDay = {
+        globalIndex: number;
+        dayIndex: number;
+        date: Date;
+        week: number;
+        year: number;
+        weekKey: ExportWindowWeekKey;
+        activities: any[];
+    };
+
     const dispatch = createEventDispatcher();
 
     let isExporting = false;
     let exportError = "";
-    let layoutMode: "grid" | "list" | "compact" = "grid";
+    let layoutMode: LayoutMode = "grid";
     let showPreview = true;
+    let rangeMode: ExportRangeMode = "this-week";
+    let rangeStartIndex = 7;
+    let rangeEndIndex = 13;
+    let previousWeekDays: Date[] = [];
+    let currentWeekDays: Date[] = [];
+    let nextWeekDays: Date[] = [];
+    let previousWeekInfo = { week: 1, year: 1970 };
+    let nextWeekInfo = { week: 1, year: 1970 };
+    let exportWindowDays: ExportWindowDay[] = [];
+    let visibleDays: ExportWindowDay[] = [];
+    let selectedDaysLabel = "Current week";
+    let gridColumnCount = 4;
+    let shouldCenterGridDays = false;
+    let centeredGridWidth = "100%";
+    let previewWidth = "900px";
 
-    // Load preferences from localStorage on mount
-    function loadPreferences() {
+    const THIS_WEEK_RANGE = { start: 7, end: 13 };
+    const WEEKEND_RANGE = { start: 11, end: 13 };
+
+    function clampRangeIndex(index: number): number {
+        if (Number.isNaN(index)) return 7;
+        return Math.min(20, Math.max(0, index));
+    }
+
+    function inferRangeMode(start: number, end: number): ExportRangeMode {
+        if (start === THIS_WEEK_RANGE.start && end === THIS_WEEK_RANGE.end) {
+            return "this-week";
+        }
+        if (start === WEEKEND_RANGE.start && end === WEEKEND_RANGE.end) {
+            return "weekend";
+        }
+        return "custom";
+    }
+
+    function persistRangePreferences() {
         if (typeof window !== "undefined") {
-            const savedLayoutMode = localStorage.getItem("exportLayoutMode");
-            const savedShowPreview = localStorage.getItem("exportShowPreview");
-
-            if (
-                savedLayoutMode === "list" ||
-                savedLayoutMode === "grid" ||
-                savedLayoutMode === "compact"
-            ) {
-                layoutMode = savedLayoutMode;
-            }
-            if (savedShowPreview === "false") {
-                showPreview = false;
-            } else if (savedShowPreview === "true") {
-                showPreview = true;
-            }
+            localStorage.setItem("exportRangeMode", rangeMode);
+            localStorage.setItem(
+                "exportDayRangeStart",
+                String(rangeStartIndex),
+            );
+            localStorage.setItem("exportDayRangeEnd", String(rangeEndIndex));
         }
     }
 
-    // Detect iOS Safari for scale adjustment
-    const ua = navigator.userAgent;
+    function applyRange(
+        start: number,
+        end: number,
+        mode: ExportRangeMode = "custom",
+    ) {
+        rangeStartIndex = clampRangeIndex(start);
+        rangeEndIndex = clampRangeIndex(end);
+        if (rangeEndIndex < rangeStartIndex) {
+            rangeEndIndex = rangeStartIndex;
+        }
+        rangeMode = mode;
+        persistRangePreferences();
+    }
 
-    const isIOSSafari =
-        /iPad|iPhone|iPod/.test(ua) &&
-        /Safari/.test(ua) &&
-        !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+    function setRangeMode(mode: ExportRangeMode) {
+        if (mode === "this-week") {
+            applyRange(THIS_WEEK_RANGE.start, THIS_WEEK_RANGE.end, mode);
+            return;
+        }
 
-    function saveLayoutMode(mode: "grid" | "list" | "compact") {
-        // Removed iOS Safari forced compact restriction to allow all layouts
+        if (mode === "weekend") {
+            applyRange(WEEKEND_RANGE.start, WEEKEND_RANGE.end, mode);
+            return;
+        }
+
+        rangeMode = mode;
+        persistRangePreferences();
+    }
+
+    function handleDayRangeStartChange(event: Event) {
+        const value = clampRangeIndex(
+            Number((event.currentTarget as HTMLSelectElement).value),
+        );
+        applyRange(value, Math.max(value, rangeEndIndex), "custom");
+    }
+
+    function handleDayRangeEndChange(event: Event) {
+        const value = clampRangeIndex(
+            Number((event.currentTarget as HTMLSelectElement).value),
+        );
+        applyRange(Math.min(rangeStartIndex, value), value, "custom");
+    }
+
+    function saveLayoutMode(mode: LayoutMode) {
         layoutMode = mode;
 
         if (typeof window !== "undefined") {
@@ -70,16 +140,82 @@
         }
     }
 
-    /**
+    function loadPreferences() {
+        if (typeof window === "undefined") return;
 
-     * Initialize component preferences from localStorage
+        const savedLayoutMode = localStorage.getItem("exportLayoutMode");
+        const savedShowPreview = localStorage.getItem("exportShowPreview");
+        const savedRangeMode = localStorage.getItem("exportRangeMode");
+        const savedDayRangeStart = localStorage.getItem("exportDayRangeStart");
+        const savedDayRangeEnd = localStorage.getItem("exportDayRangeEnd");
 
-     * Enforce compact layout on iOS Safari
-     */
+        if (
+            savedLayoutMode === "list" ||
+            savedLayoutMode === "grid" ||
+            savedLayoutMode === "compact"
+        ) {
+            layoutMode = savedLayoutMode;
+        }
+
+        if (savedShowPreview === "false") {
+            showPreview = false;
+        } else if (savedShowPreview === "true") {
+            showPreview = true;
+        }
+
+        if (savedDayRangeStart !== null && savedDayRangeEnd !== null) {
+            const parsedStart = Number(savedDayRangeStart);
+            const parsedEnd = Number(savedDayRangeEnd);
+
+            // Migrate old single-week values (0-6) into the 3-week window.
+            if (
+                parsedStart >= 0 &&
+                parsedStart <= 6 &&
+                parsedEnd >= 0 &&
+                parsedEnd <= 6
+            ) {
+                rangeStartIndex = parsedStart + 7;
+                rangeEndIndex =
+                    parsedEnd >= parsedStart ? parsedEnd + 7 : parsedEnd + 14;
+            } else {
+                rangeStartIndex = clampRangeIndex(parsedStart);
+                rangeEndIndex = clampRangeIndex(parsedEnd);
+            }
+
+            if (rangeEndIndex < rangeStartIndex) {
+                rangeEndIndex = rangeStartIndex;
+            }
+        }
+
+        if (
+            savedRangeMode === "this-week" ||
+            savedRangeMode === "weekend" ||
+            savedRangeMode === "custom"
+        ) {
+            rangeMode = savedRangeMode;
+        } else {
+            rangeMode = inferRangeMode(rangeStartIndex, rangeEndIndex);
+        }
+
+        if (rangeMode === "this-week") {
+            rangeStartIndex = THIS_WEEK_RANGE.start;
+            rangeEndIndex = THIS_WEEK_RANGE.end;
+        } else if (rangeMode === "weekend") {
+            rangeStartIndex = WEEKEND_RANGE.start;
+            rangeEndIndex = WEEKEND_RANGE.end;
+        }
+    }
+
+    // Detect iOS Safari for scale adjustment
+    const ua = navigator.userAgent;
+
+    const isIOSSafari =
+        /iPad|iPhone|iPod/.test(ua) &&
+        /Safari/.test(ua) &&
+        !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
 
     onMount(() => {
         loadPreferences();
-        // Removed iOS Safari compact layout enforcement
     });
 
     // Reactive: Check if background is ready for export
@@ -283,8 +419,30 @@
         }
     }
 
+    function formatFileDate(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function getExportFileName(): string {
+        if (visibleDays.length === 0) {
+            return `Wochenschau_W${$currentWeek}_${$currentYear}.png`;
+        }
+
+        const startDate = visibleDays[0].date;
+        const endDate = visibleDays[visibleDays.length - 1].date;
+        const startPart = formatFileDate(startDate);
+        const endPart = formatFileDate(endDate);
+        const rangePart =
+            startPart === endPart ? startPart : `${startPart}_${endPart}`;
+
+        return `Wochenschau_${rangePart}.png`;
+    }
+
     /**
-     * Export the week as a downloadable PNG image
+     * Export the selected days as a downloadable PNG image
      */
     async function exportAsImage() {
         isExporting = true;
@@ -309,7 +467,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `Wochenschau_W${$currentWeek}_${$currentYear}.png`;
+            link.download = getExportFileName();
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -379,11 +537,9 @@
             }
 
             // Create file for sharing
-            const file = new File(
-                [blob],
-                `Wochenschau_W${$currentWeek}_${$currentYear}.png`,
-                { type: "image/png" },
-            );
+            const file = new File([blob], getExportFileName(), {
+                type: "image/png",
+            });
 
             if (!navigator.share) {
                 throw new Error("Web Share API not supported on this device");
@@ -407,8 +563,42 @@
         }
     }
 
-    // Reactive: Get days of the current week
-    $: days = getDaysOfWeek($currentWeek, $currentYear);
+    // Reactive: build a 3-week export window (previous/current/next)
+    $: previousWeekInfo = getPreviousWeek($currentWeek, $currentYear);
+    $: currentWeekDays = getDaysOfWeek($currentWeek, $currentYear);
+    $: previousWeekDays = getDaysOfWeek(
+        previousWeekInfo.week,
+        previousWeekInfo.year,
+    );
+    $: nextWeekInfo = getNextWeek($currentWeek, $currentYear);
+    $: nextWeekDays = getDaysOfWeek(nextWeekInfo.week, nextWeekInfo.year);
+
+    function getWeekLabel(weekKey: ExportWindowWeekKey): string {
+        if (weekKey === "previous") return "Previous week";
+        if (weekKey === "next") return "Upcoming week";
+        return "Current week";
+    }
+
+    function getWindowDayLabel(day: ExportWindowDay): string {
+        return `${WEEKDAYS_DE[day.dayIndex]} · ${formatDate(day.date)} · ${getWeekLabel(day.weekKey)}`;
+    }
+
+    function formatSelectionLabel(days: ExportWindowDay[]): string {
+        if (days.length === 0) return "No days selected";
+        if (
+            days.length === 7 &&
+            days.every((day) => day.weekKey === "current")
+        ) {
+            return "Current week";
+        }
+        if (days.length === 1) {
+            return getWindowDayLabel(days[0]);
+        }
+
+        const startDay = days[0];
+        const endDay = days[days.length - 1];
+        return `${getWindowDayLabel(startDay)} → ${getWindowDayLabel(endDay)} (${days.length} days)`;
+    }
 
     // Reactive: Enabled subscription IDs (only active ones)
     $: enabledSubscriptions = new Set(
@@ -417,26 +607,79 @@
             .map((s: ICalSubscription) => s.id),
     );
 
-    // Reactive: Get activities for the current week (filter out disabled iCal subscriptions)
-    $: weekActivities = $activities
-        .filter((a) => a.week === $currentWeek && a.year === $currentYear)
-        .filter(
-            (a) =>
-                a.source !== "ical" ||
-                (a.sourceId && enabledSubscriptions.has(a.sourceId)),
-        );
-
-    $: sortedWeekActivities = sortActivitiesByDisplayOrder(weekActivities);
-    $: activitiesByDay = Array.from({ length: 7 }, (_, dayIndex) =>
-        sortedWeekActivities.filter((activity) => activity.day === dayIndex),
+    $: exportActivities = sortActivitiesByDisplayOrder(
+        $activities
+            .filter(
+                (a) =>
+                    (a.week === previousWeekInfo.week &&
+                        a.year === previousWeekInfo.year) ||
+                    (a.week === $currentWeek && a.year === $currentYear) ||
+                    (a.week === nextWeekInfo.week &&
+                        a.year === nextWeekInfo.year),
+            )
+            .filter(
+                (a) =>
+                    a.source !== "ical" ||
+                    (a.sourceId && enabledSubscriptions.has(a.sourceId)),
+            ),
     );
 
-    /**
-     * Get activities for a specific day
-     */
-    function getDayActivities(dayIndex: number) {
-        return activitiesByDay[dayIndex] || [];
+    function getActivitiesForExportDay(day: ExportWindowDay) {
+        return exportActivities.filter(
+            (activity) =>
+                activity.week === day.week &&
+                activity.year === day.year &&
+                activity.day === day.dayIndex,
+        );
     }
+
+    $: exportWindowDays = [
+        ...previousWeekDays.map((date, dayIndex) => ({
+            globalIndex: dayIndex,
+            dayIndex,
+            date,
+            week: previousWeekInfo.week,
+            year: previousWeekInfo.year,
+            weekKey: "previous" as const,
+            activities: [],
+        })),
+        ...currentWeekDays.map((date, dayIndex) => ({
+            globalIndex: dayIndex + 7,
+            dayIndex,
+            date,
+            week: $currentWeek,
+            year: $currentYear,
+            weekKey: "current" as const,
+            activities: [],
+        })),
+        ...nextWeekDays.map((date, dayIndex) => ({
+            globalIndex: dayIndex + 14,
+            dayIndex,
+            date,
+            week: nextWeekInfo.week,
+            year: nextWeekInfo.year,
+            weekKey: "next" as const,
+            activities: [],
+        })),
+    ];
+    $: visibleDays = exportWindowDays
+        .slice(rangeStartIndex, rangeEndIndex + 1)
+        .map((day) => ({
+            ...day,
+            activities: getActivitiesForExportDay(day),
+        }));
+    $: selectedDaysLabel = formatSelectionLabel(visibleDays);
+    $: shouldCenterGridDays = visibleDays.length <= 3;
+    $: gridColumnCount = shouldCenterGridDays
+        ? Math.max(1, visibleDays.length)
+        : 4;
+    $: centeredGridWidth = "100%";
+    $: previewWidth =
+        layoutMode === "grid"
+            ? "900px"
+            : layoutMode === "list"
+              ? "400px"
+              : "360px";
 
     /**
      * Format date for display
@@ -486,7 +729,7 @@
         </IconButton>
 
         <h3 class="text-lg font-semibold text-foreground flex-1 text-center">
-            Export Week
+            Export
         </h3>
 
         <div class="w-6"></div>
@@ -581,6 +824,97 @@
             </div>
         </fieldset>
 
+        <fieldset class="space-y-3">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+                <legend class="text-sm font-semibold text-foreground"
+                    >Days</legend
+                >
+                <span class="text-xs text-muted-foreground">
+                    {selectedDaysLabel}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                    class="px-3 py-2 rounded-2xl text-sm font-medium transition-colors {rangeMode ===
+                    'this-week'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground hover:bg-muted/80'}"
+                    on:click={() => setRangeMode("this-week")}
+                >
+                    This Week
+                </button>
+                <button
+                    class="px-3 py-2 rounded-2xl text-sm font-medium transition-colors {rangeMode ===
+                    'weekend'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground hover:bg-muted/80'}"
+                    on:click={() => setRangeMode("weekend")}
+                >
+                    Weekend
+                </button>
+                <button
+                    class="px-3 py-2 rounded-2xl text-sm font-medium transition-colors {rangeMode ===
+                    'custom'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground hover:bg-muted/80'}"
+                    on:click={() => setRangeMode("custom")}
+                >
+                    Custom
+                </button>
+            </div>
+
+            {#if rangeMode === "custom"}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="space-y-1.5">
+                        <span class="text-xs font-medium text-muted-foreground"
+                            >From</span
+                        >
+                        <select
+                            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+                            value={rangeStartIndex}
+                            on:change={handleDayRangeStartChange}
+                        >
+                            {#each exportWindowDays as day}
+                                <option value={day.globalIndex}>
+                                    {getWindowDayLabel(day)}
+                                </option>
+                            {/each}
+                        </select>
+                    </label>
+
+                    <label class="space-y-1.5">
+                        <span class="text-xs font-medium text-muted-foreground"
+                            >To</span
+                        >
+                        <select
+                            class="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+                            value={rangeEndIndex}
+                            on:change={handleDayRangeEndChange}
+                        >
+                            {#each exportWindowDays as day}
+                                <option value={day.globalIndex}>
+                                    {getWindowDayLabel(day)}
+                                </option>
+                            {/each}
+                        </select>
+                    </label>
+                </div>
+
+                <p class="text-xs text-muted-foreground leading-relaxed">
+                    Custom can span across
+                    <span class="font-medium text-foreground">previous</span>,
+                    <span class="font-medium text-foreground">current</span>,
+                    and
+                    <span class="font-medium text-foreground">upcoming</span>
+                    week. Example:
+                    <span class="font-medium text-foreground"
+                        >last Sunday → next Tuesday</span
+                    >.
+                </p>
+            {/if}
+        </fieldset>
+
         <!-- Preview -->
         {#if showPreview}
             <div
@@ -593,19 +927,7 @@
                 >
                     <div
                         id="export-preview"
-                        style="width: {layoutMode === 'grid'
-                            ? '900px'
-                            : layoutMode === 'list'
-                              ? '400px'
-                              : '360px'}; min-width: {layoutMode === 'grid'
-                            ? '900px'
-                            : layoutMode === 'list'
-                              ? '400px'
-                              : '360px'}; max-width: {layoutMode === 'grid'
-                            ? '900px'
-                            : layoutMode === 'list'
-                              ? '400px'
-                              : '360px'}; position: relative; {$exportSettings.backgroundMode ===
+                        style="width: {previewWidth}; min-width: {previewWidth}; max-width: {previewWidth}; position: relative; {$exportSettings.backgroundMode ===
                         'color'
                             ? `background-color: ${$exportSettings.backgroundColor};`
                             : ''} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
@@ -676,103 +998,146 @@
                             </div>
 
                             {#if layoutMode === "grid"}
-                                <div class="grid grid-cols-4 gap-3 p-4 pt-0">
-                                    {#each days as day, dayIndex}
+                                <div class="p-4 pt-0 space-y-3">
+                                    <div>
                                         <div
-                                            class="p-2"
-                                            style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: {$exportSettings.borderRadius}px;"
+                                            class="grid gap-3"
+                                            style="grid-template-columns: repeat({gridColumnCount}, minmax(0, 1fr)); width: {shouldCenterGridDays
+                                                ? centeredGridWidth
+                                                : '100%'};"
                                         >
-                                            <div
-                                                class="mb-2 pb-2"
-                                                style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
-                                            >
+                                            {#each visibleDays as dayEntry}
                                                 <div
-                                                    class="font-semibold text-xs"
+                                                    class="p-2"
+                                                    style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: {$exportSettings.borderRadius}px;"
+                                                >
+                                                    <div
+                                                        class="mb-2 pb-2"
+                                                        style="border-bottom: 1px solid {$exportSettings.accentColor}30;"
+                                                    >
+                                                        <div
+                                                            class="font-semibold text-xs"
+                                                            style="color: {$exportSettings.textColor};"
+                                                        >
+                                                            {WEEKDAYS_DE[
+                                                                dayEntry
+                                                                    .dayIndex
+                                                            ]} ·
+                                                            <span
+                                                                style="opacity: 0.7; font-weight: normal;"
+                                                                >{formatDate(
+                                                                    dayEntry.date,
+                                                                )}</span
+                                                            >
+                                                        </div>
+                                                    </div>
+                                                    <div class="space-y-2">
+                                                        {#if dayEntry.activities.length === 0}
+                                                            <div
+                                                                class="text-xs text-center"
+                                                                style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
+                                                            >
+                                                                No activities
+                                                            </div>
+                                                        {:else}
+                                                            {#each dayEntry.activities as activity}
+                                                                <div
+                                                                    class="px-1.5 text-xs"
+                                                                    style="border-left: 3px solid {activity.color ||
+                                                                        $exportSettings.accentColor};"
+                                                                >
+                                                                    <div
+                                                                        class="font-semibold truncate"
+                                                                        style="color: {$exportSettings.textColor};"
+                                                                    >
+                                                                        {activity.summary}
+                                                                    </div>
+                                                                    {#if isAllDayEvent(activity)}
+                                                                        <div
+                                                                            class="text-xs"
+                                                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                        >
+                                                                            All-Day
+                                                                        </div>
+                                                                    {:else}
+                                                                        <div
+                                                                            class="text-xs"
+                                                                            style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                                        >
+                                                                            {activity.startTime}
+                                                                            - {activity.endTime}
+                                                                        </div>
+                                                                    {/if}
+                                                                </div>
+                                                            {/each}
+                                                        {/if}
+                                                    </div>
+                                                </div>
+                                            {/each}
+
+                                            {#if $bibleVerse.enabled && !shouldCenterGridDays}
+                                                <div
+                                                    class="p-2 text-center flex flex-col justify-center items-center h-full"
+                                                    style="border-radius: {$exportSettings.borderRadius}px;"
+                                                >
+                                                    <p
+                                                        class="text-sm italic mb-1"
+                                                        style="color: {$exportSettings.textColor};"
+                                                    >
+                                                        "{$bibleVerse
+                                                            .currentVerse.text}"
+                                                    </p>
+                                                    <p
+                                                        class="text-xs"
+                                                        style="color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                    >
+                                                        – {$bibleVerse
+                                                            .currentVerse
+                                                            .reference}
+                                                    </p>
+                                                </div>
+                                            {/if}
+                                        </div>
+                                    </div>
+
+                                    {#if $bibleVerse.enabled && shouldCenterGridDays}
+                                        <div>
+                                            <div
+                                                class="p-2 text-center flex flex-col justify-center items-center"
+                                                style="border-radius: {$exportSettings.borderRadius}px; width: {centeredGridWidth};"
+                                            >
+                                                <p
+                                                    class="text-sm italic mb-1"
                                                     style="color: {$exportSettings.textColor};"
                                                 >
-                                                    {WEEKDAYS_DE[dayIndex]} ·
-                                                    <span
-                                                        style="opacity: 0.7; font-weight: normal;"
-                                                        >{formatDate(day)}</span
-                                                    >
-                                                </div>
+                                                    "{$bibleVerse.currentVerse
+                                                        .text}"
+                                                </p>
+                                                <p
+                                                    class="text-xs"
+                                                    style="color: {$exportSettings.textColor}; opacity: 0.7;"
+                                                >
+                                                    – {$bibleVerse.currentVerse
+                                                        .reference}
+                                                </p>
                                             </div>
-                                            <div class="space-y-2">
-                                                {#if getDayActivities(dayIndex).length === 0}
-                                                    <div
-                                                        class="text-xs text-center"
-                                                        style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.5;"
-                                                    >
-                                                        No activities
-                                                    </div>
-                                                {:else}
-                                                    {#each getDayActivities(dayIndex) as activity}
-                                                        <div
-                                                            class="px-1.5 text-xs"
-                                                            style="border-left: 3px solid {activity.color ||
-                                                                $exportSettings.accentColor};"
-                                                        >
-                                                            <div
-                                                                class="font-semibold truncate"
-                                                                style="color: {$exportSettings.textColor};"
-                                                            >
-                                                                {activity.summary}
-                                                            </div>
-                                                            {#if isAllDayEvent(activity)}
-                                                                <div
-                                                                    class="text-xs"
-                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                                >
-                                                                    All-Day
-                                                                </div>
-                                                            {:else}
-                                                                <div
-                                                                    class="text-xs"
-                                                                    style="font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor}; opacity: 0.7;"
-                                                                >
-                                                                    {activity.startTime}
-                                                                    - {activity.endTime}
-                                                                </div>
-                                                            {/if}
-                                                        </div>
-                                                    {/each}
-                                                {/if}
-                                            </div>
-                                        </div>
-                                    {/each}
-                                    {#if $bibleVerse.enabled}
-                                        <div
-                                            class="p-2 text-center flex flex-col justify-center items-center h-full"
-                                            style="border-radius: {$exportSettings.borderRadius}px;"
-                                        >
-                                            <p
-                                                class="text-sm italic mb-1"
-                                                style="color: {$exportSettings.textColor};"
-                                            >
-                                                "{$bibleVerse.currentVerse
-                                                    .text}"
-                                            </p>
-                                            <p
-                                                class="text-xs"
-                                                style="color: {$exportSettings.textColor}; opacity: 0.7;"
-                                            >
-                                                – {$bibleVerse.currentVerse
-                                                    .reference}
-                                            </p>
                                         </div>
                                     {/if}
                                 </div>
                             {:else if layoutMode === "list"}
                                 <div class="space-y-1 p-4 pt-0">
-                                    {#each days as day, dayIndex}
+                                    {#each visibleDays as dayEntry, visibleIndex}
                                         <div
                                             class="p-3"
-                                            style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: {dayIndex ===
-                                            0
-                                                ? '16px 16px 4px 4px'
-                                                : dayIndex === 6
-                                                  ? '4px 4px 16px 16px'
-                                                  : '4px'};"
+                                            style="background-color: {getWeekContainerBackgroundStyle()}; border-radius: {visibleDays.length ===
+                                            1
+                                                ? '16px'
+                                                : visibleIndex === 0
+                                                  ? '16px 16px 4px 4px'
+                                                  : visibleIndex ===
+                                                      visibleDays.length - 1
+                                                    ? '4px 4px 16px 16px'
+                                                    : '4px'};"
                                         >
                                             <div
                                                 class="mb-2 pb-2"
@@ -782,12 +1147,14 @@
                                                     class="font-semibold text-sm"
                                                     style="color: {$exportSettings.textColor};"
                                                 >
-                                                    {WEEKDAYS_DE[dayIndex]} ·
-                                                    {formatDate(day)}
+                                                    {WEEKDAYS_DE[
+                                                        dayEntry.dayIndex
+                                                    ]} ·
+                                                    {formatDate(dayEntry.date)}
                                                 </div>
                                             </div>
                                             <div class="space-y-2">
-                                                {#if getDayActivities(dayIndex).length === 0}
+                                                {#if dayEntry.activities.length === 0}
                                                     <div
                                                         class="text-sm text-center"
                                                         style="color: {$exportSettings.textColor}; opacity: 0.5;"
@@ -795,7 +1162,7 @@
                                                         No activities
                                                     </div>
                                                 {:else}
-                                                    {#each getDayActivities(dayIndex) as activity}
+                                                    {#each dayEntry.activities as activity}
                                                         <div
                                                             class="px-2 text-sm"
                                                             style="border-left: 3px solid {activity.color ||
@@ -855,7 +1222,7 @@
                             {:else}
                                 <!-- Compact view (revised) -->
                                 <div class="space-y-1.5 p-4 pt-0 pr-0">
-                                    {#each days as day, dayIndex}
+                                    {#each visibleDays as dayEntry}
                                         <div class="p-0">
                                             <div class="flex gap-0.5">
                                                 <div
@@ -869,13 +1236,16 @@
                                                         <div
                                                             style="font-size:14px; font-weight:600; color: {$exportSettings.textColor};"
                                                         >
-                                                            {formatDate(day)}
+                                                            {formatDate(
+                                                                dayEntry.date,
+                                                            )}
                                                         </div>
                                                         <div
                                                             style="font-size:11px; font-weight:500; opacity:0.7; color: {$exportSettings.textColor}; text-align:right;"
                                                         >
                                                             {WEEKDAYS_DE[
-                                                                dayIndex
+                                                                dayEntry
+                                                                    .dayIndex
                                                             ]}
                                                         </div>
                                                     </div>
@@ -884,7 +1254,7 @@
                                                     class="flex-1"
                                                     style="background-color: {getWeekContainerBackgroundStyle()};border-radius: 2px 0 0 2px;"
                                                 >
-                                                    {#if getDayActivities(dayIndex).length === 0}
+                                                    {#if dayEntry.activities.length === 0}
                                                         <div
                                                             class="italic opacity-40 flex justify-center items-center h-full p-1"
                                                             style="font-size:11px; color: {$exportSettings.textColor};"
@@ -895,7 +1265,7 @@
                                                         <div
                                                             class="space-y-1 p-1"
                                                         >
-                                                            {#each getDayActivities(dayIndex) as activity}
+                                                            {#each dayEntry.activities as activity}
                                                                 <div
                                                                     class="grid"
                                                                     style="grid-template-columns: 80px 1fr; font-size:11px; line-height:1.2; color: {$exportSettings.textColor}; font-family: {$exportSettings.bodyFontFamily};"

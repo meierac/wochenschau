@@ -1,5 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
+    import { getCurrentWeek as getTodayWeekInfo } from "../utils/date";
     import IconButton from "./IconButton.svelte";
     import Button from "./Button.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
@@ -19,6 +20,9 @@
     let selectedWeek = currentWeek;
     let selectedYear = currentYear;
 
+    const todayWeekInfo = getTodayWeekInfo();
+    const actualCurrentWeek = todayWeekInfo.week;
+    const actualCurrentYear = todayWeekInfo.year;
     const currentFullYear = new Date().getFullYear();
     const years = [currentFullYear, currentFullYear + 1];
     const weeks = Array.from({ length: 52 }, (_, i) => i + 1);
@@ -38,6 +42,14 @@
             // Close after a tick to allow any parent listener to process weekSelected first
             queueMicrotask(() => handleClose());
         }
+    }
+
+    function isActualCurrentWeek(week: number, year: number): boolean {
+        return week === actualCurrentWeek && year === actualCurrentYear;
+    }
+
+    function isActiveWeek(week: number, year: number): boolean {
+        return week === currentWeek && year === currentYear;
     }
 </script>
 
@@ -131,15 +143,39 @@
             <legend class="text-sm font-semibold text-foreground">
                 Week {selectedWeek}
             </legend>
+            <div class="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+                <div
+                    class="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-1"
+                >
+                    <span class="h-2 w-2 rounded-full bg-primary"></span>
+                    Active week
+                </div>
+                <div
+                    class="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-1"
+                >
+                    <span
+                        class="h-2 w-2 rounded-full border-2 border-foreground"
+                    ></span>
+                    Current week
+                </div>
+            </div>
             <div class="grid grid-cols-6 gap-2">
                 {#each weeks as week}
+                    {@const isCurrent = isActualCurrentWeek(week, selectedYear)}
+                    {@const isActive = isActiveWeek(week, selectedYear)}
                     <Button
                         on:click={() => selectWeek(week)}
                         aria-pressed={selectedWeek === week}
-                        class={`px-2 py-2 rounded text-sm font-semibold transition-colors ${
-                            selectedWeek === week
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted/50 text-muted-foreground hover:bg-muted/80"
+                        class={`px-2 py-2 rounded text-sm font-semibold transition-colors border ${
+                            isActive
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-muted/50 text-muted-foreground hover:bg-muted/80 border-transparent"
+                        } ${
+                            isCurrent
+                                ? isActive
+                                    ? "ring-2 ring-foreground/70 ring-offset-1 ring-offset-background"
+                                    : "border-foreground text-foreground"
+                                : ""
                         }`}
                     >
                         {week}
