@@ -150,6 +150,18 @@
     $: titleTextShadow = getTitleTextShadow();
 
     /**
+     * Generate text-shadow CSS for week number drop shadow
+     */
+    function getWeekNumberTextShadow(): string {
+        if (!$exportSettings.weekNumberDropShadowEnabled) {
+            return "none";
+        }
+        return `${$exportSettings.weekNumberDropShadowOffsetX}px ${$exportSettings.weekNumberDropShadowOffsetY}px 0 ${$exportSettings.weekNumberDropShadowColor}`;
+    }
+
+    $: weekNumberTextShadow = getWeekNumberTextShadow();
+
+    /**
      * Get week container background style with opacity
      */
     function getWeekContainerBackgroundStyle(): string {
@@ -639,7 +651,7 @@
                                         </h2>
                                         <p
                                             class="font-semibold"
-                                            style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
+                                            style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity}; text-shadow: {weekNumberTextShadow};"
                                         >
                                             KW{$currentWeek}
                                         </p>
@@ -655,7 +667,7 @@
                                     {#if $exportSettings.showWeekNumber}
                                         <p
                                             class="font-semibold"
-                                            style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity};"
+                                            style="font-family: {weekNumberFontFamily}; color: {weekNumberColor}; font-size: {weekNumberFontSize}px; opacity: {weekNumberOpacity}; text-shadow: {weekNumberTextShadow};"
                                         >
                                             KW{$currentWeek}
                                         </p>

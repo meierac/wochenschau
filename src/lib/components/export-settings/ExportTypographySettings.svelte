@@ -253,6 +253,57 @@
                     bind:value={$exportSettings.weekNumberOpacity}
                     {labelClass}
                 />
+
+                <!-- Week Number Drop Shadow Settings -->
+                <div class="space-y-4 pt-4 border-t border-border/50">
+                    <div class="flex items-center justify-between">
+                        <label for={fieldIds.weekNumberDropShadowEnabled} class={toggleLabelClass}>
+                            Enable drop shadow
+                        </label>
+                        <input
+                            id={fieldIds.weekNumberDropShadowEnabled}
+                            type="checkbox"
+                            bind:checked={$exportSettings.weekNumberDropShadowEnabled}
+                            class="w-4 h-4"
+                        />
+                    </div>
+
+                    {#if $exportSettings.weekNumberDropShadowEnabled}
+                        <div>
+                            <ColorField
+                                id={fieldIds.weekNumberDropShadowColor}
+                                label="Drop shadow color"
+                                bind:value={$exportSettings.weekNumberDropShadowColor}
+                                placeholder="#000000"
+                                {labelClass}
+                                {colorInputClass}
+                                textInputClass={monoInputClass}
+                            />
+                        </div>
+
+                        <SliderField
+                            id={fieldIds.weekNumberDropShadowOffsetX}
+                            label="Shadow X offset"
+                            suffix="px"
+                            min={-10}
+                            max={10}
+                            step={1}
+                            bind:value={$exportSettings.weekNumberDropShadowOffsetX}
+                            {labelClass}
+                        />
+
+                        <SliderField
+                            id={fieldIds.weekNumberDropShadowOffsetY}
+                            label="Shadow Y offset"
+                            suffix="px"
+                            min={-10}
+                            max={10}
+                            step={1}
+                            bind:value={$exportSettings.weekNumberDropShadowOffsetY}
+                            {labelClass}
+                        />
+                    {/if}
+                </div>
             {/if}
 
             {#if $exportSettings.syncWeekNumberWithTitle}

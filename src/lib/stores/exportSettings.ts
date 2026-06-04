@@ -27,6 +27,10 @@ export interface ExportSettings {
   weekNumberFontSize: number; // Dedicated week number size when not synced
   weekNumberColor: string; // Dedicated week number color
   weekNumberOpacity: number; // 0-100 opacity for week number
+  weekNumberDropShadowEnabled: boolean; // Enable drop shadow for week number text
+  weekNumberDropShadowColor: string; // Color of the drop shadow
+  weekNumberDropShadowOffsetX: number; // X offset in pixels
+  weekNumberDropShadowOffsetY: number; // Y offset in pixels
 
   // Background
   backgroundMode: "color" | "image"; // Which background to use
@@ -72,6 +76,10 @@ const defaultSettings: ExportSettings = {
   weekNumberFontSize: 24,
   weekNumberColor: "#ffffff",
   weekNumberOpacity: 80,
+  weekNumberDropShadowEnabled: false,
+  weekNumberDropShadowColor: "#000000",
+  weekNumberDropShadowOffsetX: 2,
+  weekNumberDropShadowOffsetY: 2,
 
   // Background
   backgroundMode: "color",
@@ -128,6 +136,18 @@ function createExportSettingsStore() {
         parsed.weekNumberColor ?? defaultSettings.weekNumberColor,
       weekNumberOpacity:
         parsed.weekNumberOpacity ?? defaultSettings.weekNumberOpacity,
+      weekNumberDropShadowEnabled:
+        parsed.weekNumberDropShadowEnabled ??
+        defaultSettings.weekNumberDropShadowEnabled,
+      weekNumberDropShadowColor:
+        parsed.weekNumberDropShadowColor ??
+        defaultSettings.weekNumberDropShadowColor,
+      weekNumberDropShadowOffsetX:
+        parsed.weekNumberDropShadowOffsetX ??
+        defaultSettings.weekNumberDropShadowOffsetX,
+      weekNumberDropShadowOffsetY:
+        parsed.weekNumberDropShadowOffsetY ??
+        defaultSettings.weekNumberDropShadowOffsetY,
       backgroundMode: parsed.backgroundMode ?? "color",
 
       backgroundImageUrl: parsed.backgroundImageUrl ?? null,

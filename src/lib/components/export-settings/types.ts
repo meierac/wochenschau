@@ -16,6 +16,10 @@ export type FieldIdMap = {
   weekNumberFontSize: string;
   weekNumberColor: string;
   weekNumberOpacity: string;
+  weekNumberDropShadowEnabled: string;
+  weekNumberDropShadowColor: string;
+  weekNumberDropShadowOffsetX: string;
+  weekNumberDropShadowOffsetY: string;
   headerFont: string;
   bodyFont: string;
   textColor: string;
@@ -45,6 +49,10 @@ export type TypographyFieldIds = Pick<
   | "weekNumberFontSize"
   | "weekNumberColor"
   | "weekNumberOpacity"
+  | "weekNumberDropShadowEnabled"
+  | "weekNumberDropShadowColor"
+  | "weekNumberDropShadowOffsetX"
+  | "weekNumberDropShadowOffsetY"
   | "headerFont"
   | "bodyFont"
   | "textColor"
