@@ -533,20 +533,20 @@
                     {#if currentPage === "calendar"}
                         <!-- Desktop Header -->
                         <div
-                            class="mb-6 mx-4 mt-2 flex items-start justify-between gap-4"
+                            class="mb-6 mr-4 mt-2 flex items-start justify-between gap-4"
                         >
                             <div
                                 class="flex min-w-0 flex-wrap items-center gap-4"
                             >
                                 <div
-                                    class="flex items-center gap-1 rounded-3xl bg-secondary p-1"
+                                    class="flex items-center floating-glass-surface floating-glass-pill p-1"
                                 >
                                     <button
                                         on:click={() =>
                                             (desktopCalendarView = "week")}
                                         class={`rounded-3xl px-4 py-2 text-sm font-semibold transition-colors ${
                                             desktopCalendarView === "week"
-                                                ? "bg-primary text-primary-foreground"
+                                                ? "bg-primary/50 text-primary-foreground"
                                                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                         }`}
                                         aria-label="Show week view"
@@ -560,7 +560,7 @@
                                             (desktopCalendarView = "month")}
                                         class={`rounded-3xl px-4 py-2 text-sm font-semibold transition-colors ${
                                             desktopCalendarView === "month"
-                                                ? "bg-primary text-primary-foreground"
+                                                ? "bg-primary/50 text-primary-foreground"
                                                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                         }`}
                                         aria-label="Show month view"
@@ -572,7 +572,7 @@
                                 </div>
 
                                 <div
-                                    class="flex items-center gap-0 rounded-3xl bg-secondary py-0.5 px-1"
+                                    class="flex items-center gap-0.5 floating-glass-surface floating-glass-pill py-0.5 px-0.5"
                                 >
                                     <button
                                         on:click={() =>
@@ -602,9 +602,9 @@
                                     </button>
 
                                     <div
-                                        class="flex items-center justify-center gap-2 px-3 py-2 rounded-3xl text-muted-foreground text-center"
+                                        class="flex items-center justify-center gap-2 px-0 py-2 rounded-3xl text-muted-foreground text-center"
                                     >
-                                        <span
+                                        <!-- <span
                                             class="flex h-6 w-6 shrink-0 items-center justify-center"
                                         >
                                             <svg
@@ -620,9 +620,9 @@
                                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                                 />
                                             </svg>
-                                        </span>
+                                        </span> -->
                                         <span
-                                            class="text-md font-semibold leading-none whitespace-nowrap capitalize"
+                                            class="text-xl font-semibold leading-none whitespace-nowrap capitalize"
                                         >
                                             {#if desktopCalendarView === "month"}
                                                 {desktopMonthLabel}
@@ -632,7 +632,7 @@
                                         </span>
                                         {#if desktopCalendarView === "week"}
                                             <span
-                                                class="block text-md leading-none text-muted-foreground whitespace-nowrap"
+                                                class="block text-xl leading-none text-muted-foreground whitespace-nowrap"
                                             >
                                                 {currentWeekDateRange}
                                             </span>
@@ -669,7 +669,7 @@
                                 {#if !isViewingCurrentDesktopPeriod}
                                     <button
                                         on:click={handleJumpToToday}
-                                        class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                        class="px-4 py-2 floating-glass-surface floating-glass-pill bg-secondary/10 text-secondary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
                                         aria-label={desktopCalendarView ===
                                         "month"
                                             ? "Go to current month"
@@ -700,10 +700,10 @@
                                 <button
                                     on:click={handleRefreshSubscriptions}
                                     disabled={syncingActive}
-                                    class="px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
+                                    class="px-4 py-2 floating-glass-surface floating-glass-pill font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
                             {syncingActive
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-secondary text-secondary-foreground hover:opacity-90'}"
+                                        ? 'bg-primary/10 text-primary-foreground'
+                                        : 'bg-secondary/10 text-secondary-foreground hover:opacity-90'}"
                                     aria-label="Refresh calendar subscriptions"
                                     title={syncingActive
                                         ? $refreshSummary
@@ -746,7 +746,7 @@
                                 <!-- Export Button -->
                                 <button
                                     on:click={handleOpenExport}
-                                    class="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                    class="px-4 py-2 floating-glass-surface floating-glass-pill bg-secondary/10 text-secondary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
                                     aria-label="Export weekly agenda"
                                     title="Export as image"
                                 >
@@ -769,7 +769,7 @@
                                 <!-- Add Activity Button -->
                                 <button
                                     on:click={handleOpenAddActivity}
-                                    class="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                    class="px-4 py-2 floating-glass-surface floating-glass-pill bg-primary/50 text-primary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
                                     aria-label="Add activity"
                                     title="Add activity"
                                 >

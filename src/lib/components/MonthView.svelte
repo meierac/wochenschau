@@ -104,7 +104,7 @@
 </script>
 
 <div
-    class="flex h-full min-h-0 flex-col rounded-t-3xl rounded-b-xl border border-border bg-card p-0.5 overflow-hidden"
+    class="flex h-full min-h-0 flex-col rounded-3xl floating-glass-surface overflow-hidden"
 >
     <div class="grid grid-cols-7 gap-2 py-3">
         {#each weekdayLabels as weekday}
@@ -116,13 +116,13 @@
         {/each}
     </div>
 
-    <div class="grid flex-1 auto-rows-fr grid-cols-7 gap-0.5 overflow-y-auto">
+    <div class="grid flex-1 auto-rows-fr grid-cols-7 overflow-y-auto">
         {#each monthCells as cell}
             <div
-                class={`flex min-h-[130px] flex-col rounded-lg border p-1 ${
+                class={`flex min-h-[130px] flex-col border p-1 ${
                     cell.inCurrentMonth
                         ? "border-border bg-background"
-                        : "border-border/60 bg-card text-muted-foreground"
+                        : "border-border/60 text-muted-foreground"
                 }`}
             >
                 <div class="mb-1 flex items-center justify-between gap-2">

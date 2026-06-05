@@ -21,7 +21,7 @@
 </script>
 
 <aside
-    class={`h-full shrink-0 overflow-hidden p-1.5 border-r border-border  transition-[width] duration-200 ease-out ${
+    class={`h-[stretched] shrink-0 overflow-hidden floating-glass-surface rounded-[2rem]  m-4 p-1.5 border-r border-border  transition-[width] duration-200 ease-out ${
         collapsed ? "w-20" : "w-72"
     }`}
 >

@@ -34,7 +34,7 @@
 </script>
 
 <div
-    class="flex flex-col h-full bg-card rounded-3xl border border-border p-2 md:p-3 {dayIndex ===
+    class="flex flex-col h-full floating-glass-surface rounded-3xl p-2 md:p-3 {dayIndex ===
     0
         ? 'md:mt-0 mt-14'
         : ''}"

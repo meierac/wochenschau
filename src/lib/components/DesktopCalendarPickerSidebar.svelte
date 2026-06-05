@@ -15,7 +15,7 @@
 </script>
 
 <aside
-    class="flex h-full w-[28rem] shrink-0 flex-col overflow-hidden rounded-3xl border border-border bg-card backdrop-blur-xl"
+    class="flex h-full w-[25rem] shrink-0 flex-col overflow-hidden rounded-3xl floating-glass-surface"
 >
     <div class="flex-1 overflow-y-auto">
         <div class="space-y-6 p-4">
