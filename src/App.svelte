@@ -852,13 +852,13 @@
         <div class="h-screen flex flex-col pb-0 relative overflow-hidden">
             <!-- Mobile Header -->
             <div
-                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/100 to-transparent px-2 pb-9 backdrop-blur-lg pointer-events-none"
+                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/100 to-transparent pr-3 pl-1 pb-9 backdrop-blur-lg pointer-events-none"
                 style="padding-top: calc(0rem + env(safe-area-inset-top)); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
             >
                 <div class="flex items-center justify-between gap-0.5">
                     {#if currentPage === "calendar"}
                         <div
-                            class="pointer-events-auto flex items-center border-muted bg-secondary rounded-3xl p-0.5"
+                            class="pointer-events-auto flex items-center p-0.5"
                         >
                             <button
                                 on:click={() => (showWeekPicker = true)}
@@ -867,7 +867,7 @@
                                 title={`Pick week · ${currentWeekDateRange}`}
                                 type="button"
                             >
-                                <span
+                                <!-- <span
                                     class="flex h-6 w-6 shrink-0 items-center justify-center"
                                 >
                                     <svg
@@ -883,15 +883,15 @@
                                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                         />
                                     </svg>
-                                </span>
+                                </span> -->
 
                                 <span
-                                    class="block text-md font-semibold leading-none whitespace-nowrap"
+                                    class="block text-xl font-semibold leading-none whitespace-nowrap"
                                 >
                                     W{$currentWeek}
                                 </span>
                                 <span
-                                    class="block text-md leading-none text-muted-foreground whitespace-nowrap"
+                                    class="block text-xl leading-none text-muted-foreground whitespace-nowrap"
                                 >
                                     {currentWeekDateRange}
                                 </span>
@@ -906,7 +906,7 @@
                     {/if}
 
                     <div
-                        class="pointer-events-auto flex items-center border-muted bg-secondary rounded-3xl p-0.5"
+                        class="pointer-events-auto flex items-center floating-glass-surface floating-glass-pill p-0.5"
                     >
                         {#if currentPage === "calendar"}
                             <button
