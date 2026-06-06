@@ -162,7 +162,7 @@
     <div
         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 flex-1 overflow-y-auto md:pb-0 pt-16 md:pt-0"
         style="padding-bottom: {isDesktop
-            ? '20px'
+            ? '0px'
             : '200px'}; touch-action: pan-y;"
         on:touchstart={handleWeekSwipeStart}
         on:touchmove={handleWeekSwipeMove}

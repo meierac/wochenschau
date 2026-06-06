@@ -546,7 +546,7 @@
                                             (desktopCalendarView = "week")}
                                         class={`rounded-3xl px-4 py-2 text-sm font-semibold transition-colors ${
                                             desktopCalendarView === "week"
-                                                ? "bg-primary/50 text-primary-foreground"
+                                                ? "bg-primary text-primary-foreground"
                                                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                         }`}
                                         aria-label="Show week view"
@@ -560,7 +560,7 @@
                                             (desktopCalendarView = "month")}
                                         class={`rounded-3xl px-4 py-2 text-sm font-semibold transition-colors ${
                                             desktopCalendarView === "month"
-                                                ? "bg-primary/50 text-primary-foreground"
+                                                ? "bg-primary text-primary-foreground"
                                                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                         }`}
                                         aria-label="Show month view"
@@ -769,7 +769,7 @@
                                 <!-- Add Activity Button -->
                                 <button
                                     on:click={handleOpenAddActivity}
-                                    class="px-4 py-2 floating-glass-surface floating-glass-pill bg-primary/50 text-primary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                    class="px-4 py-2 floating-glass-surface floating-glass-pill bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
                                     aria-label="Add activity"
                                     title="Add activity"
                                 >
@@ -808,7 +808,7 @@
                                 on:weekSelected={handleWeekSelected}
                                 on:monthSelected={handleMonthSelected}
                             />
-                            <div class="min-w-0 flex-1 overflow-hidden">
+                            <div class="min-w-[52rem] flex-1 overflow-hidden">
                                 {#if desktopCalendarView === "month"}
                                     <MonthView
                                         referenceDate={desktopMonthDate}

@@ -106,7 +106,10 @@
         <!-- Drop Shadow Settings -->
         <div class="space-y-4 pt-4 border-t border-border/50">
             <div class="flex items-center justify-between">
-                <label for={fieldIds.titleDropShadowEnabled} class={toggleLabelClass}>
+                <label
+                    for={fieldIds.titleDropShadowEnabled}
+                    class={toggleLabelClass}
+                >
                     Enable drop shadow
                 </label>
                 <input
@@ -257,13 +260,18 @@
                 <!-- Week Number Drop Shadow Settings -->
                 <div class="space-y-4 pt-4 border-t border-border/50">
                     <div class="flex items-center justify-between">
-                        <label for={fieldIds.weekNumberDropShadowEnabled} class={toggleLabelClass}>
+                        <label
+                            for={fieldIds.weekNumberDropShadowEnabled}
+                            class={toggleLabelClass}
+                        >
                             Enable drop shadow
                         </label>
                         <input
                             id={fieldIds.weekNumberDropShadowEnabled}
                             type="checkbox"
-                            bind:checked={$exportSettings.weekNumberDropShadowEnabled}
+                            bind:checked={
+                                $exportSettings.weekNumberDropShadowEnabled
+                            }
                             class="w-4 h-4"
                         />
                     </div>
@@ -273,7 +281,9 @@
                             <ColorField
                                 id={fieldIds.weekNumberDropShadowColor}
                                 label="Drop shadow color"
-                                bind:value={$exportSettings.weekNumberDropShadowColor}
+                                bind:value={
+                                    $exportSettings.weekNumberDropShadowColor
+                                }
                                 placeholder="#000000"
                                 {labelClass}
                                 {colorInputClass}
@@ -288,7 +298,9 @@
                             min={-10}
                             max={10}
                             step={1}
-                            bind:value={$exportSettings.weekNumberDropShadowOffsetX}
+                            bind:value={
+                                $exportSettings.weekNumberDropShadowOffsetX
+                            }
                             {labelClass}
                         />
 
@@ -299,7 +311,9 @@
                             min={-10}
                             max={10}
                             step={1}
-                            bind:value={$exportSettings.weekNumberDropShadowOffsetY}
+                            bind:value={
+                                $exportSettings.weekNumberDropShadowOffsetY
+                            }
                             {labelClass}
                         />
                     {/if}

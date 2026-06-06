@@ -104,7 +104,7 @@
 </script>
 
 <div
-    class="flex h-full min-h-0 flex-col rounded-3xl floating-glass-surface overflow-hidden"
+    class="flex h-full min-h-0 flex-col rounded-3xl card-glass-surface overflow-hidden"
 >
     <div class="grid grid-cols-7 gap-2 py-3">
         {#each weekdayLabels as weekday}

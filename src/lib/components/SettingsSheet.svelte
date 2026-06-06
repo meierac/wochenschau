@@ -781,7 +781,7 @@
                                 <button
                                     on:click={() => selectSetting(item.id)}
                                     style="border-radius: 28px;"
-                                    class="w-full p-4 bg-muted/50 border border-border transition-colors text-left flex items-center justify-between gap-3"
+                                    class="w-full p-4 bg-cards/50 border border-border transition-colors text-left flex items-center justify-between gap-3"
                                 >
                                     <div class="shrink-0 self-center">
                                         <SettingIcon icon={item.icon} />
@@ -903,7 +903,7 @@
                                 class={`w-full p-3 transition-colors text-left flex items-center justify-between gap-3 ${
                                     selectedSetting === item.id
                                         ? "bg-primary text-primary-foreground"
-                                        : "hover:bg-muted/50"
+                                        : "hover:bg-card/20"
                                 }`}
                             >
                                 <div class="shrink-0 self-center">

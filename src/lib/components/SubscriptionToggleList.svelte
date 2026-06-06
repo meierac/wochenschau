@@ -170,7 +170,7 @@
         <div class="space-y-2">
             {#each $subscriptions as subscription (subscription.id)}
                 <div
-                    class="flex w-full items-center gap-3 rounded-xl bg-muted/60 px-3 py-3"
+                    class="flex w-full items-center gap-3 rounded-3xl bg-muted/60 px-3 py-3"
                 >
                     <!-- Color indicator / Avatar -->
                     <button
