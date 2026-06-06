@@ -67,6 +67,9 @@
     let showDeleteConfirm = false;
     let desktopCalendarView: "week" | "month" = "week";
 
+    let screenWidth = typeof window !== "undefined" ? window.innerWidth : 0;
+    let userManuallyCollapsed = false;
+
     // Unified selection state: all selection is date-based
     let selectedDate = getCalendarToday();
 
@@ -115,6 +118,16 @@
 
     function handleResize() {
         isDesktop = window.innerWidth >= 768;
+        screenWidth = window.innerWidth;
+
+        if (window.innerWidth < 1200) {
+            desktopSidebarCollapsed = true;
+            return;
+        }
+
+        if (!userManuallyCollapsed) {
+            desktopSidebarCollapsed = false;
+        }
     }
 
     function handleOpenAddActivity() {
@@ -518,6 +531,7 @@
             <div class="flex h-full gap-4">
                 <DesktopSidebar
                     collapsed={desktopSidebarCollapsed}
+                    isSmallScreen={screenWidth < 1200}
                     activeView={currentPage}
                     on:openCalendar={handleOpenCalendarPage}
                     on:openMessages={handleOpenMessagesPage}
@@ -525,8 +539,12 @@
                     on:openFiles={handleOpenFilesPage}
                     on:openProfile={handleOpenProfilePage}
                     on:openSettings={handleOpenSettings}
-                    on:toggleCollapse={() =>
-                        (desktopSidebarCollapsed = !desktopSidebarCollapsed)}
+                    on:toggleCollapse={() => {
+                        desktopSidebarCollapsed = !desktopSidebarCollapsed;
+                        if (screenWidth >= 1200) {
+                            userManuallyCollapsed = desktopSidebarCollapsed;
+                        }
+                    }}
                 />
 
                 <div class="flex min-w-0 flex-1 flex-col overflow-hidden p-4">
