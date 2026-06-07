@@ -184,7 +184,7 @@
         {#if $bibleVerse.enabled}
             <div class="h-full flex flex-col">
                 <div
-                    class="flex flex-col h-full bg-card rounded-3xl border border-border p-2 md:p-3"
+                    class="flex flex-col h-full card-glass-surface rounded-3xl p-2 md:p-3"
                 >
                     <div
                         class="flex-1 flex flex-col justify-center items-center text-center"

@@ -569,11 +569,11 @@
 
 <svelte:window on:resize={handleResize} />
 
-<main class="h-screen bg-background text-foreground overflow-hidden">
+<main class="h-screen pt-[1rem] bg-background text-foreground overflow-hidden">
     {#if isDesktop}
         <!-- Desktop Layout -->
         <div class="mx-auto h-screen max-w-10xl">
-            <div class="flex h-full gap-4">
+            <div class="flex h-[calc(100vh-1rem)] gap-4">
                 <DesktopSidebar
                     collapsed={desktopSidebarCollapsed}
                     isSmallScreen={screenWidth < 1200}
@@ -598,7 +598,7 @@
                     {#if currentPage === "calendar"}
                         <!-- Desktop Header -->
                         <div
-                            class="mb-6 mr-4 mt-2 flex items-start justify-between gap-4 padding-top: calc(0rem + env(safe-area-inset-top))"
+                            class="mb-6 mr-4 mt-2 flex items-start justify-between gap-4"
                         >
                             <div
                                 class="flex min-w-0 flex-wrap items-center gap-4"
