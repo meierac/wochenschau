@@ -28,7 +28,7 @@
     style="border-radius: 50%;"
     type="button"
     class={cn(
-        "inline-flex items-center justify-center rounded-lg transition-all duration-150",
+        "floating-glass-surface inline-flex items-center justify-center rounded-lg transition-all duration-150",
         "disabled:pointer-events-none disabled:opacity-50",
         "touch-manipulation select-none",
         variants[variant],

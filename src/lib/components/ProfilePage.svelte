@@ -303,42 +303,6 @@
                     </div>
                 </dl>
             </section>
-
-            <section
-                class="rounded-3xl border border-border bg-background/70 p-6"
-            >
-                <h2 class="text-lg font-semibold">Profile summary</h2>
-                <div
-                    class="mt-6 flex flex-col items-center rounded-3xl bg-card/60 p-6 text-center"
-                >
-                    {#if profileImagePreview}
-                        <img
-                            src={profileImagePreview}
-                            alt="Profile"
-                            class="h-24 w-24 rounded-3xl object-cover border border-border"
-                        />
-                    {:else}
-                        <div
-                            class="flex h-24 w-24 items-center justify-center rounded-3xl bg-secondary text-2xl font-bold text-secondary-foreground"
-                        >
-                            {getInitials(currentProfile)}
-                        </div>
-                    {/if}
-                    <h3 class="mt-4 text-xl font-semibold">
-                        {formatValue(
-                            `${currentProfile.firstName} ${currentProfile.lastName}`.trim(),
-                        )}
-                    </h3>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        {currentProfile.username.trim()
-                            ? `@${currentProfile.username.trim()}`
-                            : "No username set"}
-                    </p>
-                    <p class="mt-4 text-sm text-muted-foreground">
-                        {formatValue(currentProfile.role)}
-                    </p>
-                </div>
-            </section>
         </div>
     {/if}
 </div>

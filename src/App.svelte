@@ -41,12 +41,13 @@
     import WeekPicker from "./lib/components/WeekPicker.svelte";
 
     import ActivityEditSheet from "./lib/components/ActivityEditSheet.svelte";
+    import { mobileHeaderActions } from "./lib/stores/mobilePageHeader";
     import type {
         SyncConflict,
         ConflictResolution,
         CalendarItem,
     } from "./lib/types/index";
-
+    import IconButton from "./lib/components/IconButton.svelte";
     let isDesktop =
         typeof window !== "undefined" ? window.innerWidth >= 768 : false;
 
@@ -57,7 +58,12 @@
 
     let showWeekPicker = false;
 
-    type AppPage = "calendar" | "messages" | "registrations" | "files";
+    type AppPage =
+        | "calendar"
+        | "messages"
+        | "registrations"
+        | "files"
+        | "settings";
 
     let showExport = false;
     let desktopSidebarCollapsed = false;
@@ -69,6 +75,18 @@
 
     let screenWidth = typeof window !== "undefined" ? window.innerWidth : 0;
     let userManuallyCollapsed = false;
+    let settingsCurrentSubPage: string | null = null;
+    let settingsSheetInstance: { goBack: () => void } | null = null;
+    let calendarPickerSheetOpen = false;
+
+    const settingsSubPageLabels: Record<string, string> = {
+        profile: "Profile",
+        templates: "Activity Templates",
+        ical: "Calendar Subscriptions",
+        export: "Export Settings",
+        bibleVerse: "Bible Verse",
+        about: "About",
+    };
 
     // Unified selection state: all selection is date-based
     let selectedDate = getCalendarToday();
@@ -117,13 +135,31 @@
     const REFRESH_INTERVAL_HOURS = 72; // Auto-refresh if data is older than 24 hours
 
     function handleResize() {
+        const wasDesktop = isDesktop;
         isDesktop = window.innerWidth >= 768;
         screenWidth = window.innerWidth;
+
+        // Settings tab is mobile-only: migrate to the desktop sheet on resize to desktop
+        if (!wasDesktop && isDesktop && currentPage === "settings") {
+            currentPage = "calendar";
+            settingsCurrentSubPage = null;
+            mobileHeaderActions.set([]);
+            showSettings = true;
+        }
+
+        // Desktop sheet is desktop-only: migrate to the settings tab on resize to mobile
+        if (wasDesktop && !isDesktop && showSettings) {
+            showSettings = false;
+            currentPage = "settings";
+        }
 
         if (window.innerWidth < 1200) {
             desktopSidebarCollapsed = true;
             return;
         }
+
+        // Close the calendar picker sheet when resizing back to large desktop
+        calendarPickerSheetOpen = false;
 
         if (!userManuallyCollapsed) {
             desktopSidebarCollapsed = false;
@@ -140,7 +176,11 @@
 
     function handleOpenSettings() {
         settingsInitialSetting = null;
-        showSettings = true;
+        if (isDesktop) {
+            showSettings = true;
+        } else {
+            currentPage = "settings";
+        }
     }
 
     function handleOpenCalendarPage() {
@@ -160,8 +200,12 @@
     }
 
     function handleOpenProfilePage() {
-        settingsInitialSetting = isDesktop ? "profile" : null;
-        showSettings = true;
+        settingsInitialSetting = "profile";
+        if (isDesktop) {
+            showSettings = true;
+        } else {
+            currentPage = "settings";
+        }
     }
 
     function handleCloseSettings() {
@@ -173,6 +217,7 @@
         if (page === "messages") return "Messages";
         if (page === "registrations") return "Registrations";
         if (page === "files") return "Files";
+        if (page === "settings") return "Settings";
         return "Calendar";
     }
 
@@ -532,7 +577,9 @@
                 <DesktopSidebar
                     collapsed={desktopSidebarCollapsed}
                     isSmallScreen={screenWidth < 1200}
-                    activeView={currentPage}
+                    activeView={currentPage === "settings"
+                        ? "calendar"
+                        : currentPage}
                     on:openCalendar={handleOpenCalendarPage}
                     on:openMessages={handleOpenMessagesPage}
                     on:openRegistrations={handleOpenRegistrationsPage}
@@ -551,7 +598,7 @@
                     {#if currentPage === "calendar"}
                         <!-- Desktop Header -->
                         <div
-                            class="mb-6 mr-4 mt-2 flex items-start justify-between gap-4"
+                            class="mb-6 mr-4 mt-2 flex items-start justify-between gap-4 padding-top: calc(0rem + env(safe-area-inset-top))"
                         >
                             <div
                                 class="flex min-w-0 flex-wrap items-center gap-4"
@@ -619,26 +666,19 @@
                                         </svg>
                                     </button>
 
-                                    <div
-                                        class="flex items-center justify-center gap-2 px-0 py-2 rounded-3xl text-muted-foreground text-center"
+                                    <button
+                                        type="button"
+                                        on:click={() =>
+                                            screenWidth < 1200 &&
+                                            (calendarPickerSheetOpen = true)}
+                                        class="flex items-center justify-center gap-2 px-2 py-2 rounded-3xl text-muted-foreground text-center {screenWidth <
+                                        1200
+                                            ? 'hover:bg-muted transition-colors cursor-pointer'
+                                            : 'cursor-default'}"
+                                        title={screenWidth < 1200
+                                            ? "Open calendar picker"
+                                            : ""}
                                     >
-                                        <!-- <span
-                                            class="flex h-6 w-6 shrink-0 items-center justify-center"
-                                        >
-                                            <svg
-                                                class="w-6 h-6"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                                />
-                                            </svg>
-                                        </span> -->
                                         <span
                                             class="text-xl font-semibold leading-none whitespace-nowrap capitalize"
                                         >
@@ -655,7 +695,7 @@
                                                 {currentWeekDateRange}
                                             </span>
                                         {/if}
-                                    </div>
+                                    </button>
 
                                     <button
                                         on:click={() =>
@@ -818,15 +858,17 @@
 
                         <!-- Desktop Calendar View -->
                         <div class="flex flex-1 gap-4 overflow-hidden">
-                            <DesktopCalendarPickerSidebar
-                                currentWeek={$currentWeek}
-                                currentYear={$currentYear}
-                                desktopViewMode={desktopCalendarView}
-                                selectedMonthDate={desktopMonthDate}
-                                on:weekSelected={handleWeekSelected}
-                                on:monthSelected={handleMonthSelected}
-                            />
-                            <div class="min-w-[52rem] flex-1 overflow-hidden">
+                            {#if screenWidth >= 1200}
+                                <DesktopCalendarPickerSidebar
+                                    currentWeek={$currentWeek}
+                                    currentYear={$currentYear}
+                                    desktopViewMode={desktopCalendarView}
+                                    selectedMonthDate={desktopMonthDate}
+                                    on:weekSelected={handleWeekSelected}
+                                    on:monthSelected={handleMonthSelected}
+                                />
+                            {/if}
+                            <div class="flex-1 overflow-hidden">
                                 {#if desktopCalendarView === "month"}
                                     <MonthView
                                         referenceDate={desktopMonthDate}
@@ -870,7 +912,7 @@
         <div class="h-screen flex flex-col pb-0 relative overflow-hidden">
             <!-- Mobile Header -->
             <div
-                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/100 to-transparent pr-3 pl-1 pb-9 backdrop-blur-lg pointer-events-none"
+                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/5 to-transparent pr-3 pl-1 pb-6 backdrop-blur-lg pointer-events-none"
                 style="padding-top: calc(0rem + env(safe-area-inset-top)); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
             >
                 <div class="flex items-center justify-between gap-0.5">
@@ -915,6 +957,39 @@
                                 </span>
                             </button>
                         </div>
+                    {:else if currentPage === "settings" && settingsCurrentSubPage !== null}
+                        <!-- Settings sub-page header: Back + Title (same style as calendar picker) -->
+                        <div
+                            class="pointer-events-auto flex items-center p-0.5"
+                        >
+                            <IconButton
+                                on:click={() => settingsSheetInstance?.goBack()}
+                                class="pointer-events-auto flex items-center justify-center ml-2 gap-2 rounded-3xl px-3 py-2 text-center text-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                aria-label="Back to settings"
+                                type="button"
+                            >
+                                <svg
+                                    class="h-5 w-5 shrink-0 text-muted-foreground"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M15 19l-7-7 7-7"
+                                    />
+                                </svg>
+                            </IconButton>
+                            <span
+                                class="block text-xl font-semibold leading-none whitespace-nowrap"
+                            >
+                                {settingsSubPageLabels[
+                                    settingsCurrentSubPage
+                                ] ?? settingsCurrentSubPage}
+                            </span>
+                        </div>
                     {:else}
                         <h1
                             class="min-w-0 text-2xl font-bold pointer-events-auto"
@@ -926,7 +1001,22 @@
                     <div
                         class="pointer-events-auto flex items-center floating-glass-surface floating-glass-pill p-0.5"
                     >
-                        {#if currentPage === "calendar"}
+                        {#if currentPage === "settings" && settingsCurrentSubPage !== null}
+                            <!-- Action buttons registered by the active sub-page -->
+                            {#each $mobileHeaderActions as action}
+                                <button
+                                    on:click={action.onClick}
+                                    class={`rounded-full px-3 py-2 text-sm font-semibold transition-colors active:bg-muted ${
+                                        action.variant === "ghost"
+                                            ? "text-muted-foreground hover:bg-muted"
+                                            : "text-foreground hover:bg-muted"
+                                    }`}
+                                    type="button"
+                                >
+                                    {action.label}
+                                </button>
+                            {/each}
+                        {:else if currentPage === "calendar"}
                             <button
                                 on:click={handleRefreshSubscriptions}
                                 disabled={syncingActive}
@@ -1052,6 +1142,26 @@
                         on:requestEditActivity={handleRequestEditActivity}
                     />
                 </div>
+            {:else if currentPage === "settings"}
+                <div class="flex-1 overflow-hidden">
+                    <SettingsSheet
+                        bind:this={settingsSheetInstance}
+                        isPage={true}
+                        isDesktop={false}
+                        initialSetting={settingsInitialSetting}
+                        on:close={() => {
+                            currentPage = "calendar";
+                            settingsInitialSetting = null;
+                            settingsCurrentSubPage = null;
+                            mobileHeaderActions.set([]);
+                        }}
+                        on:subpage={(e) => {
+                            settingsCurrentSubPage = e.detail.open
+                                ? e.detail.setting
+                                : null;
+                        }}
+                    />
+                </div>
             {:else}
                 <div class="flex-1 overflow-hidden px-4 pb-24 pt-24">
                     <ComingSoonPage
@@ -1061,15 +1171,17 @@
                 </div>
             {/if}
 
-            <!-- Floating Navigation Bar -->
-            <FloatingNav
-                activePage={currentPage}
-                on:navigateCalendar={handleOpenCalendarPage}
-                on:navigateProfile={handleOpenProfilePage}
-                on:navigateMessages={handleOpenMessagesPage}
-                on:navigateRegistrations={handleOpenRegistrationsPage}
-                on:navigateFiles={handleOpenFilesPage}
-            />
+            <!-- Floating Navigation Bar: hidden when a settings sub-page is open -->
+            {#if !(currentPage === "settings" && settingsCurrentSubPage !== null)}
+                <FloatingNav
+                    activePage={currentPage}
+                    on:navigateCalendar={handleOpenCalendarPage}
+                    on:navigateSettings={handleOpenSettings}
+                    on:navigateMessages={handleOpenMessagesPage}
+                    on:navigateRegistrations={handleOpenRegistrationsPage}
+                    on:navigateFiles={handleOpenFilesPage}
+                />
+            {/if}
         </div>
     {/if}
 </main>
@@ -1102,6 +1214,19 @@
 
 {#if showExport}
     <ExportSheet on:close={() => (showExport = false)} {isDesktop} />
+{/if}
+
+{#if calendarPickerSheetOpen}
+    <WeekPicker
+        isDesktop={true}
+        currentWeek={$currentWeek}
+        currentYear={$currentYear}
+        desktopViewMode={desktopCalendarView}
+        selectedMonthDate={desktopMonthDate}
+        on:weekSelected={handleWeekSelected}
+        on:monthSelected={handleMonthSelected}
+        on:close={() => (calendarPickerSheetOpen = false)}
+    />
 {/if}
 
 {#if editingActivity}

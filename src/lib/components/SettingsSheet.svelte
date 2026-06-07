@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, setContext } from "svelte";
     import { templates } from "../stores/templates";
     import { subscriptions } from "../stores/ical";
     import { activities } from "../stores/activities";
@@ -31,9 +31,22 @@
     import type { SyncConflict, ConflictResolution } from "../types/index";
     import type { SubscriptionDiff } from "../services/icalService";
     import { createEntityId } from "../utils/storage";
+    import { profile } from "../stores/profile";
+
+    $: profileImage = $profile.profileImage.trim();
+    $: profileName = `${$profile.firstName} ${$profile.lastName}`.trim();
+    $: profileUsername = $profile.username.trim();
+    $: profileRole = $profile.role.trim();
+    $: profileInitials =
+        `${$profile.firstName.charAt(0)}${$profile.lastName.charAt(0)}`.trim() ||
+        $profile.username.slice(0, 2).toUpperCase() ||
+        "U";
 
     export let isDesktop = false;
+    export let isPage = false;
     export let initialSetting: SettingType | null = null;
+
+    setContext("settingsIsPage", isPage);
 
     const dispatch = createEventDispatcher();
     const APP_VERSION = "1.0.0";
@@ -576,12 +589,18 @@
 
     function selectSetting(settingId: SettingType) {
         selectedSetting = settingId;
+        if (isPage) dispatch("subpage", { open: true, setting: settingId });
     }
 
     function backToList() {
         if (!isDesktop) {
             selectedSetting = null;
         }
+        if (isPage) dispatch("subpage", { open: false, setting: null });
+    }
+
+    export function goBack() {
+        backToList();
     }
 
     function parseICalToCalendarItems(
@@ -613,19 +632,16 @@
         : "Disabled";
 </script>
 
-<SwipeableSheet {isDesktop} desktopMaxWidth="56rem" on:close={handleClose}>
-    <div
-        class={`relative flex flex-col ${isDesktop ? "md:h-[80vh]" : "max-h-[90vh]"}`}
-    >
+{#if isPage}
+    <div class="relative flex flex-col h-full overflow-hidden">
+        <!-- Loader overlay -->
         {#if showGlobalLoader}
-            <!-- Loader Overlay -->
             <div
                 class="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
             >
                 <div
                     class="flex flex-col items-center gap-4 w-[220px] text-center"
                 >
-                    <!-- Spinner -->
                     <div class="relative w-14 h-14">
                         <div
                             class="absolute inset-0 rounded-full border-4 border-primary/30"
@@ -634,8 +650,6 @@
                             class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"
                         ></div>
                     </div>
-
-                    <!-- Progress Bar -->
                     <div class="w-full">
                         <div
                             class="w-full h-2 rounded-full bg-primary/20 overflow-hidden"
@@ -648,26 +662,9 @@
                             ></div>
                         </div>
                     </div>
-
-                    <!-- Summary Text -->
                     <p class="text-xs font-medium text-muted-foreground mt-1">
                         {$refreshSummary}
                     </p>
-
-                    <!-- Metrics (optional compact view) -->
-                    {#if $refreshStatus.phase !== "error" && $refreshStatus.phase !== "cancelled"}
-                        <p class="text-[10px] text-muted-foreground">
-                            Added {$refreshStatus.addedCount} • Updated {$refreshStatus.updatedCount}
-                            • Removed {$refreshStatus.removedCount} • Conflicts {$refreshStatus.conflictCount}
-                        </p>
-                    {/if}
-
-                    <!-- Error Message -->
-                    {#if $refreshStatus.phase === "error"}
-                        <p class="text-[10px] text-destructive font-medium">
-                            {$refreshStatus.errorMessage}
-                        </p>
-                    {/if}
                 </div>
             </div>
         {/if}
@@ -677,7 +674,6 @@
                 {isDesktop}
                 on:resolve={handleConflictResolution}
                 on:close={() => {
-                    // If closed without resolution, default to keep-local behavior
                     const fakeEvent = new CustomEvent<ConflictResolution>(
                         "resolve",
                         {
@@ -711,20 +707,293 @@
             on:confirm={handleConfirmAction}
             on:close={() => (pendingConfirmAction = null)}
         />
-        <!-- Header (Always on top) -->
+
+        <!-- Content -->
+        <div class="flex flex-1 overflow-hidden">
+            {#if selectedSetting === null}
+                <!-- Settings list with profile summary -->
+                <div
+                    class="w-full overflow-y-auto p-3 pb-28"
+                    style="padding-top: calc(3.5rem + env(safe-area-inset-top));"
+                >
+                    <button
+                        on:click={() => selectSetting("profile")}
+                        class="w-full mb-3 p-5 flex flex-col items-center gap-2 bg-muted/40 border border-border text-center"
+                        style="border-radius: 28px;"
+                    >
+                        {#if profileImage}
+                            <img
+                                src={profileImage}
+                                alt={profileName || "Profile"}
+                                class="h-16 w-16 rounded-2xl object-cover border border-border"
+                            />
+                        {:else}
+                            <div
+                                class="h-16 w-16 rounded-2xl bg-secondary flex items-center justify-center text-2xl font-bold text-secondary-foreground"
+                            >
+                                {profileInitials}
+                            </div>
+                        {/if}
+                        <p class="font-semibold text-foreground">
+                            {profileName || "No name set"}
+                        </p>
+                        <p class="text-xs text-muted-foreground">
+                            {#if profileUsername && profileRole}@{profileUsername}
+                                · {profileRole}{:else if profileUsername}@{profileUsername}{:else if profileRole}{profileRole}{:else}View
+                                profile{/if}
+                        </p>
+                    </button>
+                    <div class="space-y-2">
+                        {#each settingItems as item}
+                            <button
+                                on:click={() => selectSetting(item.id)}
+                                style="border-radius: 28px;"
+                                class="w-full p-4 bg-cards/50 border border-border transition-colors text-left flex items-center justify-between gap-3"
+                            >
+                                <div class="shrink-0 self-center">
+                                    <SettingIcon icon={item.icon} />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div
+                                        class="font-semibold text-foreground mb-1"
+                                    >
+                                        {item.label}
+                                    </div>
+                                    <div class="text-xs text-muted-foreground">
+                                        {item.description}
+                                    </div>
+                                </div>
+                                <svg
+                                    class="w-5 h-5 text-muted-foreground shrink-0"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 5l7 7-7 7"
+                                    />
+                                </svg>
+                            </button>
+                        {/each}
+                    </div>
+                </div>
+            {:else}
+                <!-- Setting detail -->
+                <div
+                    class="w-full overflow-y-auto p-3"
+                    style="padding-top: calc(3.5rem + env(safe-area-inset-top)); border-radius: 0 0 32px 32px;"
+                >
+                    {#if error}
+                        <div
+                            class="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg"
+                        >
+                            <p class="text-sm text-destructive">{error}</p>
+                        </div>
+                    {/if}
+                    {#if selectedSetting === "profile"}
+                        <ProfileSettingsContent />
+                    {:else if selectedSetting === "templates"}
+                        <TemplatesSettingsContent
+                            templates={$templates}
+                            {showNewTemplate}
+                            {newTemplate}
+                            onDeleteTemplate={handleDeleteTemplate}
+                            onAddTemplate={handleAddTemplate}
+                            onCancelNewTemplate={handleCancelNewTemplate}
+                            onShowNewTemplate={() => (showNewTemplate = true)}
+                        />
+                    {:else if selectedSetting === "ical"}
+                        <SubscriptionManagerPanel
+                            subscriptions={$subscriptions}
+                            {isLoading}
+                            {showNewSubscription}
+                            {newSubscription}
+                            {itemCount}
+                            onToggleSubscription={(id, enabled) =>
+                                handleToggleSubscription(id, enabled)}
+                            onRefreshSubscription={handleRefresh}
+                            onDeleteSubscription={handleDeleteSubscription}
+                            onAddSubscription={handleAddSubscription}
+                            onCancelNewSubscription={() => {
+                                showNewSubscription = false;
+                                newSubscription = { url: "", name: "" };
+                                error = "";
+                            }}
+                            onShowNewSubscription={() =>
+                                (showNewSubscription = true)}
+                            onRefreshAll={handleRefreshAll}
+                            compact={true}
+                            showTitles={false}
+                        />
+                    {:else if selectedSetting === "bibleVerse"}
+                        <BibleVerseSettingsContent
+                            toggleId="enableBibleVerse"
+                        />
+                    {:else if selectedSetting === "about"}
+                        <AboutSettingsContent appVersion={APP_VERSION} />
+                    {:else if selectedSetting === "export"}
+                        <h3 class="text-lg font-semibold text-foreground mb-4">
+                            Export Settings
+                        </h3>
+                        <ExportSettingsPanel
+                            variant="mobile"
+                            on:reset={handleResetExportSettings}
+                        />
+                    {/if}
+                </div>
+            {/if}
+        </div>
+    </div>
+{:else}
+    <SwipeableSheet {isDesktop} desktopMaxWidth="56rem" on:close={handleClose}>
         <div
-            class={`${isDesktop ? "border-b border-border min-h-[70px]" : ""} px-3 py-3 flex items-center justify-center relative shrink-0`}
+            class={`relative flex flex-col ${isDesktop ? "md:h-[80vh]" : "max-h-[90vh]"}`}
         >
-            <!-- Mobile: Back button when viewing details (left position) -->
-            {#if !isDesktop && selectedSetting}
+            {#if showGlobalLoader}
+                <!-- Loader Overlay -->
+                <div
+                    class="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+                >
+                    <div
+                        class="flex flex-col items-center gap-4 w-[220px] text-center"
+                    >
+                        <!-- Spinner -->
+                        <div class="relative w-14 h-14">
+                            <div
+                                class="absolute inset-0 rounded-full border-4 border-primary/30"
+                            ></div>
+                            <div
+                                class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"
+                            ></div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="w-full">
+                            <div
+                                class="w-full h-2 rounded-full bg-primary/20 overflow-hidden"
+                            >
+                                <div
+                                    class="h-full bg-primary transition-all duration-300 ease-out"
+                                    style="width: {(
+                                        $refreshProgress * 100
+                                    ).toFixed(1)}%;"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Text -->
+                        <p
+                            class="text-xs font-medium text-muted-foreground mt-1"
+                        >
+                            {$refreshSummary}
+                        </p>
+
+                        <!-- Metrics (optional compact view) -->
+                        {#if $refreshStatus.phase !== "error" && $refreshStatus.phase !== "cancelled"}
+                            <p class="text-[10px] text-muted-foreground">
+                                Added {$refreshStatus.addedCount} • Updated {$refreshStatus.updatedCount}
+                                • Removed {$refreshStatus.removedCount} • Conflicts
+                                {$refreshStatus.conflictCount}
+                            </p>
+                        {/if}
+
+                        <!-- Error Message -->
+                        {#if $refreshStatus.phase === "error"}
+                            <p class="text-[10px] text-destructive font-medium">
+                                {$refreshStatus.errorMessage}
+                            </p>
+                        {/if}
+                    </div>
+                </div>
+            {/if}
+            {#if showConflictDialog}
+                <SyncConflictDialog
+                    conflicts={pendingConflicts}
+                    {isDesktop}
+                    on:resolve={handleConflictResolution}
+                    on:close={() => {
+                        // If closed without resolution, default to keep-local behavior
+                        const fakeEvent = new CustomEvent<ConflictResolution>(
+                            "resolve",
+                            {
+                                detail: "keep-local",
+                            },
+                        );
+                        handleConflictResolution(fakeEvent);
+                    }}
+                />
+            {/if}
+            <ConfirmDialog
+                isOpen={pendingConfirmAction !== null}
+                {isDesktop}
+                title={pendingConfirmAction?.kind === "reset-export"
+                    ? "Reset Export Settings"
+                    : pendingConfirmAction?.kind === "delete-template"
+                      ? "Delete Template"
+                      : "Delete Subscription"}
+                message={pendingConfirmAction?.kind === "reset-export"
+                    ? "Reset all export settings to default?"
+                    : pendingConfirmAction?.kind === "delete-template"
+                      ? "Delete this template?"
+                      : "Delete this subscription and its imported events?"}
+                confirmLabel={pendingConfirmAction?.kind === "reset-export"
+                    ? "Reset"
+                    : "Delete"}
+                cancelLabel="Cancel"
+                variant={pendingConfirmAction?.kind === "reset-export"
+                    ? "default"
+                    : "destructive"}
+                on:confirm={handleConfirmAction}
+                on:close={() => (pendingConfirmAction = null)}
+            />
+            <!-- Header (Always on top) -->
+            <div
+                class={`${isDesktop ? "border-b border-border min-h-[70px]" : ""} px-3 py-3 flex items-center justify-center relative shrink-0`}
+            >
+                <!-- Mobile: Back button when viewing details (left position) -->
+                {#if !isDesktop && selectedSetting}
+                    <div class="absolute left-3 top-3">
+                        <Button
+                            on:click={backToList}
+                            class="text-secondary-foreground bg-muted hover:bg-muted/80 flex items-center gap-2"
+                            aria-label="Back to settings"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M15 19l-7-7 7-7"
+                                />
+                            </svg>
+                            Back
+                        </Button>
+                    </div>
+                {/if}
+
+                <!-- Centered title -->
+                <h3 class="text-lg pt-2 font-semibold text-foreground">
+                    Settings
+                </h3>
+
+                <!-- Close button (right position) -->
                 <div class="absolute left-3 top-3">
-                    <Button
-                        on:click={backToList}
-                        class="text-secondary-foreground bg-muted hover:bg-muted/80 flex items-center gap-2"
-                        aria-label="Back to settings"
+                    <IconButton
+                        variant="secondary"
+                        size="lg"
+                        ariaLabel="Close settings"
+                        on:click={handleClose}
                     >
                         <svg
-                            class="w-4 h-4"
+                            class="w-6 h-6"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -733,94 +1002,251 @@
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 stroke-width="2"
-                                d="M15 19l-7-7 7-7"
+                                d="M6 18L18 6M6 6l12 12"
                             />
                         </svg>
-                        Back
-                    </Button>
+                    </IconButton>
                 </div>
-            {/if}
-
-            <!-- Centered title -->
-            <h3 class="text-lg pt-2 font-semibold text-foreground">Settings</h3>
-
-            <!-- Close button (right position) -->
-            <div class="absolute right-3 top-3">
-                <IconButton
-                    variant="secondary"
-                    size="lg"
-                    ariaLabel="Close settings"
-                    on:click={handleClose}
-                >
-                    <svg
-                        class="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
-                        />
-                    </svg>
-                </IconButton>
             </div>
-        </div>
 
-        <!-- Content Container -->
-        <div class="flex flex-1 overflow-hidden sheet-content">
-            <!-- Mobile: Show list or details based on selection -->
-            {#if !isDesktop}
-                {#if selectedSetting === null}
-                    <!-- Mobile: Settings Menu List -->
-                    <div class="w-full overflow-y-auto p-3">
-                        <div class="space-y-2">
+            <!-- Content Container -->
+            <div class="flex flex-1 overflow-hidden sheet-content">
+                <!-- Mobile: Show list or details based on selection -->
+                {#if !isDesktop}
+                    {#if selectedSetting === null}
+                        <!-- Mobile: Settings Menu List -->
+                        <div class="w-full overflow-y-auto p-3">
+                            <!-- Profile Summary -->
+                            <div
+                                class="w-full mb-3 p-5 flex flex-col items-center gap-2 text-center"
+                            >
+                                {#if profileImage}
+                                    <img
+                                        src={profileImage}
+                                        alt={profileName || "Profile"}
+                                        class=" floating-glass-surface h-32 w-32 rounded-full object-cover border border-border"
+                                    />
+                                {:else}
+                                    <div
+                                        class="floating-glass-surface h-32 w-32 rounded-full bg-secondary flex items-center justify-center text-3xl font-bold text-secondary-foreground"
+                                    >
+                                        {profileInitials}
+                                    </div>
+                                {/if}
+                                <p
+                                    class="text-xl font-semibold text-foreground mt-4"
+                                >
+                                    {profileName || "No name set"}
+                                </p>
+                                <p class="text-md text-muted-foreground">
+                                    {#if profileUsername && profileRole}
+                                        @{profileUsername} · {profileRole}
+                                    {:else if profileUsername}
+                                        @{profileUsername}
+                                    {:else if profileRole}
+                                        {profileRole}
+                                    {:else}
+                                        View profile
+                                    {/if}
+                                </p>
+                            </div>
+                            <div class="space-y-2">
+                                {#each settingItems as item}
+                                    <button
+                                        on:click={() => selectSetting(item.id)}
+                                        style="border-radius: 28px;"
+                                        class="w-full p-4 bg-card/50 border border-border transition-colors text-left flex items-center justify-between gap-3"
+                                    >
+                                        <div class="shrink-0 self-center">
+                                            <SettingIcon icon={item.icon} />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div
+                                                class="font-semibold text-foreground mb-1"
+                                            >
+                                                {item.label}
+                                            </div>
+                                            <div
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                {item.description}
+                                            </div>
+                                        </div>
+                                        <svg
+                                            class="w-5 h-5 text-muted-foreground shrink-0"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M9 5l7 7-7 7"
+                                            />
+                                        </svg>
+                                    </button>
+                                {/each}
+                            </div>
+                        </div>
+                    {:else}
+                        <!-- Mobile: Setting Details -->
+                        <div
+                            class="w-full overflow-y-auto p-3"
+                            style={"border-radius: 0 0 32px 32px"}
+                        >
+                            {#if error}
+                                <div
+                                    class="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg"
+                                >
+                                    <p class="text-sm text-destructive">
+                                        {error}
+                                    </p>
+                                </div>
+                            {/if}
+
+                            {#if selectedSetting === "profile"}
+                                <ProfileSettingsContent />
+                            {:else if selectedSetting === "templates"}
+                                <TemplatesSettingsContent
+                                    templates={$templates}
+                                    {showNewTemplate}
+                                    {newTemplate}
+                                    onDeleteTemplate={handleDeleteTemplate}
+                                    onAddTemplate={handleAddTemplate}
+                                    onCancelNewTemplate={handleCancelNewTemplate}
+                                    onShowNewTemplate={() =>
+                                        (showNewTemplate = true)}
+                                />
+                            {:else if selectedSetting === "ical"}
+                                <!-- iCal Details -->
+                                <SubscriptionManagerPanel
+                                    subscriptions={$subscriptions}
+                                    {isLoading}
+                                    {showNewSubscription}
+                                    {newSubscription}
+                                    {itemCount}
+                                    onToggleSubscription={(id, enabled) =>
+                                        handleToggleSubscription(id, enabled)}
+                                    onRefreshSubscription={handleRefresh}
+                                    onDeleteSubscription={handleDeleteSubscription}
+                                    onAddSubscription={handleAddSubscription}
+                                    onCancelNewSubscription={() => {
+                                        showNewSubscription = false;
+                                        newSubscription = {
+                                            url: "",
+                                            name: "",
+                                        };
+                                        error = "";
+                                    }}
+                                    onShowNewSubscription={() =>
+                                        (showNewSubscription = true)}
+                                    onRefreshAll={handleRefreshAll}
+                                    compact={true}
+                                    showTitles={false}
+                                />
+                            {:else if selectedSetting === "bibleVerse"}
+                                <BibleVerseSettingsContent
+                                    toggleId="enableBibleVerse"
+                                />
+                            {:else if selectedSetting === "about"}
+                                <AboutSettingsContent
+                                    appVersion={APP_VERSION}
+                                />
+                            {:else if selectedSetting === "export"}
+                                <h3
+                                    class="text-lg font-semibold text-foreground mb-4"
+                                >
+                                    Export Settings
+                                </h3>
+                                <ExportSettingsPanel
+                                    variant="mobile"
+                                    on:reset={handleResetExportSettings}
+                                />
+                            {/if}
+                        </div>
+                    {/if}
+                {:else}
+                    <!-- Desktop: Two Column Layout (left menu, right details) -->
+                    <!-- Left Column: Settings Menu -->
+                    <div
+                        class="w-48 min-w-[300px] border-r border-border overflow-y-auto bg-muted/30 shrink-0"
+                        style={"border-radius: 0 0 0 32px"}
+                    >
+                        <!-- Profile Summary -->
+                        <div class="p-3 pb-0">
+                            <div
+                                class="w-full mb-3 p-5 flex flex-col items-center gap-2 text-center"
+                            >
+                                {#if profileImage}
+                                    <img
+                                        src={profileImage}
+                                        alt={profileName || "Profile"}
+                                        class=" floating-glass-surface h-32 w-32 rounded-full object-cover border border-border"
+                                    />
+                                {:else}
+                                    <div
+                                        class="floating-glass-surface h-32 w-32 rounded-full bg-secondary flex items-center justify-center text-3xl font-bold text-secondary-foreground"
+                                    >
+                                        {profileInitials}
+                                    </div>
+                                {/if}
+                                <p
+                                    class="text-xl font-semibold text-foreground mt-4"
+                                >
+                                    {profileName || "No name set"}
+                                </p>
+                                <p class="text-md text-muted-foreground">
+                                    {#if profileUsername && profileRole}
+                                        @{profileUsername} · {profileRole}
+                                    {:else if profileUsername}
+                                        @{profileUsername}
+                                    {:else if profileRole}
+                                        {profileRole}
+                                    {:else}
+                                        View profile
+                                    {/if}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="p-3 pt-0 space-y-1">
                             {#each settingItems as item}
                                 <button
                                     on:click={() => selectSetting(item.id)}
                                     style="border-radius: 28px;"
-                                    class="w-full p-4 bg-cards/50 border border-border transition-colors text-left flex items-center justify-between gap-3"
+                                    class={`w-full p-3 transition-colors text-left flex items-center justify-between gap-3 ${
+                                        selectedSetting === item.id
+                                            ? "bg-primary text-primary-foreground"
+                                            : "hover:bg-card/20"
+                                    }`}
                                 >
                                     <div class="shrink-0 self-center">
-                                        <SettingIcon icon={item.icon} />
+                                        <SettingIcon
+                                            icon={item.icon}
+                                            size="w-5 h-5"
+                                        />
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <div
-                                            class="font-semibold text-foreground mb-1"
-                                        >
+                                        <div class="font-semibold text-sm">
                                             {item.label}
                                         </div>
                                         <div
-                                            class="text-xs text-muted-foreground"
+                                            class={`text-xs ${
+                                                selectedSetting === item.id
+                                                    ? "text-primary-foreground/70"
+                                                    : "text-muted-foreground"
+                                            }`}
                                         >
                                             {item.description}
                                         </div>
                                     </div>
-                                    <svg
-                                        class="w-5 h-5 text-muted-foreground shrink-0"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M9 5l7 7-7 7"
-                                        />
-                                    </svg>
                                 </button>
                             {/each}
                         </div>
                     </div>
-                {:else}
-                    <!-- Mobile: Setting Details -->
-                    <div
-                        class="w-full overflow-y-auto p-3"
-                        style={"border-radius: 0 0 32px 32px"}
-                    >
+
+                    <!-- Right Column: Details -->
+                    <div class="flex-1 overflow-y-auto p-6">
                         {#if error}
                             <div
                                 class="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg"
@@ -843,7 +1269,12 @@
                                     (showNewTemplate = true)}
                             />
                         {:else if selectedSetting === "ical"}
-                            <!-- iCal Details -->
+                            <h3
+                                class="text-xl font-semibold text-foreground mb-4"
+                            >
+                                Calendar Subscriptions
+                            </h3>
+
                             <SubscriptionManagerPanel
                                 subscriptions={$subscriptions}
                                 {isLoading}
@@ -866,141 +1297,30 @@
                                 onShowNewSubscription={() =>
                                     (showNewSubscription = true)}
                                 onRefreshAll={handleRefreshAll}
-                                compact={true}
-                                showTitles={false}
-                            />
-                        {:else if selectedSetting === "bibleVerse"}
-                            <BibleVerseSettingsContent
-                                toggleId="enableBibleVerse"
+                                compact={false}
+                                showTitles={true}
                             />
                         {:else if selectedSetting === "about"}
                             <AboutSettingsContent appVersion={APP_VERSION} />
                         {:else if selectedSetting === "export"}
                             <h3
-                                class="text-lg font-semibold text-foreground mb-4"
+                                class="text-xl font-semibold text-foreground mb-4"
                             >
                                 Export Settings
                             </h3>
+
                             <ExportSettingsPanel
-                                variant="mobile"
+                                variant="desktop"
                                 on:reset={handleResetExportSettings}
+                            />
+                        {:else if selectedSetting === "bibleVerse"}
+                            <BibleVerseSettingsContent
+                                toggleId="enableBibleVerseDesktop"
                             />
                         {/if}
                     </div>
                 {/if}
-            {:else}
-                <!-- Desktop: Two Column Layout (left menu, right details) -->
-                <!-- Left Column: Settings Menu -->
-                <div
-                    class="w-48 min-w-[300px] border-r border-border overflow-y-auto bg-muted/30 shrink-0"
-                    style={"border-radius: 0 0 0 32px"}
-                >
-                    <div class="p-3 space-y-1">
-                        {#each settingItems as item}
-                            <button
-                                on:click={() => selectSetting(item.id)}
-                                style="border-radius: 28px;"
-                                class={`w-full p-3 transition-colors text-left flex items-center justify-between gap-3 ${
-                                    selectedSetting === item.id
-                                        ? "bg-primary text-primary-foreground"
-                                        : "hover:bg-card/20"
-                                }`}
-                            >
-                                <div class="shrink-0 self-center">
-                                    <SettingIcon
-                                        icon={item.icon}
-                                        size="w-5 h-5"
-                                    />
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-semibold text-sm">
-                                        {item.label}
-                                    </div>
-                                    <div
-                                        class={`text-xs ${
-                                            selectedSetting === item.id
-                                                ? "text-primary-foreground/70"
-                                                : "text-muted-foreground"
-                                        }`}
-                                    >
-                                        {item.description}
-                                    </div>
-                                </div>
-                            </button>
-                        {/each}
-                    </div>
-                </div>
-
-                <!-- Right Column: Details -->
-                <div class="flex-1 overflow-y-auto p-6">
-                    {#if error}
-                        <div
-                            class="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg"
-                        >
-                            <p class="text-sm text-destructive">{error}</p>
-                        </div>
-                    {/if}
-
-                    {#if selectedSetting === "profile"}
-                        <ProfileSettingsContent />
-                    {:else if selectedSetting === "templates"}
-                        <TemplatesSettingsContent
-                            templates={$templates}
-                            {showNewTemplate}
-                            {newTemplate}
-                            onDeleteTemplate={handleDeleteTemplate}
-                            onAddTemplate={handleAddTemplate}
-                            onCancelNewTemplate={handleCancelNewTemplate}
-                            onShowNewTemplate={() => (showNewTemplate = true)}
-                        />
-                    {:else if selectedSetting === "ical"}
-                        <h3 class="text-xl font-semibold text-foreground mb-4">
-                            Calendar Subscriptions
-                        </h3>
-
-                        <SubscriptionManagerPanel
-                            subscriptions={$subscriptions}
-                            {isLoading}
-                            {showNewSubscription}
-                            {newSubscription}
-                            {itemCount}
-                            onToggleSubscription={(id, enabled) =>
-                                handleToggleSubscription(id, enabled)}
-                            onRefreshSubscription={handleRefresh}
-                            onDeleteSubscription={handleDeleteSubscription}
-                            onAddSubscription={handleAddSubscription}
-                            onCancelNewSubscription={() => {
-                                showNewSubscription = false;
-                                newSubscription = {
-                                    url: "",
-                                    name: "",
-                                };
-                                error = "";
-                            }}
-                            onShowNewSubscription={() =>
-                                (showNewSubscription = true)}
-                            onRefreshAll={handleRefreshAll}
-                            compact={false}
-                            showTitles={true}
-                        />
-                    {:else if selectedSetting === "about"}
-                        <AboutSettingsContent appVersion={APP_VERSION} />
-                    {:else if selectedSetting === "export"}
-                        <h3 class="text-xl font-semibold text-foreground mb-4">
-                            Export Settings
-                        </h3>
-
-                        <ExportSettingsPanel
-                            variant="desktop"
-                            on:reset={handleResetExportSettings}
-                        />
-                    {:else if selectedSetting === "bibleVerse"}
-                        <BibleVerseSettingsContent
-                            toggleId="enableBibleVerseDesktop"
-                        />
-                    {/if}
-                </div>
-            {/if}
+            </div>
         </div>
-    </div>
-</SwipeableSheet>
+    </SwipeableSheet>
+{/if}

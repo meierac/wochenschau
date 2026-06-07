@@ -1,12 +1,16 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
 
-    export let activePage: "calendar" | "messages" | "registrations" | "files" =
-        "calendar";
+    export let activePage:
+        | "calendar"
+        | "messages"
+        | "registrations"
+        | "files"
+        | "settings" = "calendar";
 
     const dispatch = createEventDispatcher<{
         navigateCalendar: void;
-        navigateProfile: void;
+        navigateSettings: void;
         navigateMessages: void;
         navigateRegistrations: void;
         navigateFiles: void;
@@ -102,10 +106,14 @@
             <span class="text-[10px] font-semibold leading-none">Regs</span>
         </button>
         <button
-            on:click={() => dispatch("navigateProfile")}
-            class="flex flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-2 py-2 text-muted-foreground transition-colors active:bg-muted"
-            aria-label="Open profile settings"
-            title="Profile"
+            on:click={() => dispatch("navigateSettings")}
+            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-2 py-2 transition-colors active:bg-muted ${
+                activePage === "settings"
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground"
+            }`}
+            aria-label="Open settings"
+            title="Settings"
             type="button"
         >
             <svg
@@ -118,15 +126,13 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M16 14a4 4 0 10-8 0m8 0a4 4 0 01-8 0m8 0v1a3 3 0 01-3 3H11a3 3 0 01-3-3v-1m8 0H8"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
                 />
-                <circle
-                    cx="12"
-                    cy="8"
-                    r="3"
+                <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                 />
             </svg>
             <span class="text-[10px] font-semibold leading-none">Settings</span>
