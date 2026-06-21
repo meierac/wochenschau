@@ -14,7 +14,11 @@ import { subscriptions } from "../stores/ical.js";
 import { exportSettings } from "../stores/exportSettings.js";
 import { bibleVerse } from "../stores/bibleVerse.js";
 import { mapRecordToProfile } from "./profileService.js";
-import { getLocalDataUpdatedAt, onDataChanged } from "./syncTrigger.js";
+import {
+  getLocalDataUpdatedAt,
+  onDataChanged,
+  setLocalDataUpdatedAt,
+} from "./syncTrigger.js";
 
 const DEFAULT_POCKETBASE_URL = "https://pocketbase.144t.org";
 const SYNC_DEBOUNCE_MS = 1200;
@@ -442,6 +446,44 @@ async function updateCloudRecord(
     });
 }
 
+function resolveNextClientUpdatedAt(
+  localUpdatedAt: number,
+  remoteUpdatedAt: number,
+): number {
+  const local = Number.isFinite(localUpdatedAt) ? localUpdatedAt : 0;
+  const remote = Number.isFinite(remoteUpdatedAt) ? remoteUpdatedAt : 0;
+
+  return local > remote ? local : remote + 1;
+}
+
+async function writeLocalSnapshotToCloudRecord(
+  recordId: string,
+  userId: string,
+  localSnapshot: SyncedAppData,
+  remoteUpdatedAt: number,
+): Promise<number> {
+  const nextClientUpdatedAt = resolveNextClientUpdatedAt(
+    localSnapshot.updatedAt,
+    remoteUpdatedAt,
+  );
+
+  await updateCloudRecord(
+    recordId,
+    userId,
+    {
+      ...localSnapshot,
+      updatedAt: nextClientUpdatedAt,
+    },
+    nextClientUpdatedAt,
+  );
+
+  if (nextClientUpdatedAt !== localSnapshot.updatedAt) {
+    setLocalDataUpdatedAt(nextClientUpdatedAt);
+  }
+
+  return nextClientUpdatedAt;
+}
+
 async function reconcileLocalAndCloud(): Promise<void> {
   const userId = currentUserId();
   if (!userId || !pocketbase.authStore.isValid) return;
@@ -474,11 +516,11 @@ async function reconcileLocalAndCloud(): Promise<void> {
           updatedAt: remoteUpdatedAt > 0 ? remoteUpdatedAt : Date.now(),
         });
       } else if (localHasData && !remoteHasData) {
-        await updateCloudRecord(
+        await writeLocalSnapshotToCloudRecord(
           cloudRecord.id,
           userId,
           localSnapshot,
-          localSnapshot.updatedAt,
+          remoteUpdatedAt,
         );
       } else if (remoteHasData) {
         await applySnapshotToLocalState({
@@ -486,11 +528,11 @@ async function reconcileLocalAndCloud(): Promise<void> {
           updatedAt: remoteUpdatedAt > 0 ? remoteUpdatedAt : Date.now(),
         });
       } else {
-        await updateCloudRecord(
+        await writeLocalSnapshotToCloudRecord(
           cloudRecord.id,
           userId,
           localSnapshot,
-          localSnapshot.updatedAt,
+          remoteUpdatedAt,
         );
       }
 
@@ -508,11 +550,11 @@ async function reconcileLocalAndCloud(): Promise<void> {
     }
 
     if (!remoteSnapshot || localSnapshot.updatedAt > remoteUpdatedAt) {
-      await updateCloudRecord(
+      await writeLocalSnapshotToCloudRecord(
         cloudRecord.id,
         userId,
         localSnapshot,
-        localSnapshot.updatedAt,
+        remoteUpdatedAt,
       );
       setCloudState({ lastSyncAt: Date.now() });
       return;
@@ -545,24 +587,11 @@ async function pushLocalChanges(): Promise<void> {
 
     const remoteUpdatedAt = Number(cloudRecord.clientUpdatedAt) || 0;
 
-    // Avoid overwriting newer cloud data from another device.
-    if (remoteUpdatedAt > localSnapshot.updatedAt) {
-      const remoteSnapshot = normalizeSyncedAppData(cloudRecord.payload);
-      if (remoteSnapshot) {
-        await applySnapshotToLocalState({
-          ...remoteSnapshot,
-          updatedAt: remoteUpdatedAt,
-        });
-      }
-      setCloudState({ lastSyncAt: Date.now() });
-      return;
-    }
-
-    await updateCloudRecord(
+    await writeLocalSnapshotToCloudRecord(
       cloudRecord.id,
       userId,
       localSnapshot,
-      localSnapshot.updatedAt,
+      remoteUpdatedAt,
     );
     setCloudState({ lastSyncAt: Date.now() });
   } catch (error) {
@@ -623,11 +652,12 @@ async function forceTransferLocalDataToCloud(userId: string): Promise<void> {
     return;
   }
 
-  await updateCloudRecord(
+  const remoteUpdatedAt = Number(cloudRecord.clientUpdatedAt) || 0;
+  await writeLocalSnapshotToCloudRecord(
     cloudRecord.id,
     userId,
     localSnapshot,
-    localSnapshot.updatedAt,
+    remoteUpdatedAt,
   );
 }
 
