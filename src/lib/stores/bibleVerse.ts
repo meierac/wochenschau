@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import { BIBLE_VERSES } from "../data/bibleVerses";
+import { notifyDataChanged } from "../services/syncTrigger.js";
 
 export interface BibleVerseState {
   enabled: boolean;
@@ -9,7 +10,10 @@ export interface BibleVerseState {
 }
 
 function createBibleVerseStore() {
-  const stored = localStorage.getItem("bibleVerseState");
+  const stored =
+    typeof window !== "undefined"
+      ? localStorage.getItem("bibleVerseState")
+      : null;
 
   const getRandomVerse = (
     usedIndices: number[] = [],
@@ -52,14 +56,20 @@ function createBibleVerseStore() {
 
   const { subscribe, set, update } = writable<BibleVerseState>(initialState);
 
+  const persist = (state: BibleVerseState) => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("bibleVerseState", JSON.stringify(state));
+  };
+
   return {
     subscribe,
     toggleEnabled: (enabled: boolean) => {
       update((state) => {
         const updated = { ...state, enabled };
-        localStorage.setItem("bibleVerseState", JSON.stringify(updated));
+        persist(updated);
         return updated;
       });
+      notifyDataChanged();
     },
     refreshVerse: () => {
       update((state) => {
@@ -68,16 +78,18 @@ function createBibleVerseStore() {
           state.selectedThemes,
         );
         const updated = { ...state, currentVerse: verse, usedIndices };
-        localStorage.setItem("bibleVerseState", JSON.stringify(updated));
+        persist(updated);
         return updated;
       });
+      notifyDataChanged();
     },
     setSelectedThemes: (themes: ("faith" | "hope" | "love")[]) => {
       update((state) => {
         const updated = { ...state, selectedThemes: themes };
-        localStorage.setItem("bibleVerseState", JSON.stringify(updated));
+        persist(updated);
         return updated;
       });
+      notifyDataChanged();
     },
     reset: () => {
       const { verse, usedIndices } = getRandomVerse(
@@ -90,8 +102,14 @@ function createBibleVerseStore() {
         usedIndices,
         selectedThemes: ["faith", "hope", "love"],
       };
-      localStorage.setItem("bibleVerseState", JSON.stringify(initialState));
+      persist(initialState);
       set(initialState);
+      notifyDataChanged();
+    },
+    setState: (state: BibleVerseState) => {
+      persist(state);
+      set(state);
+      notifyDataChanged();
     },
   };
 }

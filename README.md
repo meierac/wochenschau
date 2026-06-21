@@ -22,7 +22,7 @@
 - Local edit tracking for subscribed events (conflict resolution dialog)
 - Multi-layout export (grid, list, compact)
 - Image export (PNG) with clipboard and share-sheet support
-- Local-only data (activities, templates, subscriptions, export preferences)
+- Local-first data with optional PocketBase account sync
 
 ### User Experience
 - Responsive (mobile-first, tablet & desktop enhancements)
@@ -42,7 +42,7 @@
 - Troubleshooting & platform-specific documentation (see `docs/`)
 
 ### Reliability & Privacy
-- 100% client-side: no backend services
+- Works fully local without backend; optional PocketBase cloud sync
 - IndexedDB storage for large background images (migrated from legacy localStorage)
 - Graceful fallback if fonts/backgrounds unavailable
 - Conflict-safe sync: local changes to imported iCal events are never silently overwritten
@@ -64,8 +64,8 @@
 | Recurring iCal events (RRULE) | Not yet implemented (RRULE field parsed but unused) |
 | Per-item conflict resolution | Global apply (dialog offers one decision for all conflicts) |
 | Multi-week span events | Represented as single-day; week-crossing logic is minimal |
-| Cloud sync / multi-device | Not supported (intentionally local-first) |
-| Authentication | None (no external services) |
+| Cloud sync conflict resolution | Last-write-wins by timestamp (no per-field merge yet) |
+| Authentication providers | Email/password via PocketBase only |
 
 ---
 
@@ -216,6 +216,51 @@ pnpm build
 ```bash
 pnpm preview
 ```
+
+## ☁️ PocketBase Setup
+
+This app requires an account login before use. After a user has logged in on a device once, offline mode remains supported on that device.
+
+### 1) Environment variables
+Copy `.env.example` to `.env` and adjust if needed:
+
+```bash
+cp .env.example .env
+```
+
+Defaults:
+- `VITE_POCKETBASE_URL=https://pocketbase.144t.org`
+- `VITE_POCKETBASE_AUTH_COLLECTION=users`
+- `VITE_POCKETBASE_DATA_COLLECTION=user_sync_states`
+
+### 2) Apply the PocketBase migration (recommended)
+
+A ready migration is included at:
+- `pocketbase/pb_migrations/1782019200_create_users_and_sync_state.js`
+
+From your PocketBase app directory, run:
+
+```bash
+./pocketbase migrate up
+```
+
+This creates:
+- Auth collection: `users`
+- Base collection: `user_sync_states`
+  - `user` (relation to `users`, required)
+  - `payload` (json)
+  - `clientUpdatedAt` (number, required)
+  - unique index on `user`
+
+### 3) JSON import alternative
+
+If you prefer dashboard import/manual setup, use:
+- `pocketbase/collections/user_sync_collections.json`
+
+(You can copy these definitions into PocketBase collection import/creation workflows.)
+
+### 4) CORS
+If your frontend runs on a different origin, add it to PocketBase allowed origins.
 
 ---
 

@@ -1,0 +1,81 @@
+[
+  {
+    "name": "users",
+    "type": "auth",
+    "listRule": null,
+    "viewRule": "id = @request.auth.id",
+    "createRule": "",
+    "updateRule": "id = @request.auth.id",
+    "deleteRule": null,
+    "passwordAuth": {
+      "enabled": true,
+      "identityFields": ["email"]
+    },
+    "fields": [
+      {
+        "name": "avatar",
+        "type": "file",
+        "maxSelect": 1,
+        "maxSize": 5242880,
+        "mimeTypes": ["image/jpeg", "image/png", "image/gif", "image/webp"]
+      },
+      {
+        "name": "firstName",
+        "type": "text",
+        "max": 200
+      },
+      {
+        "name": "lastName",
+        "type": "text",
+        "max": 200
+      },
+      {
+        "name": "phoneNumber",
+        "type": "text",
+        "max": 50
+      },
+      {
+        "name": "shortBio",
+        "type": "text",
+        "max": 2000
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX idx_users_email ON users (email)",
+      "CREATE UNIQUE INDEX idx_users_username ON users (username)"
+    ]
+  },
+  {
+    "name": "user_sync_states",
+    "type": "base",
+    "listRule": "user = @request.auth.id",
+    "viewRule": "user = @request.auth.id",
+    "createRule": "user = @request.auth.id && user != ''",
+    "updateRule": "user = @request.auth.id",
+    "deleteRule": "user = @request.auth.id",
+    "fields": [
+      {
+        "name": "user",
+        "type": "relation",
+        "required": true,
+        "maxSelect": 1,
+        "collectionId": "<USERS_COLLECTION_ID>",
+        "cascadeDelete": true
+      },
+      {
+        "name": "payload",
+        "type": "json",
+        "maxSize": 0
+      },
+      {
+        "name": "clientUpdatedAt",
+        "type": "number",
+        "required": true,
+        "min": 0
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX idx_user_sync_states_user ON user_sync_states (user)"
+    ]
+  }
+]

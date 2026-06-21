@@ -11,7 +11,6 @@
         CalendarItem,
     } from "../types/index";
     import IconButton from "./IconButton.svelte";
-    import Button from "./Button.svelte";
     import SwipeableSheet from "./SwipeableSheet.svelte";
     import SettingIcon from "./SettingIcon.svelte";
     import SubscriptionManagerPanel from "./SubscriptionManagerPanel.svelte";
@@ -716,39 +715,38 @@
                     class="w-full overflow-y-auto p-3 pb-28"
                     style="padding-top: calc(3.5rem + env(safe-area-inset-top));"
                 >
-                    <button
-                        on:click={() => selectSetting("profile")}
-                        class="w-full mb-3 p-5 flex flex-col items-center gap-2 bg-muted/40 border border-border text-center"
+                    <div
+                        class="w-full mb-3 p-5 flex flex-col items-center text-center"
                         style="border-radius: 28px;"
                     >
                         {#if profileImage}
                             <img
                                 src={profileImage}
                                 alt={profileName || "Profile"}
-                                class="h-16 w-16 rounded-2xl object-cover border border-border"
+                                class="h-32 w-32 rounded-full object-cover floating-glass-surface"
                             />
                         {:else}
                             <div
-                                class="h-16 w-16 rounded-2xl bg-secondary flex items-center justify-center text-2xl font-bold text-secondary-foreground"
+                                class="h-32 w-32 rounded-full floating-glass-surface bg-secondary flex items-center justify-center text-3xl font-bold text-secondary-foreground"
                             >
                                 {profileInitials}
                             </div>
                         {/if}
-                        <p class="font-semibold text-foreground">
+                        <p class="mt-6 text-xl font-semibold text-foreground">
                             {profileName || "No name set"}
                         </p>
-                        <p class="text-xs text-muted-foreground">
+                        <p class="text-lg text-muted-foreground">
                             {#if profileUsername && profileRole}@{profileUsername}
                                 · {profileRole}{:else if profileUsername}@{profileUsername}{:else if profileRole}{profileRole}{:else}View
                                 profile{/if}
                         </p>
-                    </button>
+                    </div>
                     <div class="space-y-2">
                         {#each settingItems as item}
                             <button
                                 on:click={() => selectSetting(item.id)}
                                 style="border-radius: 28px;"
-                                class="w-full p-4 bg-cards/50 border border-border transition-colors text-left flex items-center justify-between gap-3"
+                                class="w-full p-4 bg-muted border border-border transition-colors text-left flex items-center justify-between gap-3"
                             >
                                 <div class="shrink-0 self-center">
                                     <SettingIcon icon={item.icon} />
@@ -759,9 +757,9 @@
                                     >
                                         {item.label}
                                     </div>
-                                    <div class="text-xs text-muted-foreground">
+                                    <!-- <div class="text-xs text-muted-foreground">
                                         {item.description}
-                                    </div>
+                                    </div> -->
                                 </div>
                                 <svg
                                     class="w-5 h-5 text-muted-foreground shrink-0"
@@ -949,65 +947,6 @@
                 on:confirm={handleConfirmAction}
                 on:close={() => (pendingConfirmAction = null)}
             />
-            <!-- Header (Always on top) -->
-            <div
-                class={`${isDesktop ? "border-b border-border min-h-[70px]" : ""} px-3 py-3 flex items-center justify-center relative shrink-0`}
-            >
-                <!-- Mobile: Back button when viewing details (left position) -->
-                {#if !isDesktop && selectedSetting}
-                    <div class="absolute left-3 top-3">
-                        <Button
-                            on:click={backToList}
-                            class="text-secondary-foreground bg-muted hover:bg-muted/80 flex items-center gap-2"
-                            aria-label="Back to settings"
-                        >
-                            <svg
-                                class="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M15 19l-7-7 7-7"
-                                />
-                            </svg>
-                            Back
-                        </Button>
-                    </div>
-                {/if}
-
-                <!-- Centered title -->
-                <h3 class="text-lg pt-2 font-semibold text-foreground">
-                    Settings
-                </h3>
-
-                <!-- Close button (right position) -->
-                <div class="absolute left-3 top-3">
-                    <IconButton
-                        variant="secondary"
-                        size="lg"
-                        ariaLabel="Close settings"
-                        on:click={handleClose}
-                    >
-                        <svg
-                            class="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </IconButton>
-                </div>
-            </div>
 
             <!-- Content Container -->
             <div class="flex flex-1 overflow-hidden sheet-content">
@@ -1173,6 +1112,29 @@
                         class="w-48 min-w-[300px] border-r border-border overflow-y-auto bg-muted/30 shrink-0"
                         style={"border-radius: 0 0 0 32px"}
                     >
+                        <!-- Close button (right position) -->
+                        <div class="absolute left-3 top-3">
+                            <IconButton
+                                variant="secondary"
+                                size="lg"
+                                ariaLabel="Close settings"
+                                on:click={handleClose}
+                            >
+                                <svg
+                                    class="w-6 h-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </IconButton>
+                        </div>
                         <!-- Profile Summary -->
                         <div class="p-3 pb-0">
                             <div

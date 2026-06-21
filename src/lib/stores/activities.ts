@@ -9,6 +9,7 @@ import {
   clearAllActivities,
 } from "../utils/storage.js";
 import { sortActivitiesByDisplayOrder } from "../utils/activityDisplay.js";
+import { notifyDataChanged } from "../services/syncTrigger.js";
 
 function createActivityStore() {
   const { subscribe, set, update } = writable<Activity[]>(getActivities());
@@ -20,6 +21,7 @@ function createActivityStore() {
       saveActivity(activity);
 
       update((activities) => [...activities, activity]);
+      notifyDataChanged();
     },
 
     updateActivity: (activity: Activity) => {
@@ -88,6 +90,8 @@ function createActivityStore() {
           ),
         );
       }
+
+      notifyDataChanged();
     },
 
     /**
@@ -159,10 +163,13 @@ function createActivityStore() {
 
         return next;
       });
+
+      notifyDataChanged();
     },
     removeActivity: (id: string) => {
       deleteActivity(id);
       update((activities) => activities.filter((a) => a.id !== id));
+      notifyDataChanged();
     },
     replaceAll: (all: Activity[]) => {
       // Atomic bulk replacement: single localStorage write + store set.
@@ -179,10 +186,12 @@ function createActivityStore() {
         );
       }
       set(normalized);
+      notifyDataChanged();
     },
     clearAll: () => {
       clearAllActivities();
       set([]);
+      notifyDataChanged();
     },
   };
 }

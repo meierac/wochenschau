@@ -29,7 +29,7 @@
     >
         <button
             on:click={() => dispatch("navigateMessages")}
-            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-2 py-2 transition-colors active:bg-muted ${
+            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-full px-2 py-3 transition-colors active:bg-muted ${
                 activePage === "messages"
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground"
@@ -55,7 +55,7 @@
         </button>
         <button
             on:click={() => dispatch("navigateCalendar")}
-            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-2 py-2 transition-colors active:bg-secondary ${
+            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-full px-2 py-3 transition-colors active:bg-secondary ${
                 activePage === "calendar"
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground"
@@ -81,7 +81,7 @@
         </button>
         <button
             on:click={() => dispatch("navigateRegistrations")}
-            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-2 py-2 transition-colors active:bg-muted ${
+            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-full px-2 py-3 transition-colors active:bg-muted ${
                 activePage === "registrations"
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground"
@@ -107,7 +107,7 @@
         </button>
         <button
             on:click={() => dispatch("navigateSettings")}
-            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-3xl px-2 py-2 transition-colors active:bg-muted ${
+            class={`flex flex-1 flex-col items-center justify-center gap-1 rounded-full px-2 py-3 transition-colors active:bg-muted ${
                 activePage === "settings"
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground"

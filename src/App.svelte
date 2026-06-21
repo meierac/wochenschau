@@ -47,7 +47,16 @@
         ConflictResolution,
         CalendarItem,
     } from "./lib/types/index";
+    import {
+        cloudAuth,
+        initializeCloudSync,
+        signInWithPocketBase,
+        createPocketBaseAccount,
+        resolveInitialTransferChoice,
+    } from "./lib/services/cloudSync";
     import IconButton from "./lib/components/IconButton.svelte";
+    import Button from "./lib/components/Button.svelte";
+    import Input from "./lib/components/Input.svelte";
     let isDesktop =
         typeof window !== "undefined" ? window.innerWidth >= 768 : false;
 
@@ -72,6 +81,13 @@
     let editingActivity: CalendarItem | null = null;
     let showDeleteConfirm = false;
     let desktopCalendarView: "week" | "month" = "week";
+
+    let authMode: "login" | "register" = "login";
+    let authEmail = "";
+    let authPassword = "";
+    let authPasswordConfirm = "";
+    let authError = "";
+    let authSuccess = "";
 
     let screenWidth = typeof window !== "undefined" ? window.innerWidth : 0;
     let userManuallyCollapsed = false;
@@ -217,7 +233,7 @@
         if (page === "messages") return "Messages";
         if (page === "registrations") return "Registrations";
         if (page === "files") return "Files";
-        if (page === "settings") return "Settings";
+        if (page === "settings") return "";
         return "Calendar";
     }
 
@@ -560,17 +576,215 @@
     });
     $: currentWeekDateRange = formatDateRange($currentWeek, $currentYear);
 
-    onMount(() => {
-        // Auto-refresh subscriptions on app start if they're outdated
+    function resetAuthMessages() {
+        authError = "";
+        authSuccess = "";
+    }
 
-        autoRefreshSubscriptions();
+    function toErrorMessage(error: unknown) {
+        if (error instanceof Error) return error.message;
+        return "Unknown error";
+    }
+
+    async function handleAuthSubmit() {
+        resetAuthMessages();
+
+        const email = authEmail.trim();
+        if (!email || !authPassword) {
+            authError = "Please enter email and password.";
+            return;
+        }
+
+        try {
+            if (authMode === "register") {
+                if (authPassword !== authPasswordConfirm) {
+                    authError = "Passwords do not match.";
+                    return;
+                }
+
+                await createPocketBaseAccount(
+                    email,
+                    authPassword,
+                    authPasswordConfirm,
+                );
+                authSuccess = "Account created. You are now signed in.";
+            } else {
+                await signInWithPocketBase(email, authPassword);
+                authSuccess = "Signed in.";
+            }
+
+            authPassword = "";
+            authPasswordConfirm = "";
+        } catch (error) {
+            authError = toErrorMessage(error);
+        }
+    }
+
+    async function handleInitialTransferChoice(transfer: boolean) {
+        resetAuthMessages();
+
+        try {
+            await resolveInitialTransferChoice(transfer);
+            authSuccess = transfer
+                ? "Local data transferred to your account."
+                : "Using account data for this device.";
+        } catch (error) {
+            authError = toErrorMessage(error);
+        }
+    }
+
+    onMount(() => {
+        (async () => {
+            try {
+                await initializeCloudSync();
+
+                // Auto-refresh subscriptions on app start for authenticated sessions.
+                if ($cloudAuth.isAuthenticated) {
+                    await autoRefreshSubscriptions();
+                }
+            } catch (error) {
+                console.error("Startup sync initialization failed:", error);
+            }
+        })();
     });
 </script>
 
 <svelte:window on:resize={handleResize} />
 
-<main class="h-screen pt-[1rem] bg-background text-foreground overflow-hidden">
-    {#if isDesktop}
+<main class="h-screen bg-background text-foreground">
+    {#if !$cloudAuth.ready}
+        <div class="flex h-screen items-center justify-center px-6">
+            <p class="text-sm text-muted-foreground">Loading account…</p>
+        </div>
+    {:else if !$cloudAuth.isAuthenticated || $cloudAuth.requiresInitialTransferChoice}
+        <div class="flex h-screen items-center justify-center px-4">
+            <section
+                class="w-full max-w-xl rounded-3xl border border-border bg-background/80 p-6 shadow-sm"
+            >
+                <h1 class="text-2xl font-bold">Welcome to Wochenschau</h1>
+                <p class="mt-2 text-sm text-muted-foreground">
+                    Sign in or create an account to continue. Offline mode stays
+                    available after you have signed in on this device.
+                </p>
+
+                {#if $cloudAuth.isAuthenticated && $cloudAuth.requiresInitialTransferChoice}
+                    <div
+                        class="mt-5 rounded-2xl border border-border/60 bg-card/40 p-4"
+                    >
+                        <p class="font-medium">Transfer local data?</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            We found local data on this device. Do you want to
+                            transfer it to your account?
+                        </p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <Button
+                                class="rounded-full px-5"
+                                on:click={() =>
+                                    handleInitialTransferChoice(true)}
+                            >
+                                Yes, transfer
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                class="rounded-full px-5"
+                                on:click={() =>
+                                    handleInitialTransferChoice(false)}
+                            >
+                                No, use account data
+                            </Button>
+                        </div>
+                    </div>
+                {:else}
+                    <div class="mt-5 flex items-center gap-2">
+                        <button
+                            type="button"
+                            class={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                                authMode === "login"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground hover:text-foreground"
+                            }`}
+                            on:click={() => {
+                                authMode = "login";
+                                resetAuthMessages();
+                            }}
+                        >
+                            Login
+                        </button>
+                        <button
+                            type="button"
+                            class={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                                authMode === "register"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground hover:text-foreground"
+                            }`}
+                            on:click={() => {
+                                authMode = "register";
+                                resetAuthMessages();
+                            }}
+                        >
+                            Create account
+                        </button>
+                    </div>
+
+                    <div class="mt-4 grid gap-3 md:grid-cols-2">
+                        <label
+                            class="flex flex-col gap-2 text-sm font-medium md:col-span-2"
+                        >
+                            <span>Email</span>
+                            <Input
+                                bind:value={authEmail}
+                                type="email"
+                                placeholder="Email"
+                            />
+                        </label>
+                        <label class="flex flex-col gap-2 text-sm font-medium">
+                            <span>Password</span>
+                            <Input
+                                bind:value={authPassword}
+                                type="password"
+                                placeholder="Password"
+                            />
+                        </label>
+                        {#if authMode === "register"}
+                            <label
+                                class="flex flex-col gap-2 text-sm font-medium"
+                            >
+                                <span>Confirm password</span>
+                                <Input
+                                    bind:value={authPasswordConfirm}
+                                    type="password"
+                                    placeholder="Confirm password"
+                                />
+                            </label>
+                        {/if}
+                    </div>
+
+                    <div class="mt-4">
+                        <Button
+                            class="rounded-full px-5"
+                            on:click={handleAuthSubmit}
+                        >
+                            {authMode === "login" ? "Login" : "Create account"}
+                        </Button>
+                    </div>
+                {/if}
+
+                {#if authError || $cloudAuth.error}
+                    <p class="mt-3 text-sm text-destructive">
+                        {authError || $cloudAuth.error}
+                    </p>
+                {/if}
+
+                {#if authSuccess}
+                    <p
+                        class="mt-3 text-sm text-emerald-600 dark:text-emerald-400"
+                    >
+                        {authSuccess}
+                    </p>
+                {/if}
+            </section>
+        </div>
+    {:else if isDesktop}
         <!-- Desktop Layout -->
         <div class="mx-auto h-screen max-w-10xl">
             <div class="flex h-[calc(100vh-1rem)] gap-4">
@@ -927,24 +1141,6 @@
                                 title={`Pick week · ${currentWeekDateRange}`}
                                 type="button"
                             >
-                                <!-- <span
-                                    class="flex h-6 w-6 shrink-0 items-center justify-center"
-                                >
-                                    <svg
-                                        class="w-6 h-6"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                        />
-                                    </svg>
-                                </span> -->
-
                                 <span
                                     class="block text-xl font-semibold leading-none whitespace-nowrap"
                                 >
@@ -1187,11 +1383,11 @@
 </main>
 
 <!-- Modals/Sheets -->
-{#if showAddActivity}
+{#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && showAddActivity}
     <AddActivityModal on:close={handleCloseAddActivity} {isDesktop} />
 {/if}
 
-{#if showSettings}
+{#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && showSettings}
     <SettingsSheet
         initialSetting={settingsInitialSetting}
         on:close={handleCloseSettings}
@@ -1199,7 +1395,7 @@
     />
 {/if}
 
-{#if showWeekPicker && !isDesktop}
+{#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && showWeekPicker && !isDesktop}
     <WeekPicker
         isDesktop={false}
         currentWeek={$currentWeek}
@@ -1212,11 +1408,11 @@
     />
 {/if}
 
-{#if showExport}
+{#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && showExport}
     <ExportSheet on:close={() => (showExport = false)} {isDesktop} />
 {/if}
 
-{#if calendarPickerSheetOpen}
+{#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && calendarPickerSheetOpen}
     <WeekPicker
         isDesktop={true}
         currentWeek={$currentWeek}
@@ -1229,7 +1425,7 @@
     />
 {/if}
 
-{#if editingActivity}
+{#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && editingActivity}
     <ActivityEditSheet
         {isDesktop}
         activity={editingActivity}
@@ -1241,7 +1437,9 @@
 
 <!-- Delete Activity Confirmation Dialog -->
 <ConfirmDialog
-    isOpen={showDeleteConfirm}
+    isOpen={$cloudAuth.isAuthenticated &&
+        !$cloudAuth.requiresInitialTransferChoice &&
+        showDeleteConfirm}
     {isDesktop}
     title="Delete Activity"
     message={editingActivity
@@ -1256,7 +1454,7 @@
 />
 
 <!-- Sync Conflict Dialog -->
-{#if showConflictDialog}
+{#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && showConflictDialog}
     <SyncConflictDialog
         conflicts={pendingConflicts}
         {isDesktop}

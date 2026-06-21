@@ -29,13 +29,13 @@
 >
     {#if isSmallScreen && !collapsed}
         <div
-            class="fixed inset-0 z-30 bg-background/50"
+            class="fixed inset-0 z-30 bg-background/5 backdrop-blur-[1px]"
             role="presentation"
             on:click={() => dispatch("toggleCollapse")}
         ></div>
     {/if}
     <aside
-        class={`h-[calc(100vh-3rem)] floating-glass-surface overflow-hidden rounded-[2rem] p-1.5 border-r border-border transition-[width] duration-200 ease-out ${
+        class={`h-[calc(100vh-2rem)] floating-glass-surface overflow-hidden rounded-[2rem] p-1.5 border-r border-border transition-[width] duration-200 ease-out ${
             isSmallScreen && !collapsed
                 ? "absolute left-0 top-0 z-40 h-[calc(100vh-2rem)] w-72"
                 : "w-full absolute z-40 left-0 top-0"

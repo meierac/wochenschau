@@ -1,34 +1,58 @@
 import { writable } from "svelte/store";
 
 import type { UserProfile } from "../types/index.js";
-import { getUserProfile, saveUserProfile } from "../utils/storage.js";
+import {
+  fetchProfile,
+  saveProfile,
+  uploadAvatar as uploadAvatarService,
+  removeAvatar as removeAvatarService,
+} from "../services/profileService.js";
 
-export const defaultUserProfile: UserProfile = {
-  role: "User",
-  username: "wochenschau-user",
-  firstName: "Max",
-  lastName: "Mustermann",
-  email: "max.mustermann@example.com",
-  phoneNumber: "+49 170 1234567",
+export const emptyUserProfile: UserProfile = {
+  role: "Member",
+  username: "",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phoneNumber: "",
   profileImage: "",
-  shortBio:
-    "I use Wochenschau to keep my weekly schedule and priorities in one place.",
+  shortBio: "",
 };
 
 function createProfileStore() {
-  const { subscribe, set } = writable<UserProfile>(
-    getUserProfile(defaultUserProfile),
-  );
+  const { subscribe, set } = writable<UserProfile>(emptyUserProfile);
 
   return {
     subscribe,
-    updateProfile: (profile: UserProfile) => {
-      saveUserProfile(profile);
+
+    async loadFromPocketBase() {
+      const profile = await fetchProfile();
       set(profile);
     },
-    resetProfile: () => {
-      saveUserProfile(defaultUserProfile);
-      set(defaultUserProfile);
+
+    async saveToRemote(data: {
+      username: string;
+      firstName: string;
+      lastName: string;
+      phoneNumber: string;
+      shortBio: string;
+    }) {
+      const updated = await saveProfile(data);
+      set(updated);
+    },
+
+    async uploadAvatar(file: File) {
+      const updated = await uploadAvatarService(file);
+      set(updated);
+    },
+
+    async removeAvatar() {
+      const updated = await removeAvatarService();
+      set(updated);
+    },
+
+    setFromRecord(profile: UserProfile) {
+      set(profile);
     },
   };
 }

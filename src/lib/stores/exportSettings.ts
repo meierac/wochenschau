@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import { imageStorage } from "./imageStorage";
+import { notifyDataChanged } from "../services/syncTrigger.js";
 
 export interface ExportSettings {
   // Typography
@@ -241,6 +242,7 @@ function createExportSettingsStore() {
     set: (value: ExportSettings) => {
       saveToLocalStorage(value);
       set(value);
+      notifyDataChanged();
     },
     update: (updater: (value: ExportSettings) => ExportSettings) => {
       update((current) => {
@@ -248,6 +250,7 @@ function createExportSettingsStore() {
         saveToLocalStorage(updated);
         return updated;
       });
+      notifyDataChanged();
     },
     reset: async () => {
       // Clear IndexedDB image
@@ -258,6 +261,7 @@ function createExportSettingsStore() {
       }
       saveToLocalStorage(defaultSettings);
       set(defaultSettings);
+      notifyDataChanged();
     },
     setBackgroundImage: async (
       imageData: string | null,
@@ -284,6 +288,8 @@ function createExportSettingsStore() {
           saveToLocalStorage(updated);
           return updated;
         });
+
+        notifyDataChanged();
       } catch (error) {
         console.error("Failed to save background image:", error);
         throw error;
@@ -300,6 +306,7 @@ function createExportSettingsStore() {
         saveToLocalStorage(updated);
         return updated;
       });
+      notifyDataChanged();
     },
   };
 }

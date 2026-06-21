@@ -29,18 +29,19 @@
         isEditing = false;
     }
 
-    function saveProfile() {
-        profile.updateProfile({
-            role: draft.role.trim(),
-            username: draft.username.trim(),
-            firstName: draft.firstName.trim(),
-            lastName: draft.lastName.trim(),
-            email: draft.email.trim(),
-            phoneNumber: draft.phoneNumber.trim(),
-            profileImage: draft.profileImage.trim(),
-            shortBio: draft.shortBio.trim(),
-        });
-        isEditing = false;
+    async function saveProfile() {
+        try {
+            await profile.saveToRemote({
+                username: draft.username.trim(),
+                firstName: draft.firstName.trim(),
+                lastName: draft.lastName.trim(),
+                phoneNumber: draft.phoneNumber.trim(),
+                shortBio: draft.shortBio.trim(),
+            });
+            isEditing = false;
+        } catch (error) {
+            console.error("Failed to save profile:", error);
+        }
     }
 
     function getInitials(profileData: UserProfile) {
