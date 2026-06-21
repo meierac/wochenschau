@@ -8,17 +8,28 @@ import {
   type SyncedAppData,
 } from "./localDataSnapshot.js";
 import { emptyUserProfile, profile } from "../stores/profile.js";
+import { activities } from "../stores/activities.js";
+import { templates } from "../stores/templates.js";
+import { subscriptions } from "../stores/ical.js";
+import { exportSettings } from "../stores/exportSettings.js";
+import { bibleVerse } from "../stores/bibleVerse.js";
 import { mapRecordToProfile } from "./profileService.js";
-import {
-  getLocalDataUpdatedAt,
-  onDataChanged,
-  setLocalDataUpdatedAt,
-} from "./syncTrigger.js";
+import { getLocalDataUpdatedAt, onDataChanged } from "./syncTrigger.js";
 
 const DEFAULT_POCKETBASE_URL = "https://pocketbase.144t.org";
 const SYNC_DEBOUNCE_MS = 1200;
 const INITIAL_TRANSFER_DECISION_KEY_PREFIX =
   "wochenschau_initial_transfer_decision";
+const REGISTERED_ON_DEVICE_KEY_PREFIX = "wochenschau_registered_on_device";
+const REALTIME_SYNC_TOPIC = "*";
+
+const EXPORT_SETTINGS_KEY = "exportSettings";
+const BIBLE_VERSE_KEY = "bibleVerseState";
+const EXPORT_LAYOUT_MODE_KEY = "exportLayoutMode";
+const EXPORT_SHOW_PREVIEW_KEY = "exportShowPreview";
+const EXPORT_RANGE_MODE_KEY = "exportRangeMode";
+const EXPORT_DAY_RANGE_START_KEY = "exportDayRangeStart";
+const EXPORT_DAY_RANGE_END_KEY = "exportDayRangeEnd";
 
 export const POCKETBASE_URL =
   import.meta.env.VITE_POCKETBASE_URL?.trim() || DEFAULT_POCKETBASE_URL;
@@ -64,6 +75,16 @@ export const cloudAuth = writable<CloudAuthState>(initialState);
 let initialized = false;
 let cloudRecordId: string | null = null;
 let syncDebounceTimer: number | null = null;
+let realtimeSubscribedUserId: string | null = null;
+let realtimeSubscriptionInFlight: Promise<void> | null = null;
+let markNextAuthenticatedUserAsDeviceRegistration = false;
+
+interface CloudSyncRealtimeRecord {
+  id: string;
+  user: string;
+  payload: unknown;
+  clientUpdatedAt: number;
+}
 
 function setCloudState(partial: Partial<CloudAuthState>): void {
   cloudAuth.update((state) => ({ ...state, ...partial }));
@@ -97,11 +118,198 @@ function getErrorMessage(error: unknown): string {
   return "Unknown error";
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function parseRealtimeRecord(event: unknown): CloudSyncRealtimeRecord | null {
+  if (!isObjectRecord(event)) return null;
+
+  const eventRecord = event.record;
+  if (!isObjectRecord(eventRecord)) return null;
+
+  const id = typeof eventRecord.id === "string" ? eventRecord.id : "";
+  const user = typeof eventRecord.user === "string" ? eventRecord.user : "";
+  const clientUpdatedAtRaw = Number(eventRecord.clientUpdatedAt);
+
+  if (!id || !user || !Number.isFinite(clientUpdatedAtRaw)) {
+    return null;
+  }
+
+  return {
+    id,
+    user,
+    payload: eventRecord.payload,
+    clientUpdatedAt: clientUpdatedAtRaw,
+  };
+}
+
+function parseRealtimeAction(event: unknown): string {
+  if (!isObjectRecord(event)) return "";
+  return typeof event.action === "string" ? event.action : "";
+}
+
+function clearRealtimeSyncSubscription(): void {
+  try {
+    pocketbase
+      .collection(POCKETBASE_DATA_COLLECTION)
+      .unsubscribe(REALTIME_SYNC_TOPIC);
+  } catch {
+    // No active subscription.
+  }
+
+  realtimeSubscribedUserId = null;
+}
+
+function clearAppLocalStorage(): void {
+  if (typeof window === "undefined") return;
+
+  const directKeys = [
+    EXPORT_SETTINGS_KEY,
+    BIBLE_VERSE_KEY,
+    EXPORT_LAYOUT_MODE_KEY,
+    EXPORT_SHOW_PREVIEW_KEY,
+    EXPORT_RANGE_MODE_KEY,
+    EXPORT_DAY_RANGE_START_KEY,
+    EXPORT_DAY_RANGE_END_KEY,
+  ];
+
+  for (const key of directKeys) {
+    localStorage.removeItem(key);
+  }
+
+  for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+    const key = localStorage.key(index);
+    if (!key) continue;
+
+    if (key.startsWith("wochenschau_")) {
+      localStorage.removeItem(key);
+    }
+  }
+}
+
+async function clearLocalDataOnSignOut(): Promise<void> {
+  try {
+    activities.clearAll();
+    templates.replaceAll([]);
+    subscriptions.replaceAll([]);
+    profile.setFromRecord(emptyUserProfile);
+    bibleVerse.reset();
+    await exportSettings.reset();
+  } catch {
+    // Best-effort cleanup.
+  }
+
+  clearAppLocalStorage();
+}
+
+async function applyRealtimeRecord(
+  record: CloudSyncRealtimeRecord,
+): Promise<void> {
+  if (!pocketbase.authStore.isValid) return;
+
+  const userId = currentUserId();
+  if (!userId || record.user !== userId) return;
+
+  cloudRecordId = record.id;
+
+  const remoteUpdatedAt = Number(record.clientUpdatedAt) || 0;
+  if (remoteUpdatedAt <= 0) return;
+
+  const localUpdatedAt = getLocalDataUpdatedAt();
+  if (remoteUpdatedAt <= localUpdatedAt) return;
+
+  const remoteSnapshot = normalizeSyncedAppData(record.payload);
+  if (!remoteSnapshot) return;
+
+  setCloudState({ syncing: true, error: null });
+
+  try {
+    await applySnapshotToLocalState({
+      ...remoteSnapshot,
+      updatedAt: remoteUpdatedAt,
+    });
+
+    setCloudState({ lastSyncAt: Date.now() });
+  } catch (error) {
+    setCloudState({ error: getErrorMessage(error) });
+  } finally {
+    setCloudState({ syncing: false });
+  }
+}
+
+async function handleRealtimeEvent(event: unknown): Promise<void> {
+  const action = parseRealtimeAction(event);
+  const record = parseRealtimeRecord(event);
+
+  if (!record) return;
+
+  if (action === "delete") {
+    if (record.user === currentUserId()) {
+      cloudRecordId = null;
+    }
+    return;
+  }
+
+  await applyRealtimeRecord(record);
+}
+
+async function ensureRealtimeSyncSubscription(): Promise<void> {
+  if (!pocketbase.authStore.isValid) return;
+
+  const userId = currentUserId();
+  if (!userId) return;
+  if (realtimeSubscribedUserId === userId) return;
+
+  if (realtimeSubscriptionInFlight) {
+    await realtimeSubscriptionInFlight;
+    return;
+  }
+
+  const requestedUserId = userId;
+
+  realtimeSubscriptionInFlight = (async () => {
+    clearRealtimeSyncSubscription();
+
+    await pocketbase
+      .collection(POCKETBASE_DATA_COLLECTION)
+      .subscribe(REALTIME_SYNC_TOPIC, (event: unknown) => {
+        void handleRealtimeEvent(event);
+      });
+
+    if (!pocketbase.authStore.isValid || currentUserId() !== requestedUserId) {
+      clearRealtimeSyncSubscription();
+      return;
+    }
+
+    realtimeSubscribedUserId = requestedUserId;
+  })()
+    .catch((error) => {
+      setCloudState({ error: getErrorMessage(error) });
+    })
+    .finally(() => {
+      realtimeSubscriptionInFlight = null;
+    });
+
+  await realtimeSubscriptionInFlight;
+}
+
 function refreshIdentityState(): void {
+  const userId = currentUserId();
+
+  if (
+    markNextAuthenticatedUserAsDeviceRegistration &&
+    pocketbase.authStore.isValid &&
+    userId
+  ) {
+    markRegisteredOnDevice(userId);
+    markNextAuthenticatedUserAsDeviceRegistration = false;
+  }
+
   setCloudState({
     ready: true,
     isAuthenticated: pocketbase.authStore.isValid,
-    userId: currentUserId(),
+    userId,
     email: currentUserEmail(),
   });
 }
@@ -127,6 +335,10 @@ function getInitialTransferDecisionKey(userId: string): string {
   return `${INITIAL_TRANSFER_DECISION_KEY_PREFIX}_${userId}`;
 }
 
+function getRegisteredOnDeviceKey(userId: string): string {
+  return `${REGISTERED_ON_DEVICE_KEY_PREFIX}_${userId}`;
+}
+
 function hasInitialTransferDecision(userId: string): boolean {
   if (typeof window === "undefined") return true;
   return Boolean(localStorage.getItem(getInitialTransferDecisionKey(userId)));
@@ -135,6 +347,21 @@ function hasInitialTransferDecision(userId: string): boolean {
 function setInitialTransferDecision(userId: string, value: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(getInitialTransferDecisionKey(userId), value);
+}
+
+function markRegisteredOnDevice(userId: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(getRegisteredOnDeviceKey(userId), "1");
+}
+
+function wasRegisteredOnDevice(userId: string): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(getRegisteredOnDeviceKey(userId)) === "1";
+}
+
+function clearRegisteredOnDeviceMark(userId: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(getRegisteredOnDeviceKey(userId));
 }
 
 function createEmptySnapshot(): SyncedAppData {
@@ -349,12 +576,17 @@ async function shouldPromptForInitialTransferChoice(
   userId: string,
 ): Promise<boolean> {
   if (hasInitialTransferDecision(userId)) return false;
+  if (!wasRegisteredOnDevice(userId)) {
+    setInitialTransferDecision(userId, "not-device-registration");
+    return false;
+  }
 
   const localSnapshot = await collectLocalSnapshot();
   const localHasData = hasMeaningfulSnapshotData(localSnapshot);
 
   if (!localHasData) {
     setInitialTransferDecision(userId, "no-local-data");
+    clearRegisteredOnDeviceMark(userId);
     return false;
   }
 
@@ -415,6 +647,7 @@ async function startAuthenticatedSessionFlow(): Promise<void> {
 
   setCloudState({ requiresInitialTransferChoice: false });
   await reconcileLocalAndCloud();
+  await ensureRealtimeSyncSubscription();
 
   // Load fresh profile from PocketBase after sync
   try {
@@ -448,6 +681,7 @@ export async function initializeCloudSync(): Promise<void> {
   pocketbase.authStore.onChange(() => {
     if (!pocketbase.authStore.isValid) {
       cloudRecordId = null;
+      clearRealtimeSyncSubscription();
       setCloudState({
         syncing: false,
         error: null,
@@ -503,41 +737,55 @@ export async function createPocketBaseAccount(
 ): Promise<void> {
   setCloudState({ error: null });
 
+  markNextAuthenticatedUserAsDeviceRegistration = true;
+
   const trimmedEmail = email.trim();
   const authCollection = pocketbase.collection(POCKETBASE_AUTH_COLLECTION);
 
   try {
-    await authCollection.create({
-      email: trimmedEmail,
-      password,
-      passwordConfirm,
-      emailVisibility: true,
-    });
-  } catch (error) {
-    const maybeResponse =
-      error instanceof ClientResponseError ? error.response : null;
+    try {
+      await authCollection.create({
+        email: trimmedEmail,
+        password,
+        passwordConfirm,
+        emailVisibility: true,
+      });
+    } catch (error) {
+      const maybeResponse =
+        error instanceof ClientResponseError ? error.response : null;
 
-    const usernameFieldError = Boolean(
-      maybeResponse &&
-      typeof maybeResponse === "object" &&
-      "data" in maybeResponse &&
-      (maybeResponse.data as Record<string, unknown>)?.username,
-    );
+      const usernameFieldError = Boolean(
+        maybeResponse &&
+        typeof maybeResponse === "object" &&
+        "data" in maybeResponse &&
+        (maybeResponse.data as Record<string, unknown>)?.username,
+      );
 
-    if (!usernameFieldError) {
-      throw error;
+      if (!usernameFieldError) {
+        throw error;
+      }
+
+      await authCollection.create({
+        email: trimmedEmail,
+        password,
+        passwordConfirm,
+        emailVisibility: true,
+        username: deriveUsernameFromEmail(trimmedEmail),
+      });
     }
 
-    await authCollection.create({
-      email: trimmedEmail,
-      password,
-      passwordConfirm,
-      emailVisibility: true,
-      username: deriveUsernameFromEmail(trimmedEmail),
-    });
-  }
+    await authCollection.authWithPassword(trimmedEmail, password);
 
-  await authCollection.authWithPassword(trimmedEmail, password);
+    const userId = currentUserId();
+    if (userId) {
+      markRegisteredOnDevice(userId);
+    }
+
+    markNextAuthenticatedUserAsDeviceRegistration = false;
+  } catch (error) {
+    markNextAuthenticatedUserAsDeviceRegistration = false;
+    throw error;
+  }
 }
 
 export async function resolveInitialTransferChoice(
@@ -559,6 +807,9 @@ export async function resolveInitialTransferChoice(
       setInitialTransferDecision(userId, "skip-transfer");
     }
 
+    clearRegisteredOnDeviceMark(userId);
+    await ensureRealtimeSyncSubscription();
+
     setCloudState({
       requiresInitialTransferChoice: false,
       lastSyncAt: Date.now(),
@@ -577,9 +828,11 @@ export function signOutFromPocketBase(): void {
     syncDebounceTimer = null;
   }
 
+  markNextAuthenticatedUserAsDeviceRegistration = false;
   cloudRecordId = null;
+  clearRealtimeSyncSubscription();
   pocketbase.authStore.clear();
-  setLocalDataUpdatedAt(Date.now());
+  void clearLocalDataOnSignOut();
   setCloudState({ requiresInitialTransferChoice: false });
 }
 
