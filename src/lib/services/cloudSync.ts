@@ -81,6 +81,8 @@ let cloudRecordId: string | null = null;
 let syncDebounceTimer: number | null = null;
 let realtimeSubscribedUserId: string | null = null;
 let realtimeSubscriptionInFlight: Promise<void> | null = null;
+let profileRealtimeSubscribedUserId: string | null = null;
+let profileRealtimeSubscriptionInFlight: Promise<void> | null = null;
 let markNextAuthenticatedUserAsDeviceRegistration = false;
 
 interface CloudSyncRealtimeRecord {
@@ -163,6 +165,78 @@ function clearRealtimeSyncSubscription(): void {
   }
 
   realtimeSubscribedUserId = null;
+}
+
+function clearProfileRealtimeSubscription(): void {
+  const userId = profileRealtimeSubscribedUserId ?? currentUserId();
+
+  if (userId) {
+    try {
+      pocketbase.collection(POCKETBASE_AUTH_COLLECTION).unsubscribe(userId);
+    } catch {
+      // No active subscription.
+    }
+  }
+
+  profileRealtimeSubscribedUserId = null;
+}
+
+async function handleProfileRealtimeEvent(event: unknown): Promise<void> {
+  if (!isObjectRecord(event)) return;
+
+  const action = typeof event.action === "string" ? event.action : "";
+  if (action !== "update" && action !== "create") return;
+
+  const eventRecord = event.record;
+  if (!isObjectRecord(eventRecord)) return;
+  if (!pocketbase.authStore.isValid) return;
+
+  try {
+    const mapped = mapRecordToProfile(eventRecord as RecordModel);
+    profile.setFromRecord(mapped);
+  } catch {
+    // Ignore malformed realtime payloads.
+  }
+}
+
+async function ensureProfileRealtimeSubscription(): Promise<void> {
+  if (!pocketbase.authStore.isValid) return;
+
+  const userId = currentUserId();
+  if (!userId) return;
+  if (profileRealtimeSubscribedUserId === userId) return;
+
+  if (profileRealtimeSubscriptionInFlight) {
+    await profileRealtimeSubscriptionInFlight;
+    return;
+  }
+
+  const requestedUserId = userId;
+
+  profileRealtimeSubscriptionInFlight = (async () => {
+    clearProfileRealtimeSubscription();
+
+    await pocketbase
+      .collection(POCKETBASE_AUTH_COLLECTION)
+      .subscribe(requestedUserId, (event: unknown) => {
+        void handleProfileRealtimeEvent(event);
+      });
+
+    if (!pocketbase.authStore.isValid || currentUserId() !== requestedUserId) {
+      clearProfileRealtimeSubscription();
+      return;
+    }
+
+    profileRealtimeSubscribedUserId = requestedUserId;
+  })()
+    .catch((error) => {
+      setCloudState({ error: getErrorMessage(error) });
+    })
+    .finally(() => {
+      profileRealtimeSubscriptionInFlight = null;
+    });
+
+  await profileRealtimeSubscriptionInFlight;
 }
 
 function clearAppLocalStorage(): void {
@@ -665,6 +739,8 @@ async function startAuthenticatedSessionFlow(): Promise<void> {
   const userId = currentUserId();
   if (!userId || !pocketbase.authStore.isValid) return;
 
+  await ensureProfileRealtimeSubscription();
+
   const needsChoice = await shouldPromptForInitialTransferChoice(userId);
   if (needsChoice) {
     setCloudState({
@@ -712,6 +788,7 @@ export async function initializeCloudSync(): Promise<void> {
     if (!pocketbase.authStore.isValid) {
       cloudRecordId = null;
       clearRealtimeSyncSubscription();
+      clearProfileRealtimeSubscription();
       setCloudState({
         syncing: false,
         error: null,
@@ -861,6 +938,7 @@ export function signOutFromPocketBase(): void {
   markNextAuthenticatedUserAsDeviceRegistration = false;
   cloudRecordId = null;
   clearRealtimeSyncSubscription();
+  clearProfileRealtimeSubscription();
   pocketbase.authStore.clear();
   void clearLocalDataOnSignOut();
   setCloudState({ requiresInitialTransferChoice: false });

@@ -21,7 +21,6 @@ import {
   getActivities,
   getTemplates,
   getSubscriptions,
-  getUserProfile,
 } from "../utils/storage.js";
 
 import {
@@ -122,7 +121,7 @@ export async function collectLocalSnapshot(): Promise<SyncedAppData> {
     activities: getActivities(),
     templates: getTemplates(),
     subscriptions: getSubscriptions(),
-    profile: getUserProfile(emptyUserProfile),
+    profile: get(profile),
     exportSettings: exportSettingsRaw || {},
     bibleVerseState: bibleVerseRaw,
     backgroundImage,
@@ -161,7 +160,6 @@ export async function applySnapshotToLocalState(
     activities.replaceAll(snapshot.activities);
     templates.replaceAll(snapshot.templates);
     subscriptions.replaceAll(snapshot.subscriptions);
-    profile.setFromRecord(snapshot.profile);
 
     const currentExportSettings = get(exportSettings);
     const mergedExportSettings: ExportSettings = {
