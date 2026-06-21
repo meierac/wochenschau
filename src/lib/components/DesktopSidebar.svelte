@@ -23,7 +23,7 @@
 </script>
 
 <div
-    class={`relative shrink-0 m-4 ${
+    class={`relative shrink-0 ${
         isSmallScreen ? "w-20" : collapsed ? "w-20" : "w-72"
     }`}
 >
@@ -35,10 +35,10 @@
         ></div>
     {/if}
     <aside
-        class={`h-[calc(100vh-2rem)] floating-glass-surface overflow-hidden rounded-[2rem] p-1.5 border-r border-border transition-[width] duration-200 ease-out ${
+        class={`overflow-hidden transition-[width]  duration-200 ease-out ${
             isSmallScreen && !collapsed
-                ? "absolute left-0 top-0 z-40 h-[calc(100vh-2rem)] w-72"
-                : "w-full absolute z-40 left-0 top-0"
+                ? "absolute left-0 top-0 z-40 rounded-[2rem] p-2 m-4  h-[calc(100vh-2rem)] w-72 floating-glass-surface border-border"
+                : "w-full absolute z-40 left-0 top-0 p-1.5 h-[100vh] border-r"
         }`}
     >
         <div class="flex h-full flex-col justify-between gap-3">
@@ -57,7 +57,7 @@
                     </div>
                 {:else}
                     <div
-                        class="flex min-h-[72px] items-center justify-between gap-3 rounded-[1.4rem] px-3 py-3"
+                        class="flex min-h-[72px] items-center justify-between gap-3 rounded-[1.4rem] px-3 py-3 pl-[0.9rem]"
                     >
                         <div class="flex min-w-0 items-center gap-3">
                             <img
@@ -68,7 +68,7 @@
                                 class="h-10 w-10 shrink-0 rounded-xl"
                             />
                             <span class="truncate text-lg font-semibold">
-                                Wochenschau
+                                Strata
                             </span>
                         </div>
                     </div>
@@ -84,7 +84,7 @@
                         activeView === "calendar"
                             ? "bg-muted text-foreground"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    } ${collapsed ? "justify-center" : "gap-3"}`}
+                    } ${collapsed ? "justify-center" : "gap-3 pl-[1.35rem]"}`}
                     aria-label="Open calendar page"
                     title="Calendar"
                 >
@@ -118,7 +118,7 @@
                         activeView === "messages"
                             ? "bg-muted text-foreground"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    } ${collapsed ? "justify-center" : "gap-3"}`}
+                    } ${collapsed ? "justify-center" : "gap-3 pl-[1.35rem]"}`}
                     aria-label="Open messages page"
                     title="Messages"
                 >
@@ -152,7 +152,7 @@
                         activeView === "registrations"
                             ? "bg-muted text-foreground"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    } ${collapsed ? "justify-center" : "gap-3"}`}
+                    } ${collapsed ? "justify-center" : "gap-3 pl-[1.35rem]"}`}
                     aria-label="Open registrations page"
                     title="Registrations"
                 >
@@ -186,7 +186,7 @@
                         activeView === "files"
                             ? "bg-muted text-foreground"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    } ${collapsed ? "justify-center" : "gap-3"}`}
+                    } ${collapsed ? "justify-center" : "gap-3 pl-[1.35rem]"}`}
                     aria-label="Open files page"
                     title="Files"
                 >
@@ -218,7 +218,7 @@
                         if (isSmallScreen && !collapsed)
                             dispatch("closeSidebar");
                     }}
-                    class={`flex w-full items-center rounded-3xl px-3 py-3 text-left text-muted-foreground transition-colors active:bg-muted hover:bg-muted hover:text-foreground ${collapsed ? "justify-center" : "gap-3"}`}
+                    class={`flex w-full items-center rounded-3xl px-3 py-3 text-left text-muted-foreground transition-colors active:bg-muted hover:bg-muted hover:text-foreground ${collapsed ? "justify-center" : "gap-3 pl-[1.35rem]"}`}
                     aria-label="Open settings"
                     title="Settings"
                 >
@@ -255,7 +255,7 @@
                             if (isSmallScreen && !collapsed)
                                 dispatch("closeSidebar");
                         }}
-                        class={`flex w-full items-center rounded-3xl px-3 py-3 text-left text-muted-foreground transition-colors active:bg-muted hover:bg-muted hover:text-foreground ${collapsed ? "justify-center" : "gap-3"}`}
+                        class={`flex w-full items-center rounded-3xl px-3 py-3 text-left text-muted-foreground transition-colors active:bg-muted hover:bg-muted hover:text-foreground ${collapsed ? "justify-center" : "gap-3 pl-[1.35rem]"}`}
                         aria-label="Open profile page"
                         title={sidebarProfileName || "Profile"}
                     >
@@ -294,7 +294,7 @@
                             if (isSmallScreen && !collapsed)
                                 dispatch("closeSidebar");
                         }}
-                        class={`flex w-full items-center gap-3 rounded-3xl px-2 py-2 text-left text-muted-foreground transition-colors active:bg-muted hover:bg-muted hover:text-foreground ${collapsed ? "justify-center" : "gap-3"}`}
+                        class={`flex w-full items-center gap-3 rounded-3xl px-2 py-2 text-left text-muted-foreground transition-colors active:bg-muted hover:bg-muted hover:text-foreground ${collapsed ? "justify-center" : "gap-3 pl-[1.1rem]"}`}
                         aria-label="Open profile details"
                         title={sidebarProfileName || "Profile"}
                     >
@@ -320,7 +320,7 @@
                     aria-expanded="false"
                     title="Expand sidebar"
                     type="button"
-                    class={`flex w-full items-center rounded-3xl px-3 py-3 text-left transition-colors active:bg-muted text-muted-foreground hover:bg-muted hover:text-foreground ${collapsed ? "justify-center" : "gap-3"}`}
+                    class={`flex w-full items-center rounded-3xl px-3 py-3 text-left transition-colors active:bg-muted text-muted-foreground hover:bg-muted hover:text-foreground ${collapsed ? "justify-center" : "gap-3 pl-[1.35rem]"}`}
                 >
                     {#if !collapsed}
                         <svg

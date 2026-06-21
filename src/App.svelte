@@ -787,7 +787,7 @@
     {:else if isDesktop}
         <!-- Desktop Layout -->
         <div class="mx-auto h-screen max-w-10xl">
-            <div class="flex h-[calc(100vh-1rem)] gap-4">
+            <div class="flex h-screen">
                 <DesktopSidebar
                     collapsed={desktopSidebarCollapsed}
                     isSmallScreen={screenWidth < 1200}
@@ -808,17 +808,17 @@
                     }}
                 />
 
-                <div class="flex min-w-0 flex-1 flex-col overflow-hidden p-4">
+                <div class="min-w-0 flex-1 flex-col overflow-y-scroll">
                     {#if currentPage === "calendar"}
                         <!-- Desktop Header -->
                         <div
-                            class="mb-6 mr-4 mt-2 flex items-start justify-between gap-4"
+                            class="px-10 pr-12 pt-3 pb-3 flex items-start justify-between gap-4 border-b sticky top-0 z-10 backdrop-blur-xl"
                         >
                             <div
                                 class="flex min-w-0 flex-wrap items-center gap-4"
                             >
                                 <div
-                                    class="flex items-center floating-glass-surface floating-glass-pill p-1"
+                                    class="flex items-center border border-border floating-glass-pill p-1"
                                 >
                                     <button
                                         on:click={() =>
@@ -851,7 +851,7 @@
                                 </div>
 
                                 <div
-                                    class="flex items-center gap-0.5 floating-glass-surface floating-glass-pill py-0.5 px-0.5"
+                                    class="flex items-center gap-0.5 border border-border floating-glass-pill py-0.5 px-0.5"
                                 >
                                     <button
                                         on:click={() =>
@@ -941,7 +941,7 @@
                                 {#if !isViewingCurrentDesktopPeriod}
                                     <button
                                         on:click={handleJumpToToday}
-                                        class="px-4 py-2 floating-glass-surface floating-glass-pill bg-secondary/10 text-secondary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                        class="px-4 py-2 border border-border floating-glass-pill bg-secondary/10 text-secondary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
                                         aria-label={desktopCalendarView ===
                                         "month"
                                             ? "Go to current month"
@@ -972,7 +972,7 @@
                                 <button
                                     on:click={handleRefreshSubscriptions}
                                     disabled={syncingActive}
-                                    class="px-4 py-2 floating-glass-surface floating-glass-pill font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
+                                    class="px-4 py-2 border border-border floating-glass-pill font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
                             {syncingActive
                                         ? 'bg-primary/10 text-primary-foreground'
                                         : 'bg-secondary/10 text-secondary-foreground hover:opacity-90'}"
@@ -1018,7 +1018,7 @@
                                 <!-- Export Button -->
                                 <button
                                     on:click={handleOpenExport}
-                                    class="px-4 py-2 floating-glass-surface floating-glass-pill bg-secondary/10 text-secondary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                    class="px-4 py-2 border border-border floating-glass-pill bg-secondary/10 text-secondary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
                                     aria-label="Export weekly agenda"
                                     title="Export as image"
                                 >
@@ -1041,7 +1041,7 @@
                                 <!-- Add Activity Button -->
                                 <button
                                     on:click={handleOpenAddActivity}
-                                    class="px-4 py-2 floating-glass-surface floating-glass-pill bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                    class="px-4 py-2 border border-border floating-glass-pill bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
                                     aria-label="Add activity"
                                     title="Add activity"
                                 >
@@ -1071,7 +1071,7 @@
                         </div>
 
                         <!-- Desktop Calendar View -->
-                        <div class="flex flex-1 gap-4 overflow-hidden">
+                        <div class="flex flex-1 gap-4">
                             {#if screenWidth >= 1200}
                                 <DesktopCalendarPickerSidebar
                                     currentWeek={$currentWeek}
@@ -1082,7 +1082,7 @@
                                     on:monthSelected={handleMonthSelected}
                                 />
                             {/if}
-                            <div class="flex-1 overflow-hidden">
+                            <div class="flex-1 overflow-hidden m-10 ml-5">
                                 {#if desktopCalendarView === "month"}
                                     <MonthView
                                         referenceDate={desktopMonthDate}
