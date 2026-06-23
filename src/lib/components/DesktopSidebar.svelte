@@ -1,5 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
+    import { base } from "$app/paths";
     import { profile } from "../stores/profile";
 
     export let collapsed = false;
@@ -48,7 +49,7 @@
                         class="flex min-h-[72px] items-center justify-center rounded-[1.4rem] px-3 py-3"
                     >
                         <img
-                            src="/favicon.svg"
+                            src={`${base}/favicon.svg`}
                             alt="Wochenschau Logo"
                             width="40"
                             height="40"
@@ -61,7 +62,7 @@
                     >
                         <div class="flex min-w-0 items-center gap-3">
                             <img
-                                src="/favicon.svg"
+                                src={`${base}/favicon.svg`}
                                 alt="Wochenschau Logo"
                                 width="40"
                                 height="40"
