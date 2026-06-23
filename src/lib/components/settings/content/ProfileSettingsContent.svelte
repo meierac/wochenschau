@@ -237,61 +237,8 @@
 
     <!-- ── Authenticated view ──────────────────────────────────────── -->
     {#if $cloudAuth.isAuthenticated}
-        <!-- Account section -->
-        <section class="rounded-3xl border border-border bg-background/70 p-6">
-            <div
-                class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-            >
-                <div>
-                    <h3 class="text-lg font-semibold">Account</h3>
-                    <p class="text-sm text-muted-foreground">
-                        Logged in as
-                        <span class="font-medium"
-                            >{$cloudAuth.email || "—"}</span
-                        >
-                    </p>
-                </div>
-                <Button
-                    variant="ghost"
-                    class="rounded-full px-5"
-                    on:click={handleSignOut}
-                >
-                    Logout
-                </Button>
-            </div>
-
-            {#if $cloudAuth.requiresInitialTransferChoice}
-                <div
-                    class="mt-4 rounded-2xl border border-border/60 bg-background/70 p-4 text-sm"
-                >
-                    <p class="font-medium">Transfer local data?</p>
-                    <p class="mt-1 text-muted-foreground">
-                        We found local data on this device. Do you want to
-                        transfer it to this account?
-                    </p>
-                    <div class="mt-3 flex flex-wrap gap-2">
-                        <Button
-                            class="rounded-full px-5"
-                            on:click={() => handleInitialTransferChoice(true)}
-                        >
-                            Yes, transfer
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            class="rounded-full px-5"
-                            on:click={() => handleInitialTransferChoice(false)}
-                        >
-                            No, use account data
-                        </Button>
-                    </div>
-                </div>
-            {/if}
-        </section>
-
         <!-- Profile section -->
         <section class="rounded-3xl border border-border bg-background/70 p-6">
-            <h3 class="text-lg font-semibold">Profile</h3>
-
             <!-- Avatar -->
             <div class="mt-4 flex flex-col items-center gap-2">
                 <input
@@ -454,6 +401,55 @@
                         </dd>
                     </div>
                 </dl>
+            {/if}
+        </section>
+        <!-- Account section -->
+        <section class="rounded-3xl p-2">
+            <div
+                class="flex flex-col gap-3 md:pl-2 items-center md:justify-between"
+            >
+                <div>
+                    <p class="text-sm text-muted-foreground">
+                        Logged in as
+                        <span class="font-medium"
+                            >{$cloudAuth.email || "—"}</span
+                        >
+                    </p>
+                </div>
+                <Button
+                    variant="secondary"
+                    class="rounded-full px-5 w-full"
+                    on:click={handleSignOut}
+                >
+                    Logout
+                </Button>
+            </div>
+
+            {#if $cloudAuth.requiresInitialTransferChoice}
+                <div
+                    class="mt-4 rounded-2xl border border-border/60 bg-background/70 p-4 text-sm"
+                >
+                    <p class="font-medium">Transfer local data?</p>
+                    <p class="mt-1 text-muted-foreground">
+                        We found local data on this device. Do you want to
+                        transfer it to this account?
+                    </p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <Button
+                            class="rounded-full px-5"
+                            on:click={() => handleInitialTransferChoice(true)}
+                        >
+                            Yes, transfer
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            class="rounded-full px-5"
+                            on:click={() => handleInitialTransferChoice(false)}
+                        >
+                            No, use account data
+                        </Button>
+                    </div>
+                </div>
             {/if}
         </section>
 

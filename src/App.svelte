@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { base } from "$app/paths";
 
     import WeekView from "./lib/components/WeekView.svelte";
     import MonthView from "./lib/components/MonthView.svelte";
@@ -659,14 +660,20 @@
     {:else if !$cloudAuth.isAuthenticated || $cloudAuth.requiresInitialTransferChoice}
         <div class="flex h-screen items-center justify-center px-4">
             <section
-                class="w-full max-w-xl rounded-3xl border border-border bg-background/80 p-6 shadow-sm"
+                class="w-full max-w-xl rounded-3xl bg-background/80 p-6 shadow-sm"
             >
-                <h1 class="text-2xl font-bold">Welcome to Wochenschau</h1>
-                <p class="mt-2 text-sm text-muted-foreground">
-                    Sign in or create an account to continue. Offline mode stays
-                    available after you have signed in on this device.
-                </p>
-
+                <div
+                    class="flex min-h-[72px] items-center flex-col gap-8 justify-center rounded-[1.4rem] px-3 py-3"
+                >
+                    <img
+                        src={`${base}/favicon.svg`}
+                        alt="Wochenschau Logo"
+                        width="200"
+                        height="200"
+                        class="h-24 w-24 shrink-0 rounded-xl"
+                    />
+                    <h1 class="text-4xl font-bold">Strata</h1>
+                </div>
                 {#if $cloudAuth.isAuthenticated && $cloudAuth.requiresInitialTransferChoice}
                     <div
                         class="mt-5 rounded-2xl border border-border/60 bg-card/40 p-4"
@@ -695,12 +702,14 @@
                         </div>
                     </div>
                 {:else}
-                    <div class="mt-5 flex items-center gap-2">
+                    <div
+                        class="mt-5 flex items-center gap-2 border-border border rounded-full p-0.5 bg-muted"
+                    >
                         <button
                             type="button"
-                            class={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                            class={`rounded-full w-full px-3 py-1.5 text-sm font-medium transition-colors ${
                                 authMode === "login"
-                                    ? "bg-primary text-primary-foreground"
+                                    ? "bg-secondary text-primary-foreground"
                                     : "bg-muted text-muted-foreground hover:text-foreground"
                             }`}
                             on:click={() => {
@@ -712,9 +721,9 @@
                         </button>
                         <button
                             type="button"
-                            class={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                            class={`rounded-full w-full px-3 py-1.5 text-sm font-medium transition-colors ${
                                 authMode === "register"
-                                    ? "bg-primary text-primary-foreground"
+                                    ? "bg-secondary text-primary-foreground"
                                     : "bg-muted text-muted-foreground hover:text-foreground"
                             }`}
                             on:click={() => {
@@ -730,15 +739,19 @@
                         <label
                             class="flex flex-col gap-2 text-sm font-medium md:col-span-2"
                         >
-                            <span>Email</span>
+                            <!-- <span>Email</span> -->
                             <Input
                                 bind:value={authEmail}
                                 type="email"
                                 placeholder="Email"
                             />
                         </label>
-                        <label class="flex flex-col gap-2 text-sm font-medium">
-                            <span>Password</span>
+                        <label
+                            class={`flex flex-col gap-2 text-sm font-medium ${
+                                authMode === "login" ? "md:col-span-2" : ""
+                            }`}
+                        >
+                            <!-- <span>Password</span> -->
                             <Input
                                 bind:value={authPassword}
                                 type="password"
@@ -749,7 +762,7 @@
                             <label
                                 class="flex flex-col gap-2 text-sm font-medium"
                             >
-                                <span>Confirm password</span>
+                                <!-- <span>Confirm password</span> -->
                                 <Input
                                     bind:value={authPasswordConfirm}
                                     type="password"
@@ -761,7 +774,7 @@
 
                     <div class="mt-4">
                         <Button
-                            class="rounded-full px-5"
+                            class="rounded-full w-full px-5"
                             on:click={handleAuthSubmit}
                         >
                             {authMode === "login" ? "Login" : "Create account"}
@@ -1126,7 +1139,7 @@
         <div class="h-screen flex flex-col pb-0 relative overflow-hidden">
             <!-- Mobile Header -->
             <div
-                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background/5 to-transparent pr-3 pl-1 pb-6 backdrop-blur-lg pointer-events-none"
+                class="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-background to-background pr-3 pl-1 pb-3 backdrop-blur-lg pointer-events-none"
                 style="padding-top: calc(0rem + env(safe-area-inset-top)); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%); -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);"
             >
                 <div class="flex items-center justify-between gap-0.5">
