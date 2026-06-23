@@ -48,7 +48,7 @@
                         class="flex min-h-[72px] items-center justify-center rounded-[1.4rem] px-3 py-3"
                     >
                         <img
-                            src="/wochenschau/favicon.svg"
+                            src="/favicon.svg"
                             alt="Wochenschau Logo"
                             width="40"
                             height="40"
@@ -61,7 +61,7 @@
                     >
                         <div class="flex min-w-0 items-center gap-3">
                             <img
-                                src="/wochenschau/favicon.svg"
+                                src="/favicon.svg"
                                 alt="Wochenschau Logo"
                                 width="40"
                                 height="40"

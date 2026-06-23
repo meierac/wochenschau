@@ -6,12 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "pnpm run build && wrangler dev",
+    "preview": "vite preview",
     "check": "tsc --noEmit",
-    "deploy": "pnpm run build && wrangler deploy"
+    "deploy": "pnpm run build && wrangler pages deploy dist --project-name=wochenschau"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.42.2",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@types/node": "^24.9.1",

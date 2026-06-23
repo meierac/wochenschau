@@ -217,6 +217,29 @@ pnpm build
 pnpm preview
 ```
 
+## ☁️ Deploy to Cloudflare Pages
+
+### One-time setup
+1. Create a Cloudflare Pages project named `wochenschau`.
+2. In GitHub repository settings, add these secrets:
+   - `CLOUDFLARE_API_TOKEN`
+   - `CLOUDFLARE_ACCOUNT_ID`
+3. Ensure the API token has permission to deploy Pages projects.
+
+### CI deploy
+A GitHub Actions workflow at `.github/workflows/deploy.yml` builds the app and runs:
+
+```bash
+pnpm exec wrangler pages deploy dist --project-name=wochenschau --branch=<branch>
+```
+
+### Manual deploy
+```bash
+pnpm deploy
+```
+
+> SPA routing on Cloudflare Pages is enabled via `public/_redirects`.
+
 ## ☁️ PocketBase Setup
 
 This app requires an account login before use. After a user has logged in on a device once, offline mode remains supported on that device.
