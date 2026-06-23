@@ -314,7 +314,7 @@ function createExportSettingsStore() {
 export const exportSettings = createExportSettingsStore();
 
 // Font family options - LOCAL FONTS ONLY
-// Only fonts that are available in /public/fonts/
+// Only fonts that are available in /static/fonts/
 export const FONT_FAMILIES = [
   // Handwriting & Script (Local)
   { name: "Dancing Script (Script)", value: "'Dancing Script'" },

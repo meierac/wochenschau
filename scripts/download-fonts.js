@@ -14,78 +14,78 @@
  *   - Internet connection
  */
 
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
+const https = require("https");
+const fs = require("fs");
+const path = require("path");
 
 // Font configuration
 const FONTS_TO_DOWNLOAD = [
   {
-    name: 'Inter',
-    folder: 'inter',
+    name: "Inter",
+    folder: "inter",
     weights: [300, 400, 500, 600, 700],
-    type: 'sans-serif',
+    type: "sans-serif",
   },
   {
-    name: 'Playfair Display',
-    folder: 'playfair-display',
+    name: "Playfair Display",
+    folder: "playfair-display",
     weights: [400, 500, 600, 700],
-    type: 'serif',
+    type: "serif",
   },
   {
-    name: 'Roboto',
-    folder: 'roboto',
+    name: "Roboto",
+    folder: "roboto",
     weights: [300, 400, 500, 700],
-    type: 'sans-serif',
+    type: "sans-serif",
   },
   {
-    name: 'Montserrat',
-    folder: 'montserrat',
+    name: "Montserrat",
+    folder: "montserrat",
     weights: [300, 400, 500, 600, 700],
-    type: 'sans-serif',
+    type: "sans-serif",
   },
   {
-    name: 'Lora',
-    folder: 'lora',
+    name: "Lora",
+    folder: "lora",
     weights: [400, 500, 600, 700],
-    type: 'serif',
+    type: "serif",
   },
   {
-    name: 'Dancing Script',
-    folder: 'dancing-script',
+    name: "Dancing Script",
+    folder: "dancing-script",
     weights: [400, 500, 600, 700],
-    type: 'cursive',
+    type: "cursive",
   },
   {
-    name: 'Pacifico',
-    folder: 'pacifico',
+    name: "Pacifico",
+    folder: "pacifico",
     weights: [400],
-    type: 'cursive',
+    type: "cursive",
   },
   {
-    name: 'Fira Code',
-    folder: 'fira-code',
+    name: "Fira Code",
+    folder: "fira-code",
     weights: [300, 400, 500, 600, 700],
-    type: 'monospace',
+    type: "monospace",
   },
 ];
 
-const OUTPUT_DIR = path.join(__dirname, '..', 'public', 'fonts');
+const OUTPUT_DIR = path.join(__dirname, "..", "static", "fonts");
 
 // Utility functions
 function getWeightName(weight) {
   const names = {
-    100: 'Thin',
-    200: 'ExtraLight',
-    300: 'Light',
-    400: 'Regular',
-    500: 'Medium',
-    600: 'SemiBold',
-    700: 'Bold',
-    800: 'ExtraBold',
-    900: 'Black',
+    100: "Thin",
+    200: "ExtraLight",
+    300: "Light",
+    400: "Regular",
+    500: "Medium",
+    600: "SemiBold",
+    700: "Bold",
+    800: "ExtraBold",
+    900: "Black",
   };
-  return names[weight] || 'Regular';
+  return names[weight] || "Regular";
 }
 
 function ensureDirectoryExists(dirPath) {
@@ -97,57 +97,66 @@ function ensureDirectoryExists(dirPath) {
 
 function downloadFile(url, outputPath) {
   return new Promise((resolve, reject) => {
-    https.get(url, (response) => {
-      if (response.statusCode === 302 || response.statusCode === 301) {
-        // Follow redirect
-        downloadFile(response.headers.location, outputPath)
-          .then(resolve)
-          .catch(reject);
-        return;
-      }
+    https
+      .get(url, (response) => {
+        if (response.statusCode === 302 || response.statusCode === 301) {
+          // Follow redirect
+          downloadFile(response.headers.location, outputPath)
+            .then(resolve)
+            .catch(reject);
+          return;
+        }
 
-      if (response.statusCode !== 200) {
-        reject(new Error(`HTTP ${response.statusCode}: ${url}`));
-        return;
-      }
+        if (response.statusCode !== 200) {
+          reject(new Error(`HTTP ${response.statusCode}: ${url}`));
+          return;
+        }
 
-      const fileStream = fs.createWriteStream(outputPath);
-      response.pipe(fileStream);
+        const fileStream = fs.createWriteStream(outputPath);
+        response.pipe(fileStream);
 
-      fileStream.on('finish', () => {
-        fileStream.close();
-        resolve();
-      });
+        fileStream.on("finish", () => {
+          fileStream.close();
+          resolve();
+        });
 
-      fileStream.on('error', (err) => {
-        fs.unlink(outputPath, () => {});
-        reject(err);
-      });
-    }).on('error', reject);
+        fileStream.on("error", (err) => {
+          fs.unlink(outputPath, () => {});
+          reject(err);
+        });
+      })
+      .on("error", reject);
   });
 }
 
 async function getGoogleFontsCss(fontName, weights) {
   return new Promise((resolve, reject) => {
     // Construct Google Fonts API URL
-    const family = fontName.replace(/\s+/g, '+');
-    const weightsParam = weights.join(';');
+    const family = fontName.replace(/\s+/g, "+");
+    const weightsParam = weights.join(";");
     const url = `https://fonts.googleapis.com/css2?family=${family}:wght@${weightsParam}&display=swap`;
 
-    https.get(url, {
-      headers: {
-        // User agent for modern browsers (gets WOFF2)
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    }, (response) => {
-      let data = '';
-      response.on('data', (chunk) => {
-        data += chunk;
-      });
-      response.on('end', () => {
-        resolve(data);
-      });
-    }).on('error', reject);
+    https
+      .get(
+        url,
+        {
+          headers: {
+            // User agent for modern browsers (gets WOFF2)
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          },
+        },
+        (response) => {
+          let data = "";
+          response.on("data", (chunk) => {
+            data += chunk;
+          });
+          response.on("end", () => {
+            resolve(data);
+          });
+        },
+      )
+      .on("error", reject);
   });
 }
 
@@ -186,7 +195,7 @@ async function downloadFont(fontConfig) {
       const url = fontUrls[i];
       const weight = fontConfig.weights[i];
       const weightName = getWeightName(weight);
-      const fileName = `${fontConfig.name.replace(/\s+/g, '')}-${weightName}.woff2`;
+      const fileName = `${fontConfig.name.replace(/\s+/g, "")}-${weightName}.woff2`;
       const outputPath = path.join(fontDir, fileName);
 
       try {
@@ -206,7 +215,7 @@ async function downloadFont(fontConfig) {
 }
 
 async function generateFontsCss() {
-  console.log('\n📝 Generating fonts.css...');
+  console.log("\n📝 Generating fonts.css...");
 
   let cssContent = `/*
  * Local Fonts CSS
@@ -226,7 +235,7 @@ async function generateFontsCss() {
 
     for (const weight of fontConfig.weights) {
       const weightName = getWeightName(weight);
-      const fileName = `${fontConfig.name.replace(/\s+/g, '')}-${weightName}.woff2`;
+      const fileName = `${fontConfig.name.replace(/\s+/g, "")}-${weightName}.woff2`;
       const filePath = path.join(fontDir, fileName);
 
       if (fs.existsSync(filePath)) {
@@ -241,7 +250,7 @@ async function generateFontsCss() {
     }
   }
 
-  const outputPath = path.join(__dirname, '..', 'src', 'assets', 'fonts.css');
+  const outputPath = path.join(__dirname, "..", "src", "assets", "fonts.css");
   const assetsDir = path.dirname(outputPath);
   ensureDirectoryExists(assetsDir);
 
@@ -250,9 +259,9 @@ async function generateFontsCss() {
 }
 
 async function main() {
-  console.log('🎨 Font Download Helper for Wochenschau\n');
-  console.log('This script will download fonts from Google Fonts');
-  console.log('and save them locally in WOFF2 format.\n');
+  console.log("🎨 Font Download Helper for Wochenschau\n");
+  console.log("This script will download fonts from Google Fonts");
+  console.log("and save them locally in WOFF2 format.\n");
 
   // Ensure output directory exists
   ensureDirectoryExists(OUTPUT_DIR);
@@ -265,17 +274,17 @@ async function main() {
   // Generate fonts.css
   await generateFontsCss();
 
-  console.log('\n✅ All done!');
-  console.log('\nNext steps:');
-  console.log('1. Import fonts.css in your main.ts:');
+  console.log("\n✅ All done!");
+  console.log("\nNext steps:");
+  console.log("1. Import fonts.css in your root layout (+layout.svelte):");
   console.log("   import './assets/fonts.css';");
-  console.log('2. Remove Google Fonts links from index.html');
-  console.log('3. Update ExportSheet.svelte to use local fonts');
-  console.log('\nSee FONTS_LOCAL_SETUP.md for detailed instructions.');
+  console.log("2. Ensure app.html has no external Google Fonts links");
+  console.log("3. Update ExportSheet.svelte to use local fonts");
+  console.log("\nSee FONTS_LOCAL_SETUP.md for detailed instructions.");
 }
 
 // Run the script
 main().catch((err) => {
-  console.error('❌ Error:', err);
+  console.error("❌ Error:", err);
   process.exit(1);
 });

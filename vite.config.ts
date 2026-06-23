@@ -1,12 +1,10 @@
 import { defineConfig } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { sveltekit } from "@sveltejs/kit/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-// https://vite.dev/config/
 export default defineConfig({
-  base: "/",
   plugins: [
-    svelte(),
+    sveltekit(),
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
@@ -26,8 +24,8 @@ export default defineConfig({
         short_name: "Wochenschau",
         id: "/",
         description: "Your weekly overview",
-        theme_color: "#3450d1", // Match logo blue color
-        background_color: "#3450d1", // Match logo blue color
+        theme_color: "#3450d1",
+        background_color: "#3450d1",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
@@ -65,7 +63,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,ttf}"],
-        maximumFileSizeToCacheInBytes: 50 * 1024 * 1024, // 50 MB
+        maximumFileSizeToCacheInBytes: 50 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -74,7 +72,7 @@ export default defineConfig({
               cacheName: "google-fonts-cache",
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -88,7 +86,7 @@ export default defineConfig({
               cacheName: "local-fonts-cache",
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
               cacheableResponse: {
                 statuses: [0, 200],

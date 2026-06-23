@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/icon-rounded.svg" alt="Wochenschau Logo" width="120" height="120">
+  <img src="static/icon-rounded.svg" alt="Wochenschau Logo" width="120" height="120">
 </p>
 
 <h1 align="center">Wochenschau</h1>
@@ -8,7 +8,7 @@
   <em>Your weekly overview at a glance. A beautiful, intuitive calendar app for planning your week.</em>
 </p>
 
-**Wochenschau** (German for "weekly review") is a modern Progressive Web App built with Svelte 5, TypeScript, Tailwind CSS and Vite. It blends iOS-inspired design patterns with fast, private, offline-first functionality.
+**Wochenschau** (German for "weekly review") is a modern Progressive Web App built with SvelteKit (Svelte 5), TypeScript, Tailwind CSS and Vite. It blends iOS-inspired design patterns with fast, private, offline-first functionality.
 
 ---
 
@@ -73,6 +73,14 @@
 
 ```
 src/
+├── routes/
+│   ├── +layout.svelte
+│   ├── +layout.ts
+│   └── +page.svelte
+├── app.html
+├── app.css
+├── fonts.css
+├── App.svelte
 └── lib/
     ├── components/
     │   ├── WeekView.svelte
@@ -109,16 +117,12 @@ src/
     │   └── storage.ts
     ├── types/
     │   └── index.ts
-    ├── data/
-    │   └── bibleVerses.ts
-    ├── App.svelte
-    ├── main.ts
-    ├── app.css
-    └── fonts.css
+    └── data/
+        └── bibleVerses.ts
 docs/
 └── export-troubleshooting.md
 └── ios-background-fix.md
-public/
+static/
 └── backgrounds/ (default selectable images)
 ```
 
@@ -128,10 +132,10 @@ public/
 
 | Tech | Purpose |
 |------|---------|
-| Svelte 5 | Reactive UI & compiled components |
+| SvelteKit (Svelte 5) | App framework, routing, build |
 | TypeScript | Type safety & domain modeling |
 | Tailwind CSS | Utility-first styling |
-| Vite | Fast dev server + build |
+| Vite | Underlying dev server and bundler |
 | vite-plugin-pwa | Service worker + manifest |
 | IndexedDB | Large background image persistence |
 | LocalStorage | Lightweight structured data (activities, templates, subscriptions) |
@@ -238,7 +242,7 @@ pnpm exec wrangler pages deploy dist --project-name=wochenschau --branch=<branch
 pnpm deploy
 ```
 
-> SPA routing on Cloudflare Pages is enabled via `public/_redirects`.
+> SPA routing on Cloudflare Pages is enabled via `static/_redirects`.
 
 ## ☁️ PocketBase Setup
 
