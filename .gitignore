@@ -32,8 +32,4 @@ dist-ssr
 # PWA assets
 dev-dist
 
-# wrangler files
-.wrangler
-.dev.vars*
-!.dev.vars.example
 !.env.example

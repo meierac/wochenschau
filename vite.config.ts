@@ -2,6 +2,10 @@ import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+const basePath = process.env.BASE_PATH ?? "";
+const appBase =
+  basePath === "" || basePath === "/" ? "/" : `${basePath.replace(/\/$/, "")}/`;
+
 export default defineConfig({
   plugins: [
     sveltekit(),
@@ -22,14 +26,14 @@ export default defineConfig({
       manifest: {
         name: "Wochenschau",
         short_name: "Wochenschau",
-        id: "/",
+        id: appBase,
         description: "Your weekly overview",
         theme_color: "#3450d1",
         background_color: "#3450d1",
         display: "standalone",
         orientation: "portrait",
-        scope: "/",
-        start_url: "/",
+        scope: appBase,
+        start_url: appBase,
         icons: [
           {
             src: "web-app-manifest-192x192.png",

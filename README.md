@@ -221,28 +221,25 @@ pnpm build
 pnpm preview
 ```
 
-## ☁️ Deploy to Cloudflare Pages
+## ☁️ Deploy to GitHub Pages
 
 ### One-time setup
-1. Create a Cloudflare Pages project named `wochenschau`.
-2. In GitHub repository settings, add these secrets:
-   - `CLOUDFLARE_API_TOKEN`
-   - `CLOUDFLARE_ACCOUNT_ID`
-3. Ensure the API token has permission to deploy Pages projects.
+1. In your GitHub repository, open **Settings → Pages**.
+2. Set **Source** to **GitHub Actions**.
+3. Ensure your default branch is `main` (or update `.github/workflows/deploy.yml` accordingly).
 
 ### CI deploy
-A GitHub Actions workflow at `.github/workflows/deploy.yml` builds the app and runs:
+A GitHub Actions workflow at `.github/workflows/deploy.yml` builds the app and deploys `dist/` to GitHub Pages on every push to `main`.
 
-```bash
-pnpm exec wrangler pages deploy dist --project-name=wochenschau --branch=<branch>
-```
+The workflow automatically sets `BASE_PATH` from `actions/configure-pages`, so project-page URLs (e.g. `/repo-name`) work without manual edits.
 
 ### Manual deploy
 ```bash
 pnpm deploy
 ```
+(Equivalent to `pnpm build` for producing `dist/`; publishing is handled by GitHub Actions.)
 
-> SPA routing on Cloudflare Pages is enabled via `static/_redirects`.
+> SPA fallback on GitHub Pages is handled by SvelteKit static adapter output (`fallback: "404.html"`).
 
 ## ☁️ PocketBase Setup
 

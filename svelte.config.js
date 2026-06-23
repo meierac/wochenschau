@@ -8,8 +8,11 @@ const config = {
     adapter: adapter({
       pages: "dist",
       assets: "dist",
-      fallback: "200.html",
+      fallback: "404.html",
     }),
+    paths: {
+      base: process.env.BASE_PATH ?? "",
+    },
   },
 };
 
