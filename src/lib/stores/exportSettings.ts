@@ -51,7 +51,7 @@ export interface ExportSettings {
   weekContainerBackgroundOpacity: number; // 0-100
 }
 
-const defaultSettings: ExportSettings = {
+export const defaultExportSettings: ExportSettings = {
   // Typography
   headerFontFamily: "'Ms Madi'",
   bodyFontFamily: "'Manrope'",
@@ -100,68 +100,209 @@ const defaultSettings: ExportSettings = {
   weekContainerBackgroundOpacity: 30,
 };
 
+function cloneDefaultExportSettings(): ExportSettings {
+  return { ...defaultExportSettings };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function safeJsonParse<T>(value: string | null): T | null {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+}
+
+function stringOrFallback(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function nullableStringOrFallback(
+  value: unknown,
+  fallback: string | null,
+): string | null {
+  if (value === null) return null;
+  return typeof value === "string" ? value : fallback;
+}
+
+function numberOrFallback(value: unknown, fallback: number): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  return fallback;
+}
+
+function booleanOrFallback(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function backgroundModeOrFallback(
+  value: unknown,
+  fallback: ExportSettings["backgroundMode"],
+): ExportSettings["backgroundMode"] {
+  return value === "color" || value === "image" ? value : fallback;
+}
+
+function backgroundImageTypeOrFallback(
+  value: unknown,
+  fallback: ExportSettings["backgroundImageType"],
+): ExportSettings["backgroundImageType"] {
+  if (value === null) return null;
+  return value === "default" || value === "custom" ? value : fallback;
+}
+
+function weekNumberLayoutOrFallback(
+  value: unknown,
+  fallback: ExportSettings["weekNumberLayout"],
+): ExportSettings["weekNumberLayout"] {
+  return value === "inline" || value === "separate-line" ? value : fallback;
+}
+
+export function normalizeExportSettings(
+  value: unknown,
+  fallback: ExportSettings = defaultExportSettings,
+): ExportSettings {
+  const source = isRecord(value) ? value : {};
+
+  return {
+    headerFontFamily: stringOrFallback(
+      source.headerFontFamily,
+      fallback.headerFontFamily,
+    ),
+    bodyFontFamily: stringOrFallback(
+      source.bodyFontFamily,
+      fallback.bodyFontFamily,
+    ),
+    textColor: stringOrFallback(source.textColor, fallback.textColor),
+
+    title: stringOrFallback(source.title, fallback.title),
+    titleFontSize: numberOrFallback(
+      source.titleFontSize,
+      fallback.titleFontSize,
+    ),
+    titleOpacity: numberOrFallback(source.titleOpacity, fallback.titleOpacity),
+    titleColor: stringOrFallback(source.titleColor, fallback.titleColor),
+    titleDropShadowEnabled: booleanOrFallback(
+      source.titleDropShadowEnabled,
+      fallback.titleDropShadowEnabled,
+    ),
+    titleDropShadowColor: stringOrFallback(
+      source.titleDropShadowColor,
+      fallback.titleDropShadowColor,
+    ),
+    titleDropShadowOffsetX: numberOrFallback(
+      source.titleDropShadowOffsetX,
+      fallback.titleDropShadowOffsetX,
+    ),
+    titleDropShadowOffsetY: numberOrFallback(
+      source.titleDropShadowOffsetY,
+      fallback.titleDropShadowOffsetY,
+    ),
+    showWeekNumber: booleanOrFallback(
+      source.showWeekNumber,
+      fallback.showWeekNumber,
+    ),
+    weekNumberLayout: weekNumberLayoutOrFallback(
+      source.weekNumberLayout,
+      fallback.weekNumberLayout,
+    ),
+    syncWeekNumberWithTitle: booleanOrFallback(
+      source.syncWeekNumberWithTitle,
+      fallback.syncWeekNumberWithTitle,
+    ),
+    weekNumberFontFamily: stringOrFallback(
+      source.weekNumberFontFamily,
+      fallback.weekNumberFontFamily,
+    ),
+    weekNumberFontSize: numberOrFallback(
+      source.weekNumberFontSize,
+      fallback.weekNumberFontSize,
+    ),
+    weekNumberColor: stringOrFallback(
+      source.weekNumberColor,
+      fallback.weekNumberColor,
+    ),
+    weekNumberOpacity: numberOrFallback(
+      source.weekNumberOpacity,
+      fallback.weekNumberOpacity,
+    ),
+    weekNumberDropShadowEnabled: booleanOrFallback(
+      source.weekNumberDropShadowEnabled,
+      fallback.weekNumberDropShadowEnabled,
+    ),
+    weekNumberDropShadowColor: stringOrFallback(
+      source.weekNumberDropShadowColor,
+      fallback.weekNumberDropShadowColor,
+    ),
+    weekNumberDropShadowOffsetX: numberOrFallback(
+      source.weekNumberDropShadowOffsetX,
+      fallback.weekNumberDropShadowOffsetX,
+    ),
+    weekNumberDropShadowOffsetY: numberOrFallback(
+      source.weekNumberDropShadowOffsetY,
+      fallback.weekNumberDropShadowOffsetY,
+    ),
+
+    backgroundMode: backgroundModeOrFallback(
+      source.backgroundMode,
+      fallback.backgroundMode,
+    ),
+    backgroundImage: nullableStringOrFallback(
+      source.backgroundImage,
+      fallback.backgroundImage,
+    ),
+    backgroundImageUrl: nullableStringOrFallback(
+      source.backgroundImageUrl,
+      fallback.backgroundImageUrl,
+    ),
+    backgroundImageType: backgroundImageTypeOrFallback(
+      source.backgroundImageType,
+      fallback.backgroundImageType,
+    ),
+    backgroundColor: stringOrFallback(
+      source.backgroundColor,
+      fallback.backgroundColor,
+    ),
+    backgroundOpacity: numberOrFallback(
+      source.backgroundOpacity,
+      fallback.backgroundOpacity,
+    ),
+
+    accentColor: stringOrFallback(source.accentColor, fallback.accentColor),
+    borderRadius: numberOrFallback(source.borderRadius, fallback.borderRadius),
+    showBorders: booleanOrFallback(source.showBorders, fallback.showBorders),
+
+    weekContainerBackgroundColor: stringOrFallback(
+      source.weekContainerBackgroundColor,
+      fallback.weekContainerBackgroundColor,
+    ),
+    weekContainerBackgroundOpacity: numberOrFallback(
+      source.weekContainerBackgroundOpacity,
+      fallback.weekContainerBackgroundOpacity,
+    ),
+  };
+}
+
 function createExportSettingsStore() {
   const stored =
     typeof window !== "undefined"
       ? localStorage.getItem("exportSettings")
       : null;
-  let initial: ExportSettings;
-
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    // Ensure new fields exist for backward compatibility
-    initial = {
-      ...defaultSettings,
-
-      ...parsed,
-
-      titleColor: parsed.titleColor ?? defaultSettings.titleColor,
-      titleDropShadowEnabled:
-        parsed.titleDropShadowEnabled ?? defaultSettings.titleDropShadowEnabled,
-      titleDropShadowColor:
-        parsed.titleDropShadowColor ?? defaultSettings.titleDropShadowColor,
-      titleDropShadowOffsetX:
-        parsed.titleDropShadowOffsetX ?? defaultSettings.titleDropShadowOffsetX,
-      titleDropShadowOffsetY:
-        parsed.titleDropShadowOffsetY ?? defaultSettings.titleDropShadowOffsetY,
-      weekNumberLayout:
-        parsed.weekNumberLayout ?? defaultSettings.weekNumberLayout,
-      syncWeekNumberWithTitle:
-        parsed.syncWeekNumberWithTitle ??
-        defaultSettings.syncWeekNumberWithTitle,
-      weekNumberFontFamily:
-        parsed.weekNumberFontFamily ?? defaultSettings.weekNumberFontFamily,
-      weekNumberFontSize:
-        parsed.weekNumberFontSize ?? defaultSettings.weekNumberFontSize,
-      weekNumberColor:
-        parsed.weekNumberColor ?? defaultSettings.weekNumberColor,
-      weekNumberOpacity:
-        parsed.weekNumberOpacity ?? defaultSettings.weekNumberOpacity,
-      weekNumberDropShadowEnabled:
-        parsed.weekNumberDropShadowEnabled ??
-        defaultSettings.weekNumberDropShadowEnabled,
-      weekNumberDropShadowColor:
-        parsed.weekNumberDropShadowColor ??
-        defaultSettings.weekNumberDropShadowColor,
-      weekNumberDropShadowOffsetX:
-        parsed.weekNumberDropShadowOffsetX ??
-        defaultSettings.weekNumberDropShadowOffsetX,
-      weekNumberDropShadowOffsetY:
-        parsed.weekNumberDropShadowOffsetY ??
-        defaultSettings.weekNumberDropShadowOffsetY,
-      backgroundMode: parsed.backgroundMode ?? "color",
-
-      backgroundImageUrl: parsed.backgroundImageUrl ?? null,
-
-      backgroundImageType: parsed.backgroundImageType ?? null,
-
-      // Don't load backgroundImage from localStorage - will load from IndexedDB
-
-      backgroundImage: null,
-    };
-  } else {
-    initial = defaultSettings;
-  }
+  const parsed = safeJsonParse<Partial<ExportSettings>>(stored);
+  const initial: ExportSettings = parsed
+    ? normalizeExportSettings({ ...parsed, backgroundImage: null })
+    : cloneDefaultExportSettings();
 
   const { subscribe, set, update } = writable<ExportSettings>(initial);
 
@@ -174,13 +315,13 @@ function createExportSettingsStore() {
         if (base64) {
           // Update with current settings merged with image
           update((current) => {
-            const updated: ExportSettings = {
+            const updated = normalizeExportSettings({
               ...current,
               backgroundImage: base64,
               backgroundImageUrl: metadata.url,
               backgroundImageType: metadata.type,
               backgroundMode: "image" as const, // Set mode to image when loading from IndexedDB
-            };
+            });
             return updated;
           });
           return;
@@ -192,30 +333,28 @@ function createExportSettingsStore() {
         typeof window !== "undefined"
           ? localStorage.getItem("exportSettings")
           : null;
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.backgroundImage) {
-          // Migrate to IndexedDB
-          await imageStorage.migrateFromLocalStorage(parsed.backgroundImage);
-          // Load it back
-          const base64 = await imageStorage.getImageAsBase64();
-          if (base64) {
-            // Update with current settings merged with image
-            update((current) => {
-              const updated: ExportSettings = {
-                ...current,
-                backgroundImage: base64,
-                backgroundImageUrl: parsed.backgroundImageUrl ?? null,
-                backgroundImageType: parsed.backgroundImageType ?? null,
-                backgroundMode: "image" as const, // Set mode to image when migrating
-              };
-              return updated;
+      const parsed = safeJsonParse<Partial<ExportSettings>>(stored);
+      if (parsed && parsed.backgroundImage) {
+        // Migrate to IndexedDB
+        await imageStorage.migrateFromLocalStorage(parsed.backgroundImage);
+        // Load it back
+        const base64 = await imageStorage.getImageAsBase64();
+        if (base64) {
+          // Update with current settings merged with image
+          update((current) => {
+            const updated = normalizeExportSettings({
+              ...current,
+              backgroundImage: base64,
+              backgroundImageUrl: parsed.backgroundImageUrl ?? null,
+              backgroundImageType: parsed.backgroundImageType ?? null,
+              backgroundMode: "image" as const, // Set mode to image when migrating
             });
-          }
-          // Clean up localStorage - remove the large base64 string
-          delete parsed.backgroundImage;
-          localStorage.setItem("exportSettings", JSON.stringify(parsed));
+            return updated;
+          });
         }
+        // Clean up localStorage - remove the large base64 string
+        delete parsed.backgroundImage;
+        localStorage.setItem("exportSettings", JSON.stringify(parsed));
       }
     } catch (error) {
       console.error("Failed to load background image from IndexedDB:", error);
@@ -230,7 +369,8 @@ function createExportSettingsStore() {
   // Helper to save settings to localStorage (without backgroundImage)
   const saveToLocalStorage = (settings: ExportSettings) => {
     if (typeof window === "undefined") return;
-    const { backgroundImage, ...settingsWithoutImage } = settings;
+    const normalized = normalizeExportSettings(settings);
+    const { backgroundImage, ...settingsWithoutImage } = normalized;
     localStorage.setItem(
       "exportSettings",
       JSON.stringify(settingsWithoutImage),
@@ -240,13 +380,18 @@ function createExportSettingsStore() {
   return {
     subscribe,
     set: (value: ExportSettings) => {
-      saveToLocalStorage(value);
-      set(value);
+      const normalized = normalizeExportSettings(value);
+      saveToLocalStorage(normalized);
+      set(normalized);
       notifyDataChanged();
     },
     update: (updater: (value: ExportSettings) => ExportSettings) => {
       update((current) => {
-        const updated = updater(current);
+        const normalizedCurrent = normalizeExportSettings(current);
+        const updated = normalizeExportSettings(
+          updater(normalizedCurrent),
+          normalizedCurrent,
+        );
         saveToLocalStorage(updated);
         return updated;
       });
@@ -259,8 +404,9 @@ function createExportSettingsStore() {
       } catch (error) {
         console.error("Failed to delete image from IndexedDB:", error);
       }
-      saveToLocalStorage(defaultSettings);
-      set(defaultSettings);
+      const defaults = cloneDefaultExportSettings();
+      saveToLocalStorage(defaults);
+      set(defaults);
       notifyDataChanged();
     },
     setBackgroundImage: async (
@@ -279,12 +425,12 @@ function createExportSettingsStore() {
 
         // Update store with the image data and metadata
         update((current) => {
-          const updated = {
+          const updated = normalizeExportSettings({
             ...current,
             backgroundImage: imageData,
             backgroundImageUrl: url,
             backgroundImageType: type,
-          };
+          });
           saveToLocalStorage(updated);
           return updated;
         });
@@ -299,10 +445,10 @@ function createExportSettingsStore() {
     refreshImage: initializeImage,
     setBackgroundMode: (mode: "color" | "image") => {
       update((current) => {
-        const updated = {
+        const updated = normalizeExportSettings({
           ...current,
           backgroundMode: mode,
-        };
+        });
         saveToLocalStorage(updated);
         return updated;
       });

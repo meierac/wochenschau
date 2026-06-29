@@ -7,14 +7,17 @@ import type {
   UserProfile,
 } from "../types/index.js";
 import type { BibleVerseState } from "../stores/bibleVerse";
-import type { ExportSettings } from "../stores/exportSettings";
+import {
+  exportSettings,
+  normalizeExportSettings,
+  type ExportSettings,
+} from "../stores/exportSettings";
 
 import { activities } from "../stores/activities";
 import { templates } from "../stores/templates";
 import { subscriptions } from "../stores/ical";
 import { profile, emptyUserProfile } from "../stores/profile";
 import { bibleVerse } from "../stores/bibleVerse";
-import { exportSettings } from "../stores/exportSettings";
 import { imageStorage } from "../stores/imageStorage";
 
 import {
@@ -72,7 +75,9 @@ function normalizeProfile(value: unknown): UserProfile {
   };
 }
 
-function normalizeExportSettings(value: unknown): Partial<ExportSettings> {
+function normalizeExportSettingsPayload(
+  value: unknown,
+): Partial<ExportSettings> {
   if (!isRecord(value)) return {};
   return value as Partial<ExportSettings>;
 }
@@ -146,7 +151,7 @@ export function normalizeSyncedAppData(value: unknown): SyncedAppData | null {
       ? (value.subscriptions as ICalSubscription[])
       : [],
     profile: normalizeProfile(value.profile),
-    exportSettings: normalizeExportSettings(value.exportSettings),
+    exportSettings: normalizeExportSettingsPayload(value.exportSettings),
     bibleVerseState: normalizeBibleVerseState(value.bibleVerseState),
     backgroundImage:
       typeof value.backgroundImage === "string" ? value.backgroundImage : null,
@@ -162,11 +167,11 @@ export async function applySnapshotToLocalState(
     subscriptions.replaceAll(snapshot.subscriptions);
 
     const currentExportSettings = get(exportSettings);
-    const mergedExportSettings: ExportSettings = {
+    const mergedExportSettings = normalizeExportSettings({
       ...currentExportSettings,
       ...snapshot.exportSettings,
       backgroundImage: snapshot.backgroundImage,
-    };
+    });
 
     exportSettings.set(mergedExportSettings);
     await exportSettings.setBackgroundImage(
