@@ -2,7 +2,6 @@
     import { createEventDispatcher } from "svelte";
     import type { CalendarItem } from "../types/index";
     import { WEEKDAYS } from "../types/index";
-    import { activities } from "../stores/activities";
     import ActivityCard from "./ActivityCard.svelte";
 
     export let day: Date;
@@ -11,8 +10,9 @@
 
     // Dispatch events upward so App (or a higher-level component) can manage the edit sheet
     const dispatch = createEventDispatcher<{
+        requestViewActivity: CalendarItem;
         requestEditActivity: CalendarItem;
-        deleteActivity: string;
+        requestDeleteActivity: CalendarItem;
     }>();
 
     function formatDate(date: Date): string {
@@ -22,14 +22,17 @@
         });
     }
 
+    function handleOpenActivity(event: CustomEvent<CalendarItem>) {
+        dispatch("requestViewActivity", event.detail);
+    }
+
     function handleEditActivity(event: CustomEvent<CalendarItem>) {
         // Bubble the activity up to the parent – no local sheet management anymore
         dispatch("requestEditActivity", event.detail);
     }
 
-    function handleDeleteActivity(activity: CalendarItem) {
-        activities.removeActivity(activity.id);
-        dispatch("deleteActivity", activity.id);
+    function handleDeleteActivity(event: CustomEvent<CalendarItem>) {
+        dispatch("requestDeleteActivity", event.detail);
     }
 </script>
 
@@ -57,8 +60,9 @@
                 {#each dayActivities as activity (activity.id)}
                     <ActivityCard
                         {activity}
+                        on:open={handleOpenActivity}
                         on:edit={handleEditActivity}
-                        on:delete={() => handleDeleteActivity(activity)}
+                        on:delete={handleDeleteActivity}
                     />
                 {/each}
             </div>
@@ -69,6 +73,7 @@
 <!--
     ActivityEditSheet management removed.
     Parent component should listen for:
+    - on:requestViewActivity to open the global ActivityDetailsSheet
     - on:requestEditActivity to open the global ActivityEditSheet
-    - on:deleteActivity (optional) if parent wants to react to deletions
+    - on:requestDeleteActivity to open the global ConfirmDialog
 -->

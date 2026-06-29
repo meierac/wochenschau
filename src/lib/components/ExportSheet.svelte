@@ -508,7 +508,13 @@
      * Uses modern-screenshot for better iOS/Safari compatibility
      */
     async function generateImageBlob(): Promise<Blob | null> {
+        const restorePreviewAfterCapture = !showPreview;
+
         try {
+            if (restorePreviewAfterCapture) {
+                showPreview = true;
+            }
+
             isCapturing = true;
             await tick();
 
@@ -597,6 +603,10 @@
             return null;
         } finally {
             isCapturing = false;
+
+            if (restorePreviewAfterCapture) {
+                showPreview = false;
+            }
         }
     }
 

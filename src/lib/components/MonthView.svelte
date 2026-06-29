@@ -11,7 +11,7 @@
     export let referenceDate: Date;
 
     const dispatch = createEventDispatcher<{
-        requestEditActivity: CalendarItem;
+        requestViewActivity: CalendarItem;
     }>();
 
     type MonthCell = {
@@ -65,8 +65,8 @@
             : `${activity.startTime}–${activity.endTime}`;
     }
 
-    function handleEditActivity(activity: CalendarItem) {
-        dispatch("requestEditActivity", activity);
+    function handleOpenActivity(activity: CalendarItem) {
+        dispatch("requestViewActivity", activity);
     }
 
     $: todayKey = toDateKey(getCalendarToday());
@@ -143,7 +143,7 @@
                     {#each cell.activities.slice(0, 3) as activity}
                         <button
                             type="button"
-                            on:click={() => handleEditActivity(activity)}
+                            on:click={() => handleOpenActivity(activity)}
                             class="w-full rounded-md bg-secondary/70 px-2 py-1 text-left transition-colors hover:bg-secondary"
                             style={`border-left-color: ${activity.color ?? "var(--primary)"};`}
                         >

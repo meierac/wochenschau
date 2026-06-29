@@ -41,6 +41,7 @@
 
     import WeekPicker from "./lib/components/WeekPicker.svelte";
 
+    import ActivityDetailsSheet from "./lib/components/ActivityDetailsSheet.svelte";
     import ActivityEditSheet from "./lib/components/ActivityEditSheet.svelte";
     import { mobileHeaderActions } from "./lib/stores/mobilePageHeader";
     import type {
@@ -69,17 +70,15 @@
     let showWeekPicker = false;
 
     type AppPage =
-        | "calendar"
-        | "messages"
-        | "registrations"
-        | "files"
-        | "settings";
+        "calendar" | "messages" | "registrations" | "files" | "settings";
 
     let showExport = false;
     let desktopSidebarCollapsed = false;
     let currentPage: AppPage = "calendar";
 
+    let viewingActivity: CalendarItem | null = null;
     let editingActivity: CalendarItem | null = null;
+    let deletingActivity: CalendarItem | null = null;
     let showDeleteConfirm = false;
     let desktopCalendarView: "week" | "month" = "week";
 
@@ -277,9 +276,23 @@
         selectedDate = nextDate;
     }
 
-    // Activity editing handlers (global sheet)
+    // Activity detail/editing handlers (global sheets)
+    function handleRequestViewActivity(event: CustomEvent<CalendarItem>) {
+        viewingActivity = event.detail;
+    }
+
+    function handleCloseActivityDetails() {
+        viewingActivity = null;
+    }
+
+    function handleEditFromDetails(event: CustomEvent<CalendarItem>) {
+        editingActivity = event.detail;
+        viewingActivity = null;
+    }
+
     function handleRequestEditActivity(event: CustomEvent<CalendarItem>) {
         editingActivity = event.detail;
+        viewingActivity = null;
     }
     function handleCloseEditActivity() {
         editingActivity = null;
@@ -288,18 +301,34 @@
         activities.updateActivity(event.detail);
         editingActivity = null;
     }
+    function handleRequestDeleteActivity(event: CustomEvent<CalendarItem>) {
+        deletingActivity = event.detail;
+        showDeleteConfirm = true;
+    }
     function handleRequestDelete() {
+        if (!editingActivity) return;
+        deletingActivity = editingActivity;
         showDeleteConfirm = true;
     }
     function handleConfirmDelete() {
-        if (editingActivity) {
-            activities.removeActivity(editingActivity.id);
+        if (deletingActivity) {
+            activities.removeActivity(deletingActivity.id);
+
+            if (editingActivity?.id === deletingActivity.id) {
+                editingActivity = null;
+            }
+
+            if (viewingActivity?.id === deletingActivity.id) {
+                viewingActivity = null;
+            }
         }
+
         showDeleteConfirm = false;
-        editingActivity = null;
+        deletingActivity = null;
     }
     function handleCancelDelete() {
         showDeleteConfirm = false;
+        deletingActivity = null;
     }
 
     // Delegated iCal parsing (consolidated in service)
@@ -1099,12 +1128,14 @@
                                 {#if desktopCalendarView === "month"}
                                     <MonthView
                                         referenceDate={desktopMonthDate}
-                                        on:requestEditActivity={handleRequestEditActivity}
+                                        on:requestViewActivity={handleRequestViewActivity}
                                     />
                                 {:else}
                                     <WeekView
                                         {isDesktop}
+                                        on:requestViewActivity={handleRequestViewActivity}
                                         on:requestEditActivity={handleRequestEditActivity}
+                                        on:requestDeleteActivity={handleRequestDeleteActivity}
                                     />
                                 {/if}
                             </div>
@@ -1348,7 +1379,9 @@
                 <div class="flex-1 overflow-hidden">
                     <WeekView
                         {isDesktop}
+                        on:requestViewActivity={handleRequestViewActivity}
                         on:requestEditActivity={handleRequestEditActivity}
+                        on:requestDeleteActivity={handleRequestDeleteActivity}
                     />
                 </div>
             {:else if currentPage === "settings"}
@@ -1438,6 +1471,15 @@
     />
 {/if}
 
+{#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && viewingActivity}
+    <ActivityDetailsSheet
+        {isDesktop}
+        activity={viewingActivity}
+        on:edit={handleEditFromDetails}
+        on:close={handleCloseActivityDetails}
+    />
+{/if}
+
 {#if $cloudAuth.isAuthenticated && !$cloudAuth.requiresInitialTransferChoice && editingActivity}
     <ActivityEditSheet
         {isDesktop}
@@ -1455,8 +1497,8 @@
         showDeleteConfirm}
     {isDesktop}
     title="Delete Activity"
-    message={editingActivity
-        ? `Delete activity "${editingActivity.summary}"?`
+    message={deletingActivity
+        ? `Delete activity "${deletingActivity.summary}"?`
         : "Delete this activity?"}
     confirmLabel="Delete"
     cancelLabel="Cancel"

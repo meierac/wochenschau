@@ -3,7 +3,6 @@
     import { createEventDispatcher } from "svelte";
     import { isAllDayActivity } from "../utils/activityDisplay";
     import IconButton from "./IconButton.svelte";
-    import ConfirmDialog from "./ConfirmDialog.svelte";
 
     export let activity: CalendarItem;
 
@@ -16,7 +15,7 @@
     let isDragging = false;
     let isDesktop = false;
     let isHovering = false;
-    let showDeleteConfirm = false;
+    let suppressNextClick = false;
 
     function handleResize() {
         isDesktop = window.innerWidth >= 768;
@@ -59,6 +58,10 @@
 
         // Only trigger actions if we were actually dragging
         if (isDragging) {
+            suppressNextClick = true;
+            setTimeout(() => {
+                suppressNextClick = false;
+            }, 0);
             // Right swipe (positive deltaX) = delete
             if (deltaX > minSwipeDistance) {
                 handleDelete();
@@ -73,17 +76,38 @@
         isDragging = false;
     }
 
+    function handleOpen() {
+        if (suppressNextClick) {
+            suppressNextClick = false;
+            return;
+        }
+
+        dispatch("open", activity);
+    }
+
+    function handleOpenKeydown(event: KeyboardEvent) {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleOpen();
+        }
+    }
+
     function handleEdit() {
         dispatch("edit", activity);
     }
 
-    function handleDelete() {
-        showDeleteConfirm = true;
+    function handleEditClick(event: Event) {
+        event.stopPropagation();
+        handleEdit();
     }
 
-    function confirmDelete() {
-        showDeleteConfirm = false;
-        dispatch("delete");
+    function handleDelete() {
+        dispatch("delete", activity);
+    }
+
+    function handleDeleteClick(event: Event) {
+        event.stopPropagation();
+        handleDelete();
     }
 
     function isAllDayEvent(): boolean {
@@ -126,10 +150,14 @@
 
     <!-- Main card -->
     <div
-        class="bg-secondary p-3 rounded-2xl transition-transform relative"
+        class="block w-full cursor-pointer bg-secondary p-3 rounded-2xl transition-transform relative text-left hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"
+        role="button"
+        tabindex="0"
         style="transform: translateX({swipeOffset}px); {isDragging
             ? 'transition: none;'
             : ''}"
+        on:click={handleOpen}
+        on:keydown={handleOpenKeydown}
     >
         <div class="flex items-start justify-between gap-3">
             <div class="flex-1 min-w-0">
@@ -154,10 +182,10 @@
                 class="bg-secondary flex gap-0 shrink-0 absolute right-1 top-1 {isHovering &&
                 isDesktop
                     ? 'opacity-100'
-                    : 'opacity-0 pointer-events-none'}"
+                    : 'opacity-0 pointer-events-none'} focus-within:opacity-100"
             >
                 <IconButton
-                    on:click={handleEdit}
+                    on:click={handleEditClick}
                     class="px-1 py-1 hover:bg-primary/20 rounded text-primary transition-colors font-semibold md:text-lg active:bg-primary/30"
                     aria-label="Edit activity"
                     title="Edit activity"
@@ -176,11 +204,11 @@
                     >
                 </IconButton>
                 <IconButton
-                    on:click={handleDelete}
+                    on:click={handleDeleteClick}
                     class="px-1 py-1 hover:bg-destructive/20 rounded text-destructive transition-colors font-semibold md:text-lg active:bg-destructive/30 {isHovering &&
                     isDesktop
                         ? 'opacity-100'
-                        : 'opacity-0 pointer-events-none'}"
+                        : 'opacity-0 pointer-events-none'} focus-within:opacity-100"
                     aria-label="Delete activity"
                     title="Delete activity"
                 >
@@ -201,15 +229,3 @@
         </div>
     </div>
 </div>
-
-<ConfirmDialog
-    isOpen={showDeleteConfirm}
-    {isDesktop}
-    title="Delete Activity"
-    message={`Delete activity "${activity.summary}"?`}
-    confirmLabel="Delete"
-    cancelLabel="Cancel"
-    variant="destructive"
-    on:confirm={confirmDelete}
-    on:close={() => (showDeleteConfirm = false)}
-/>

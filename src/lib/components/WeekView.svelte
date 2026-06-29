@@ -27,12 +27,22 @@
     const MIN_WEEK_SWIPE_DISTANCE = 60;
 
     const dispatch = createEventDispatcher<{
+        requestViewActivity: CalendarItem;
         requestEditActivity: CalendarItem;
+        requestDeleteActivity: CalendarItem;
     }>();
+
+    function handleRequestViewActivity(event: CustomEvent<CalendarItem>) {
+        dispatch("requestViewActivity", event.detail);
+    }
 
     function handleRequestEditActivity(event: CustomEvent<CalendarItem>) {
         // Forward to parent so the global ActivityEditSheet in App.svelte can open
         dispatch("requestEditActivity", event.detail);
+    }
+
+    function handleRequestDeleteActivity(event: CustomEvent<CalendarItem>) {
+        dispatch("requestDeleteActivity", event.detail);
     }
 
     // Reactive week days
@@ -175,7 +185,9 @@
                     {day}
                     {dayIndex}
                     dayActivities={activitiesByDay[dayIndex]}
+                    on:requestViewActivity={handleRequestViewActivity}
                     on:requestEditActivity={handleRequestEditActivity}
+                    on:requestDeleteActivity={handleRequestDeleteActivity}
                 />
             </div>
         {/each}
