@@ -10,6 +10,7 @@
         name: "",
         startTime: "09:00",
         endTime: "10:00",
+        location: "",
     };
     export let onDeleteTemplate: (id: string) => void;
     export let onAddTemplate: () => void;
@@ -51,6 +52,13 @@
                             <div class="text-xs text-muted-foreground">
                                 {template.startTime} - {template.endTime}
                             </div>
+                            {#if template.location}
+                                <div
+                                    class="text-xs text-muted-foreground truncate"
+                                >
+                                    {template.location}
+                                </div>
+                            {/if}
                         </div>
                         <Button
                             variant="ghost"
@@ -78,6 +86,12 @@
                     type="text"
                     bind:value={newTemplate.name}
                     placeholder="Template name"
+                    class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
+                />
+                <input
+                    type="text"
+                    bind:value={newTemplate.location}
+                    placeholder="Location (optional)"
                     class="w-full px-3 py-2 bg-background border border-input rounded-3xl text-foreground text-sm"
                 />
                 <div class="grid grid-cols-2 gap-2">

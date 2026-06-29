@@ -19,6 +19,7 @@
     let step: "selectDay" | "details" = "selectDay";
     let selectedDay: number | null = null;
     let activityName = "";
+    let location = "";
     let startTime = "09:00";
     let endTime = "10:00";
     let saveAsTemplate = false;
@@ -31,7 +32,8 @@
             (t) =>
                 t.name === activityName &&
                 t.startTime === startTime &&
-                t.endTime === endTime,
+                t.endTime === endTime &&
+                (t.location ?? "") === location.trim(),
         );
 
     function handleSelectDay(day: number) {
@@ -43,6 +45,7 @@
         const template = $templates.find((t) => t.id === templateId);
         if (template) {
             activityName = template.name;
+            location = template.location ?? "";
             startTime = template.startTime;
             endTime = template.endTime;
             selectedTemplate = templateId;
@@ -91,6 +94,7 @@
             id: createEntityId("manual"),
             summary: activityName,
             description: "",
+            location: location.trim(),
             dtstart,
             dtend,
             startDate,
@@ -115,6 +119,7 @@
                 name: activityName,
                 startTime,
                 endTime,
+                location: location.trim(),
                 createdAt: templateCreatedAt,
             };
             templates.addTemplate(template);
@@ -264,6 +269,13 @@
                                     <div class="text-muted-foreground">
                                         {template.startTime} - {template.endTime}
                                     </div>
+                                    {#if template.location}
+                                        <div
+                                            class="text-muted-foreground truncate"
+                                        >
+                                            {template.location}
+                                        </div>
+                                    {/if}
                                 </button>
                             {/each}
                         </div>
@@ -282,6 +294,23 @@
                         type="text"
                         bind:value={activityName}
                         placeholder="Enter activity name"
+                        class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                </div>
+
+                <!-- Location -->
+                <div>
+                    <label
+                        for="activity-location"
+                        class="text-xs font-semibold text-foreground block mb-2"
+                    >
+                        Location
+                    </label>
+                    <input
+                        id="activity-location"
+                        type="text"
+                        bind:value={location}
+                        placeholder="Add a location (optional)"
                         class="w-full px-3 py-2 bg-background border border-input rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                 </div>

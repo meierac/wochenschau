@@ -51,12 +51,7 @@
     const APP_VERSION = "1.0.0";
 
     type SettingType =
-        | "profile"
-        | "templates"
-        | "ical"
-        | "export"
-        | "bibleVerse"
-        | "about";
+        "profile" | "templates" | "ical" | "export" | "bibleVerse" | "about";
 
     interface SettingItem {
         id: SettingType;
@@ -115,6 +110,7 @@
         name: "",
         startTime: "09:00",
         endTime: "10:00",
+        location: "",
     };
 
     // iCal state
@@ -241,12 +237,18 @@
             name: newTemplate.name,
             startTime: newTemplate.startTime,
             endTime: newTemplate.endTime,
+            location: newTemplate.location.trim(),
             createdAt,
         };
 
         templates.addTemplate(template);
         showNewTemplate = false;
-        newTemplate = { name: "", startTime: "09:00", endTime: "10:00" };
+        newTemplate = {
+            name: "",
+            startTime: "09:00",
+            endTime: "10:00",
+            location: "",
+        };
     }
 
     function handleDeleteTemplate(id: string) {
@@ -255,7 +257,12 @@
 
     function handleCancelNewTemplate() {
         showNewTemplate = false;
-        newTemplate = { name: "", startTime: "09:00", endTime: "10:00" };
+        newTemplate = {
+            name: "",
+            startTime: "09:00",
+            endTime: "10:00",
+            location: "",
+        };
     }
 
     // iCal operations
@@ -349,7 +356,8 @@
                         prev.dtstart !== item.dtstart ||
                         prev.dtend !== item.dtend ||
                         prev.summary !== item.summary ||
-                        prev.description !== item.description;
+                        prev.description !== item.description ||
+                        (prev.location ?? "") !== (item.location ?? "");
 
                     if (changed) {
                         // Preserve local overrides and timestamps:

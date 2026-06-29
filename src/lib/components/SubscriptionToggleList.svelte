@@ -71,7 +71,8 @@
                         prev.dtstart !== item.dtstart ||
                         prev.dtend !== item.dtend ||
                         prev.summary !== item.summary ||
-                        prev.description !== item.description;
+                        prev.description !== item.description ||
+                        (prev.location ?? "") !== (item.location ?? "");
 
                     if (changed) {
                         // Preserve local overrides and timestamps

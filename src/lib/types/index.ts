@@ -6,6 +6,7 @@ export interface CalendarItem {
   // Core event information
   summary: string; // Event title
   description?: string; // Event description
+  location?: string; // Event location / venue
 
   // Date/Time information (stored as iCal format for compatibility)
   dtstart: string; // ISO 8601 or iCal format: YYYYMMDD or YYYYMMDDTHHMMSS
@@ -45,6 +46,7 @@ export interface ActivityTemplate {
   startTime: string;
   endTime: string;
   description?: string;
+  location?: string;
   createdAt: number;
 }
 
@@ -65,6 +67,7 @@ export interface ICalEvent {
   uid: string;
   summary: string;
   description?: string;
+  location?: string;
   dtstart: string;
   dtend: string;
   rrule?: string; // Recurrence rule (not yet implemented)

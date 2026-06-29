@@ -52,6 +52,12 @@ function createActivityStore() {
               overrides.description = updatedActivity.description;
             }
 
+            if (
+              (updatedActivity.location ?? "") !== (original.location ?? "")
+            ) {
+              overrides.location = updatedActivity.location ?? "";
+            }
+
             if (updatedActivity.dtstart !== original.dtstart) {
               overrides.dtstart = updatedActivity.dtstart;
             }

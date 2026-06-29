@@ -1,7 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import type { CalendarItem, ICalSubscription } from "../types/index";
-    import { WEEKDAYS_DE } from "../types/index";
     import { subscriptions } from "../stores/ical";
     import { isAllDayActivity } from "../utils/activityDisplay";
     import IconButton from "./IconButton.svelte";
@@ -51,6 +50,15 @@
         return `${activity.startTime} – ${activity.endTime}`;
     }
 
+    const overrideFieldLabels: Record<string, string> = {
+        summary: "Title",
+        description: "Description",
+        location: "Location",
+        dtstart: "Start",
+        dtend: "End",
+        color: "Color",
+    };
+
     function formatSource(activity: CalendarItem): string {
         if (activity.source === "manual") return "Manual event";
         if (activity.source === "template") return "From template";
@@ -62,9 +70,16 @@
         return subscription ? subscription.name : "Calendar subscription";
     }
 
+    function getOverrideLabels(activity: CalendarItem): string[] {
+        return Object.keys(activity.localOverrides ?? {}).map(
+            (field) => overrideFieldLabels[field] ?? field,
+        );
+    }
+
     $: isMultiDay = activity.endDate && activity.endDate !== activity.startDate;
-    $: dayName = WEEKDAYS_DE[activity.day] ?? "";
     $: accentColor = activity.color ?? "var(--primary)";
+    $: overrideLabels = getOverrideLabels(activity);
+    $: hasLocalOverrides = overrideLabels.length > 0;
 </script>
 
 <SwipeableSheet {isDesktop} desktopMaxWidth="30rem" on:close={handleClose}>
@@ -162,6 +177,21 @@
                 </div>
             </section>
 
+            {#if activity.location}
+                <section class="space-y-2">
+                    <h5
+                        class="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                        Where
+                    </h5>
+                    <div
+                        class="whitespace-pre-wrap break-words rounded-2xl bg-muted/40 px-4 py-3 text-sm leading-relaxed text-foreground"
+                    >
+                        {activity.location}
+                    </div>
+                </section>
+            {/if}
+
             {#if activity.description}
                 <section class="space-y-2">
                     <h5
@@ -183,10 +213,43 @@
                 >
                     Source
                 </h5>
-                <div
-                    class="rounded-2xl bg-muted/40 px-4 py-3 text-sm text-muted-foreground"
-                >
-                    {formatSource(activity)}
+                <div class="rounded-2xl bg-muted/40 px-4 py-3 text-sm">
+                    <div class="font-medium text-foreground">
+                        {formatSource(activity)}
+                    </div>
+
+                    {#if activity.source === "ical"}
+                        <div class="mt-3 rounded-xl bg-background/70 px-3 py-2">
+                            {#if hasLocalOverrides}
+                                <div
+                                    class="flex items-center gap-2 font-semibold text-amber-700 dark:text-amber-300"
+                                >
+                                    <span
+                                        class="h-2 w-2 rounded-full bg-amber-500"
+                                        aria-hidden="true"
+                                    ></span>
+                                    Edited locally
+                                </div>
+                                <p class="mt-1 text-xs text-muted-foreground">
+                                    Local changes: {overrideLabels.join(", ")}
+                                </p>
+                            {:else}
+                                <div
+                                    class="flex items-center gap-2 font-semibold text-emerald-700 dark:text-emerald-300"
+                                >
+                                    <span
+                                        class="h-2 w-2 rounded-full bg-emerald-500"
+                                        aria-hidden="true"
+                                    ></span>
+                                    In sync with source
+                                </div>
+                                <p class="mt-1 text-xs text-muted-foreground">
+                                    No local edits have been made to this synced
+                                    activity.
+                                </p>
+                            {/if}
+                        </div>
+                    {/if}
                 </div>
             </section>
         </div>

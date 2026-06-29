@@ -114,7 +114,7 @@ function extractTime(iCalDateTime: string): string {
  */
 function decodeICalText(text: string): string {
   return text
-    .replace(/\\n/g, "\n")
+    .replace(/\\[nN]/g, "\n")
     .replace(/\\,/g, ",")
     .replace(/\\;/g, ";")
     .replace(/\\\\/g, "\\");
@@ -126,6 +126,7 @@ function decodeICalText(text: string): string {
 function buildCalendarItem(event: {
   summary?: string;
   description?: string;
+  location?: string;
   dtstart?: string;
   dtend?: string;
   uid?: string;
@@ -162,6 +163,7 @@ function buildCalendarItem(event: {
       id,
       summary: event.summary,
       description: event.description || "",
+      location: event.location || "",
       dtstart,
       dtend,
       startDate,
@@ -215,6 +217,7 @@ export function parseICalToCalendarItems(
   let currentEvent: {
     summary?: string;
     description?: string;
+    location?: string;
     dtstart?: string;
     dtend?: string;
     uid?: string;
@@ -248,18 +251,21 @@ export function parseICalToCalendarItems(
     const colonIndex = trimmed.indexOf(":");
     if (colonIndex === -1) continue;
     const field = trimmed.substring(0, colonIndex);
+    const propertyName = field.split(";", 1)[0].toUpperCase();
     const value = trimmed.substring(colonIndex + 1);
 
-    if (field === "SUMMARY") {
+    if (propertyName === "SUMMARY") {
       currentEvent.summary = decodeICalText(value);
-    } else if (field.startsWith("DTSTART")) {
+    } else if (propertyName === "DTSTART") {
       currentEvent.dtstart = value;
-    } else if (field.startsWith("DTEND")) {
+    } else if (propertyName === "DTEND") {
       currentEvent.dtend = value;
-    } else if (field === "UID") {
+    } else if (propertyName === "UID") {
       currentEvent.uid = value;
-    } else if (field === "DESCRIPTION") {
+    } else if (propertyName === "DESCRIPTION") {
       currentEvent.description = decodeICalText(value);
+    } else if (propertyName === "LOCATION") {
+      currentEvent.location = decodeICalText(value);
     }
   }
 
@@ -273,7 +279,7 @@ export function parseICalToCalendarItems(
  * Conflict definition:
  *  - Item exists locally
  *  - Local item has localOverrides (user modified a synced event)
- *  - Remote fields changed (summary/description/dtstart/dtend)
+ *  - Remote fields changed (summary/description/location/dtstart/dtend)
  */
 export function diffSubscriptionItems(
   subscription: ICalSubscription,
@@ -300,12 +306,14 @@ export function diffSubscriptionItems(
       prev.localOverrides?.description ?? prev.description;
     const baseDtstart = prev.localOverrides?.dtstart ?? prev.dtstart;
     const baseDtend = prev.localOverrides?.dtend ?? prev.dtend;
+    const baseLocation = prev.localOverrides?.location ?? prev.location ?? "";
 
     const changed =
       baseSummary !== item.summary ||
       baseDescription !== item.description ||
       baseDtstart !== item.dtstart ||
-      baseDtend !== item.dtend;
+      baseDtend !== item.dtend ||
+      baseLocation !== (item.location ?? "");
 
     if (changed) {
       // Merge with preserved local overrides & timestamps

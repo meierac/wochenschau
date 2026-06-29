@@ -29,7 +29,7 @@
 
     const dispatch = createEventDispatcher();
 
-    let editData = { ...activity };
+    let editData = { ...activity, location: activity.location ?? "" };
     let hasChanges = false;
     let dayOptions: MoveDayOption[] = [];
     let weekOptions: MoveWeekOption[] = [];
@@ -209,6 +209,7 @@
             editData.summary !== activity.summary ||
             editData.startTime !== activity.startTime ||
             editData.endTime !== activity.endTime ||
+            editData.location !== (activity.location ?? "") ||
             editData.description !== activity.description ||
             selectedDayOption?.week !== activity.week ||
             selectedDayOption?.year !== activity.year ||
@@ -234,6 +235,8 @@
     );
 
     function handleSave() {
+        editData.location = editData.location.trim();
+
         // If day changed, update all date-related fields
         if (
             selectedDayOption &&
@@ -487,6 +490,23 @@
             <div class="text-sm font-semibold text-foreground">
                 {durationStr}
             </div>
+        </div>
+
+        <!-- Location -->
+        <div>
+            <label
+                for="activity-location"
+                class="text-xs font-semibold text-foreground block mb-2"
+            >
+                Location
+            </label>
+            <input
+                id="activity-location"
+                type="text"
+                bind:value={editData.location}
+                placeholder="Add a location (optional)"
+                class="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
         </div>
 
         <!-- Description -->
