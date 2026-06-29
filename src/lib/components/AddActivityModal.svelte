@@ -219,7 +219,7 @@
     </div>
 
     <!-- Content -->
-    <div class="p-3 pb-8 max-h-[60vh] overflow-y-auto sheet-content">
+    <div class="p-3 pb-8 sheet-content">
         {#if step === "selectDay"}
             <!-- Day Selection -->
             <div class="space-y-2">

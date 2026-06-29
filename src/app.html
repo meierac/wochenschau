@@ -1,61 +1,83 @@
 <!doctype html>
 <html lang="de">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="%sveltekit.assets%/favicon.svg" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <head>
+        <meta charset="utf-8" />
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="%sveltekit.assets%/favicon.svg"
+        />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
 
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Wochenschau" />
-    <meta name="description" content="Wochenschau - Your weekly overview" />
-    <link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
-    <link
-      rel="mask-icon"
-      href="%sveltekit.assets%/apple-touch-icon-monochrome.svg"
-      color="#3450d1"
-    />
-    <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+        <meta
+            name="theme-color"
+            content="#ffffff"
+            media="(prefers-color-scheme: light)"
+        />
+        <meta
+            name="theme-color"
+            content="#000000"
+            media="(prefers-color-scheme: dark)"
+        />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="Wochenschau" />
+        <meta name="description" content="Wochenschau - Your weekly overview" />
+        <link
+            rel="apple-touch-icon"
+            href="%sveltekit.assets%/apple-touch-icon.png"
+        />
+        <link
+            rel="mask-icon"
+            href="%sveltekit.assets%/apple-touch-icon-monochrome.svg"
+            color="#3450d1"
+        />
+        <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 
-    <script>
-      (function () {
-        const dynamicMeta =
-          document.querySelector('meta[name="theme-color"][data-dynamic]') ||
-          (function () {
-            const m = document.createElement("meta");
-            m.name = "theme-color";
-            m.setAttribute("data-dynamic", "true");
-            document.head.appendChild(m);
-            return m;
-          })();
+        <script>
+            (function () {
+                const dynamicMeta =
+                    document.querySelector(
+                        'meta[name="theme-color"][data-dynamic]',
+                    ) ||
+                    (function () {
+                        const m = document.createElement("meta");
+                        m.name = "theme-color";
+                        m.setAttribute("data-dynamic", "true");
+                        document.head.appendChild(m);
+                        return m;
+                    })();
 
-        function resolveThemeColor() {
-          const styles = getComputedStyle(document.documentElement);
-          const hsl = styles.getPropertyValue("--background").trim();
-          if (hsl) {
-            dynamicMeta.content = `hsl(${hsl})`;
-            return;
-          }
-          dynamicMeta.content = window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "#000000"
-            : "#F8FAFC";
-        }
+                function resolveThemeColor() {
+                    const styles = getComputedStyle(document.documentElement);
+                    const hsl = styles.getPropertyValue("--background").trim();
+                    if (hsl) {
+                        dynamicMeta.content = `hsl(${hsl})`;
+                        return;
+                    }
+                    dynamicMeta.content = window.matchMedia(
+                        "(prefers-color-scheme: dark)",
+                    ).matches
+                        ? "#000000"
+                        : "#F8FAFC";
+                }
 
-        resolveThemeColor();
-        window
-          .matchMedia("(prefers-color-scheme: dark)")
-          .addEventListener("change", resolveThemeColor);
-      })();
-    </script>
+                resolveThemeColor();
+                window
+                    .matchMedia("(prefers-color-scheme: dark)")
+                    .addEventListener("change", resolveThemeColor);
+            })();
+        </script>
 
-    %sveltekit.head%
-  </head>
-  <body data-sveltekit-preload-data="hover">
-    <div style="display: contents">%sveltekit.body%</div>
-  </body>
+        %sveltekit.head%
+    </head>
+    <body data-sveltekit-preload-data="hover">
+        <div style="display: contents">%sveltekit.body%</div>
+    </body>
 </html>

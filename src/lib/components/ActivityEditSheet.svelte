@@ -329,7 +329,7 @@
     </div>
 
     <!-- Content -->
-    <div class="p-3 space-y-4 max-h-[60vh] overflow-y-auto sheet-content">
+    <div class="p-3 space-y-4 sheet-content">
         <!-- Activity Name -->
         <div>
             <label
@@ -522,8 +522,7 @@
                 bind:value={editData.description}
                 placeholder="Add notes or details (optional)"
                 class="w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                rows="3"
-            ></textarea>
+                rows="3"></textarea>
         </div>
 
         <!-- Source Info -->

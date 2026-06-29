@@ -241,7 +241,7 @@
         class:mobile={!isDesktop}
         class:dragging={isDragging}
         class:pwa={isStandalone}
-        style:max-height={isDesktop ? "80vh" : maxHeight}
+        style:max-height={isDesktop ? "90vh" : maxHeight}
         style:max-width={isDesktop ? desktopMaxWidth : "600px"}
         role="dialog"
         aria-modal="true"
@@ -264,7 +264,7 @@
     .backdrop {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.1);
+        background: rgba(0, 0, 0, 0.3);
         z-index: 50;
         display: flex;
         align-items: flex-end;

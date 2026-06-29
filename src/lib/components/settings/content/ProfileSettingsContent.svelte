@@ -27,8 +27,7 @@
     };
     let profileError = "";
     let profileSuccess = "";
-
-    let avatarInput: HTMLInputElement;
+    let isUploadingAvatar = false;
 
     $: currentProfile = $profile;
 
@@ -73,28 +72,37 @@
     }
 
     async function handleAvatarChange(e: Event) {
-        const input = e.target as HTMLInputElement;
+        const input = e.currentTarget as HTMLInputElement;
         const file = input.files?.[0];
         if (!file) return;
+
+        isUploadingAvatar = true;
         profileError = "";
         profileSuccess = "";
+
         try {
             await profile.uploadAvatar(file);
             profileSuccess = "Avatar updated.";
         } catch (error) {
             profileError = toErrorMessage(error);
+        } finally {
+            isUploadingAvatar = false;
+            input.value = "";
         }
-        input.value = "";
     }
 
     async function handleRemoveAvatar() {
         profileError = "";
         profileSuccess = "";
+        isUploadingAvatar = true;
+
         try {
             await profile.removeAvatar();
             profileSuccess = "Avatar removed.";
         } catch (error) {
             profileError = toErrorMessage(error);
+        } finally {
+            isUploadingAvatar = false;
         }
     }
 
@@ -241,20 +249,20 @@
         <section class="rounded-3xl border border-border bg-background/70 p-6">
             <!-- Avatar -->
             <div class="mt-4 flex flex-col items-center gap-2">
-                <input
-                    type="file"
-                    accept="image/*"
-                    class="hidden"
-                    bind:this={avatarInput}
-                    on:change={handleAvatarChange}
-                />
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <button
-                    type="button"
-                    class="group relative h-24 w-24 overflow-hidden rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    on:click={() => avatarInput.click()}
+                <label
+                    class="group relative block h-24 w-24 overflow-hidden rounded-full focus-within:outline-none focus-within:ring-2 focus-within:ring-ring {isUploadingAvatar
+                        ? 'pointer-events-none opacity-70'
+                        : 'cursor-pointer'}"
                     title="Change profile photo"
+                    aria-label="Change profile photo"
                 >
+                    <input
+                        type="file"
+                        accept="image/*,.heic,.heif"
+                        class="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        disabled={isUploadingAvatar}
+                        on:change={handleAvatarChange}
+                    />
                     {#if currentProfile.profileImage}
                         <img
                             src={currentProfile.profileImage}
@@ -269,15 +277,18 @@
                         </div>
                     {/if}
                     <div
-                        class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 {isUploadingAvatar
+                            ? 'opacity-100'
+                            : ''}"
                     >
-                        Change
+                        {isUploadingAvatar ? "Uploading…" : "Change"}
                     </div>
-                </button>
+                </label>
                 {#if currentProfile.profileImage}
                     <button
                         type="button"
                         class="text-xs text-muted-foreground underline hover:text-destructive"
+                        disabled={isUploadingAvatar}
                         on:click={handleRemoveAvatar}
                     >
                         Remove photo

@@ -83,7 +83,7 @@
 </script>
 
 <SwipeableSheet {isDesktop} desktopMaxWidth="30rem" on:close={handleClose}>
-    <div class="px-3 py-3 flex items-center justify-between">
+    <div class="px-3 pt-3 pb-2 flex items-center justify-between sticky top-0">
         <IconButton
             variant="secondary"
             size="lg"
@@ -134,7 +134,7 @@
         </IconButton>
     </div>
 
-    <div class="sheet-content max-h-[65vh] overflow-y-auto px-4 pb-6 pt-1">
+    <div class="sheet-content px-4 pb-6 pt-1">
         <div class="space-y-5">
             <div class="rounded-3xl border border-border bg-card/50 p-4">
                 <div class="flex items-start gap-3">

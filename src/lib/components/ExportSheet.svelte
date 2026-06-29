@@ -61,14 +61,16 @@
     let exportBackgroundFallbackColor = defaultExportSettings.backgroundColor;
     let exportPreviewBackgroundStyle = "";
     let previewViewportWidth = 0;
-    let previewViewportHeight = 0;
     let exportPreviewHeight = 0;
     let previewWidthPx = 900;
     let previewScale = 1;
     let appliedPreviewScale = 1;
-    let previewFrameWidth = "900px";
+    let previewFrameWidth = "100%";
     let previewFrameHeight = "auto";
     let previewTransform = "none";
+    let exportSheetContentHeight = "calc(95vh - 4.75rem)";
+    let exportPreviewElement: HTMLElement | null = null;
+    let previewMeasureToken = 0;
     let isCapturing = false;
 
     const THIS_WEEK_RANGE = { start: 7, end: 13 };
@@ -145,6 +147,7 @@
 
     function saveLayoutMode(mode: LayoutMode) {
         layoutMode = mode;
+        queueExportPreviewMeasurement();
 
         if (typeof window !== "undefined") {
             localStorage.setItem("exportLayoutMode", mode);
@@ -235,6 +238,65 @@
     onMount(() => {
         loadPreferences();
     });
+
+    function updateExportPreviewHeight() {
+        if (!exportPreviewElement) return;
+
+        const nextHeight = exportPreviewElement.scrollHeight;
+        if (nextHeight > 0 && nextHeight !== exportPreviewHeight) {
+            exportPreviewHeight = nextHeight;
+        }
+    }
+
+    function queueExportPreviewMeasurement() {
+        if (typeof window === "undefined") return;
+
+        const token = ++previewMeasureToken;
+        tick()
+            .then(
+                () =>
+                    new Promise<void>((resolve) => {
+                        requestAnimationFrame(() => resolve());
+                    }),
+            )
+            .then(() => {
+                if (token === previewMeasureToken) {
+                    updateExportPreviewHeight();
+                }
+            });
+    }
+
+    function measurePreviewHeight(node: HTMLElement) {
+        exportPreviewElement = node;
+        let frame: number | null = null;
+
+        const schedule = () => {
+            if (frame !== null) {
+                cancelAnimationFrame(frame);
+            }
+
+            frame = requestAnimationFrame(() => {
+                frame = null;
+                updateExportPreviewHeight();
+            });
+        };
+
+        const observer = new ResizeObserver(schedule);
+        observer.observe(node);
+        schedule();
+
+        return {
+            destroy() {
+                observer.disconnect();
+                if (frame !== null) {
+                    cancelAnimationFrame(frame);
+                }
+                if (exportPreviewElement === node) {
+                    exportPreviewElement = null;
+                }
+            },
+        };
+    }
 
     // Reactive: Check if background is ready for export
     $: isBackgroundReady =
@@ -868,20 +930,16 @@
     $: previewWidthPx =
         layoutMode === "grid" ? 900 : layoutMode === "list" ? 400 : 360;
     $: previewWidth = `${previewWidthPx}px`;
-    $: previewScale = Math.min(
-        1,
-        previewViewportWidth > 0 ? previewViewportWidth / previewWidthPx : 1,
-        previewViewportHeight > 0 && exportPreviewHeight > 0
-            ? previewViewportHeight / exportPreviewHeight
-            : 1,
-    );
+    $: exportSheetContentHeight = isDesktop
+        ? "calc(90vh - 4.5rem)"
+        : "calc(95vh - 4.75rem)";
+    $: previewScale =
+        previewViewportWidth > 0 ? previewViewportWidth / previewWidthPx : 1;
     $: appliedPreviewScale = isCapturing ? 1 : previewScale;
     $: previewTransform = isCapturing
         ? "none"
         : `scale(${appliedPreviewScale})`;
-    $: previewFrameWidth = `${Math.ceil(
-        previewWidthPx * appliedPreviewScale,
-    )}px`;
+    $: previewFrameWidth = "100%";
     $: previewFrameHeight =
         exportPreviewHeight > 0
             ? `${Math.ceil(exportPreviewHeight * appliedPreviewScale)}px`
@@ -905,12 +963,7 @@
     }
 </script>
 
-<SwipeableSheet
-    {isDesktop}
-    maxHeight="95vh"
-    desktopMaxWidth="56rem"
-    on:close={handleClose}
->
+<SwipeableSheet {isDesktop} desktopMaxWidth="56rem" on:close={handleClose}>
     <!-- Header -->
     <div class="px-3 py-3 flex items-center justify-between shrink-0">
         <IconButton
@@ -942,7 +995,10 @@
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-y-auto p-3 space-y-3 sheet-content">
+    <div
+        class="flex-1 min-h-0 p-3 flex flex-col gap-3 sheet-content"
+        style="height: {exportSheetContentHeight}; overflow: hidden;"
+    >
         {#if exportError}
             <div
                 class="p-4 bg-destructive/10 border border-destructive/30 rounded-lg"
@@ -952,7 +1008,7 @@
         {/if}
 
         <!-- Preview Controls -->
-        <fieldset class="space-y-3">
+        <fieldset class="space-y-3 shrink-0">
             <div class="flex items-center justify-between">
                 <legend class="text-sm font-semibold text-foreground"
                     >Preview</legend
@@ -1030,7 +1086,7 @@
             </div>
         </fieldset>
 
-        <fieldset class="space-y-3">
+        <fieldset class="space-y-3 shrink-0">
             <div class="flex items-center justify-between gap-3 flex-wrap">
                 <legend class="text-sm font-semibold text-foreground"
                     >Days</legend
@@ -1125,8 +1181,7 @@
         {#if showPreview}
             <div
                 bind:clientWidth={previewViewportWidth}
-                bind:clientHeight={previewViewportHeight}
-                class="bg-background/30 rounded-lg border border-border/70 overflow-hidden max-h-[55vh] flex justify-center items-start"
+                class="min-h-0 flex-1 bg-background/30 rounded-lg border border-border/70 overflow-y-auto overflow-x-hidden flex justify-center items-start"
             >
                 <div
                     style="width: {previewFrameWidth}; height: {previewFrameHeight}; flex: none; overflow: hidden;"
@@ -1136,7 +1191,7 @@
                     >
                         <div
                             id="export-preview"
-                            bind:clientHeight={exportPreviewHeight}
+                            use:measurePreviewHeight
                             style="width: {previewWidth}; min-width: {previewWidth}; max-width: {previewWidth}; position: relative; overflow: hidden; isolation: isolate; {exportPreviewBackgroundStyle} font-family: {$exportSettings.bodyFontFamily}; color: {$exportSettings.textColor};"
                         >
                             {#if $exportSettings.backgroundMode === "color"}
@@ -1527,7 +1582,7 @@
         {/if}
 
         <!-- Export Options -->
-        <fieldset class="space-y-4">
+        <fieldset class="space-y-4 shrink-0">
             {#if isDesktop}
                 <div class="grid grid-cols-2 gap-3">
                     <Button

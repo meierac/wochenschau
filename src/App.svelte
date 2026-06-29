@@ -1200,7 +1200,7 @@
                     {:else if currentPage === "settings" && settingsCurrentSubPage !== null}
                         <!-- Settings sub-page header: Back + Title (same style as calendar picker) -->
                         <div
-                            class="pointer-events-auto flex items-center p-0.5"
+                            class="pointer-events-auto flex items-center p-0.5 gap-2"
                         >
                             <IconButton
                                 on:click={() => settingsSheetInstance?.goBack()}
